@@ -11,7 +11,7 @@ AVRIL turns this into PBIs. Do not invent a second product.
 3. **Chrome** — Elm gallery: paste a Resume, live Theme switcher, download HTML/CSS. GPUI Component design guides.
 4. **Themes** — three to four dramatically different Themes so the Garden is real.
 5. **Store** — Axum + Turso: Theme metadata, submissions, featured flags.
-6. **Bridge** — SchemaResume import and export (lossless where possible).
+6. **Bridge** — SchemaResume and UniversalResume import and export (lossless where possible).
 7. **Generate** — Grok emits a Theme against the Class Contract.
 8. **Later** — PDF, Auth, Payments, custom subdomains. Not this product yet.
 
@@ -37,8 +37,12 @@ _Avoid_: resumezen.v1, CV object, custom storage schema, “the JSON we invented
 tradik/schema-resume (schema-resume.org). A JSON Resume–inspired dialect with extra fields, JSON-LD / Schema.org context, and XML. Import into a Resume. Export a Resume out to SchemaResume. Never the stored form.
 _Avoid_: Treating SchemaResume as canonical, requiring `@context` on every Resume
 
+**UniversalResume**:
+[universal-resume](https://github.com/universal-resume) (`universal-resume/json-schema`). A stricter resume JSON: `basics.headline`, `basics.contact`, `employments[]` (not `work`), `education.organization`, `initiatives[]` (volunteer / personal / open-source / …), nested Organization/Location objects, `additionalProperties: false`. Import into a Resume. Export a Resume out to UniversalResume. Never the stored form. Their html-renderer and pdf-generator are not our Renderer or Themes.
+_Avoid_: Treating UniversalResume as canonical, adopting their HTML/PDF tools as the Skeleton, using `employments` in stored JSON
+
 **Author**:
-The person the Resume describes. Pastes or imports JSON. Not a Designer unless they also submit a Theme.
+The person the Resume describes. Pastes or imports JSON (a Resume, SchemaResume, or UniversalResume). Not a Designer unless they also submit a Theme.
 _Avoid_: User (when you mean this person), candidate, job seeker as the entity
 
 ### Render
@@ -99,4 +103,4 @@ _Avoid_: LLM rewriting the Skeleton, generating HTML, a second class vocabulary
 
 Not nouns here. Do not plan them as v1 entities.
 
-_Avoid as entities_: Account, Auth, Payment, Invoice, Subscription, custom subdomain as a kernel, PDF as the source of truth, Job board, ATS vendor adapter, JSON Resume Handlebars theme, Tailwind, Organization (as OS root)
+_Avoid as entities_: Account, Auth, Payment, Invoice, Subscription, custom subdomain as a kernel, PDF as the source of truth, Job board, ATS vendor adapter, JSON Resume Handlebars theme, UniversalResume html-renderer, UniversalResume pdf-generator, Tailwind, Organization (as OS root)
