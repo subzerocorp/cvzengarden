@@ -1,0 +1,76 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jsonresume/resume-schema/master/schema.json",
+  "basics": {
+    "name": "Jordan Hale",
+    "label": "Design Engineer",
+    "email": "jordan@hale.example",
+    "url": "https://jordanhale.example",
+    "summary": "Design engineer who treats stylesheets as a public interface.",
+    "location": {
+      "city": "Portland",
+      "region": "OR",
+      "countryCode": "US"
+    },
+    "profiles": [
+      {
+        "network": "GitHub",
+        "username": "jordanhale",
+        "url": "https://github.com/jordanhale"
+      }
+    ]
+  },
+  "work": [
+    {
+      "name": "Acme Studio",
+      "location": "Remote",
+      "position": "Staff Design Engineer",
+      "url": "https://acme.example",
+      "startDate": "2022-03",
+      "highlights": [
+        "Locked class names and token names as an API."
+      ],
+      "industry": "Product design"
+    }
+  ],
+  "education": [
+    {
+      "institution": "Reed College",
+      "url": "https://www.reed.edu",
+      "area": "Art and Computer Science",
+      "studyType": "B.A.",
+      "startDate": "2010-08",
+      "endDate": "2014-05"
+    }
+  ],
+  "skills": [
+    {
+      "name": "Engineering",
+      "level": "Advanced",
+      "keywords": ["HTML", "CSS", "Rust"]
+    }
+  ],
+  "tools": [
+    {
+      "name": "Figma",
+      "level": "Advanced"
+    }
+  ],
+  "meta": {
+    "version": "v1.0.0",
+    "lastModified": "2026-08-22T00:00:00",
+    "x-schema-resume": {
+      "context": "https://schema-resume.org/context.jsonld",
+      "schema": "https://schema-resume.org/schema.json",
+      "type": "DigitalDocument",
+      "work": {
+        "0": {
+          "location": {
+            "city": "Portland",
+            "region": "OR",
+            "countryCode": "US"
+          }
+        }
+      }
+    }
+  }
+}

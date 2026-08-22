@@ -2,7 +2,7 @@
 
 Elm + vanilla CSS product chrome. **Not started.**
 
-This is the gallery, theme switcher, JSON paste, and forms — not the résumé itself.
+This is the gallery, theme switcher, JSON Resume paste, and forms — not the résumé itself. The paste target is [JSON Resume](https://jsonresume.org/schema), not a custom dialect.
 
 - Visual language: [`DESIGN.md`](DESIGN.md) (GPUI Component).
 - Résumé markup: [`../skeleton/CLASS-CONTRACT.md`](../skeleton/CLASS-CONTRACT.md).

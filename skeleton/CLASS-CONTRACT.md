@@ -1,16 +1,23 @@
 # ResumeZen HTML class contract
 
-**Version:** `1.0`  
-**Status:** stable interface — treat class names as a public API  
+**HTML contract version:** `1.0` (`data-rz-schema` on `.rz-resume`)  
+**Data interface:** [JSON Resume](https://jsonresume.org/schema)  
+**Schema:** [`jsonresume/resume-schema`](https://github.com/jsonresume/resume-schema) (`schema.json`)  
 **Namespace:** `rz-`  
 **Companion files:** [`example.html`](example.html), [`resume.json`](resume.json)
 
-This document is the agreement between:
+Two interfaces, one product:
 
-- the **Rust renderer** (JSON → this HTML),
-- **theme authors** (pure CSS targeting these classes),
-- **product chrome** (must never use `rz-*`),
-- **AI theme prompts** (must emit CSS against this list).
+| Interface | What it is | Who consumes it |
+| --- | --- | --- |
+| **JSON Resume** | Paste / import / store format | Renderer, converter, paste UI |
+| **`rz-*` HTML** | Fixed semantic skeleton | Theme CSS, ATS, gallery iframe |
+
+Themes never see JSON. They only target documented `rz-*` classes. JSON Resume theme templates are **not** used.
+
+[`schema-resume`](https://schema-resume.org/) is **import/export only**. It is not stored. See [`../converter/`](../converter/).
+
+There is no `resumezen.v1` JSON dialect. `data-rz-schema` is the **HTML contract version**, not a JSON schema id.
 
 A designer should be able to write a complete theme from this spec and `example.html` alone.
 
@@ -25,6 +32,7 @@ A designer should be able to write a complete theme from this spec and `example.
 5. **Omit empties.** The renderer drops a section, contact, link, entry, or bullet when it has no content. Themes must not require any optional node to exist.
 6. **Labels stay in the DOM.** Section titles, contact labels, and link labels are real text nodes. A theme may hide them visually; it must not rely on replacing them with CSS `content` if the words matter to ATS.
 7. **Standalone vs. gallery.** In a standalone/export document, a theme may style `html` and `body`. In the gallery, the résumé is sandboxed (iframe or equivalent) so theme CSS cannot leak into product chrome.
+8. **JSON Resume in, HTML out.** The renderer consumes a document that validates against [resume-schema](https://github.com/jsonresume/resume-schema). Unknown `additionalProperties` are preserved in storage and ignored by the HTML emitter unless listed in the field map below.
 
 ### What themes may style
 
@@ -40,8 +48,9 @@ A designer should be able to write a complete theme from this spec and `example.
 
 - Add or require extra HTML, scripts, webfont loader JS, or build tools.
 - Depend on Tailwind, CSS-in-JS, or a preprocessor at ship time. Ship a single `.css` file.
-- Assume a section is present, or assume a photo, pronouns, end date, or extras block exists.
+- Assume a section is present, or assume a photo, end date, or extras block exists.
 - Use class names that collide with chrome. Stay in `rz-*`.
+- Target JSON Resume field names. There are no `.basics` / `.work` classes.
 
 Custom properties are fine. Prefer `--rz-*` inside a theme so they cannot collide with chrome tokens (`--background`, `--primary`, …).
 
@@ -55,7 +64,7 @@ Custom properties are fine. Prefer `--rz-*` inside a theme so they cannot collid
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{name} — {label}</title>
+    <title>{basics.name} — {basics.label}</title>
     <!-- theme stylesheet linked here in standalone / iframe documents -->
   </head>
   <body>
@@ -72,24 +81,34 @@ Custom properties are fine. Prefer `--rz-*` inside a theme so they cannot collid
 | Class / attr | On | Meaning |
 | --- | --- | --- |
 | `.rz-resume` | `<article>` | Root of the résumé. The theme's canvas. |
-| `data-rz-schema="1.0"` | `.rz-resume` | Contract version the renderer emitted. |
-| `lang` | `<html>` | From `meta.locale` (BCP 47). Default `en`. |
+| `data-rz-schema="1.0"` | `.rz-resume` | **HTML** contract version the renderer emitted. Not a JSON dialect. |
+| `lang` | `<html>` | Default `en`. JSON Resume has no locale field. |
 
 Schema.org microdata is optional sugar on identity fields (`itemprop="name"`, `jobTitle`, `email`, `url`, `address`). Themes should ignore it.
+
+JSON Resume `meta` (`canonical`, `version`, `lastModified`) is **not** rendered.
 
 ---
 
 ## 3. Canonical section order
 
-The renderer emits this order. Missing sections are skipped, not left blank.
+The renderer emits this order — JSON Resume's top-level property order, with `basics.summary` lifted into its own section. Missing sections are skipped, not left blank.
 
-1. **Identity header** — always present (at least a name)
+1. **Identity header** — `basics` (always present if `basics.name` exists)
 2. **Summary** — `basics.summary`
-3. **Experience**
-4. **Education**
-5. **Skills**
-6. **Projects**
-7. **Extras** — zero or more, in JSON array order (awards, languages, certifications, volunteer, publications, interests, references, custom, …)
+3. **Experience** — `work`
+4. **Volunteer** — `volunteer`
+5. **Education** — `education`
+6. **Awards** — `awards`
+7. **Certificates** — `certificates`
+8. **Publications** — `publications`
+9. **Skills** — `skills`
+10. **Languages** — `languages`
+11. **Interests** — `interests`
+12. **References** — `references`
+13. **Projects** — `projects`
+
+`$schema` and `meta` are data-only.
 
 Each body section is:
 
@@ -105,112 +124,99 @@ Each body section is:
 | Class / attr | Meaning |
 | --- | --- |
 | `.rz-section` | Any body section. |
-| `.rz-section--summary`, `--experience`, `--education`, `--skills`, `--projects` | Built-in section kinds. |
-| `.rz-section--extra` | Plus `.rz-section--{id}` for a custom extra (`--awards`, `--languages`, …). |
+| `.rz-section--summary` · `--experience` · `--education` · `--skills` · `--projects` | Built-in section kinds. |
+| `.rz-section--extra` | Plus `.rz-section--{id}` for JSON Resume sections that share the extras patterns: `--volunteer`, `--awards`, `--certificates`, `--publications`, `--languages`, `--interests`, `--references`. |
 | `.rz-section-title` | Visible `h2` heading. |
 | `id="rz-{id}"` | Fragment target (`#rz-experience`). |
-| `data-rz-section="{id}"` | Stable machine id. Built-ins: `summary`, `experience`, `education`, `skills`, `projects`. Extras use their JSON `id`. |
-| `data-rz-kind` | Extra sections only: `entries` \| `list` \| `prose` \| `tags`. |
+| `data-rz-section="{id}"` | Stable machine id (see table below). |
+| `data-rz-kind` | Extra-pattern sections: `entries` \| `list` \| `prose` \| `tags`. |
+
+| `data-rz-section` | JSON Resume key | Kind | Heading |
+| --- | --- | --- | --- |
+| `summary` | `basics.summary` | prose | Summary |
+| `experience` | `work` | entries (built-in) | Experience |
+| `volunteer` | `volunteer` | entries | Volunteer |
+| `education` | `education` | entries (built-in) | Education |
+| `awards` | `awards` | entries | Awards |
+| `certificates` | `certificates` | entries | Certificates |
+| `publications` | `publications` | entries | Publications |
+| `skills` | `skills` | skill groups | Skills |
+| `languages` | `languages` | list | Languages |
+| `interests` | `interests` | tags *or* entries | Interests |
+| `references` | `references` | entries | References |
+| `projects` | `projects` | entries (built-in) | Projects |
+
+`interests`: if every item is name-only (no `keywords`), emit one `.rz-tags` list (`data-rz-kind="tags"`). If any item has `keywords`, emit entries (`data-rz-kind="entries"`) with `.rz-entry-primary` = `name` and `.rz-tags` = `keywords`.
 
 ---
 
-## 4. Identity (header)
+## 4. Field map (JSON Resume → `rz-*`)
+
+This is the renderer contract. Paths are JSON Resume. Slots are HTML classes.
+
+### 4.1 `$schema`
+
+| JSON Resume | HTML |
+| --- | --- |
+| `$schema` | Not rendered. Must be a URI that identifies resume-schema when present. |
+
+### 4.2 `basics`
+
+| JSON Resume | HTML |
+| --- | --- |
+| `basics.name` | `.rz-name` (`<h1>`, only one in the document) |
+| `basics.label` | `.rz-title` (`<p>`, not a heading) |
+| `basics.image` | `.rz-photo` / `.rz-photo-img` (`<img alt="Portrait of {name}">`). Omitted when missing or `""`. |
+| `basics.email` | `.rz-contact.rz-contact--email` · value is `<a href="mailto:{email}">` |
+| `basics.phone` | `.rz-contact.rz-contact--phone` · `<a href="tel:{digits}">` (href strips spaces / punctuation that is not `+`) |
+| `basics.url` | `.rz-contact.rz-contact--url` · `<a href="{url}">` · visible text is the hostname |
+| `basics.location` | `.rz-contact.rz-contact--location` · visible text = `[city, region].join(", ")`, falling back to `countryCode` if both city and region are empty |
+| `basics.location.address` · `postalCode` | Stored, not rendered in v1 (header clutter / privacy) |
+| `basics.summary` | `.rz-section--summary` · `.rz-prose.rz-summary` · split on blank lines (`\n\n`) into `<p>` |
+| `basics.profiles[]` | `.rz-link` (see below) |
+
+JSON Resume has **no** pronouns field. Do not emit a pronouns node.
 
 ```html
 <header class="rz-header">
   <div class="rz-identity">
     <h1 class="rz-name" itemprop="name">Jordan Hale</h1>
     <p class="rz-title" itemprop="jobTitle">Design Engineer</p>
-    <p class="rz-pronouns">they/them</p>
   </div>
-
-  <figure class="rz-photo">
-    <img class="rz-photo-img" src="…" alt="Portrait of Jordan Hale" width="160" height="160">
-  </figure>
-
-  <address class="rz-contacts">
-    <ul class="rz-contact-list">
-      <li class="rz-contact rz-contact--email" data-rz-type="email">
-        <span class="rz-contact-label">Email</span>
-        <a class="rz-contact-value" itemprop="email" href="mailto:jordan@example.com">jordan@example.com</a>
-      </li>
-      <!-- phone, location, url, other -->
-    </ul>
-  </address>
-
-  <nav class="rz-links" aria-label="Profiles">
-    <ul class="rz-link-list">
-      <li class="rz-link rz-link--github" data-rz-type="github">
-        <span class="rz-link-label">GitHub</span>
-        <a class="rz-link-value" itemprop="url" href="https://github.com/jordanhale">jordanhale</a>
-      </li>
-    </ul>
-  </nav>
+  <address class="rz-contacts">…</address>
+  <nav class="rz-links" aria-label="Profiles">…</nav>
 </header>
 ```
 
-### Identity classes
+| Class | Element | When |
+| --- | --- | --- |
+| `.rz-header` | `<header>` | always (if a name exists) |
+| `.rz-identity` | `<div>` | always |
+| `.rz-name` | `<h1>` | `basics.name` |
+| `.rz-title` | `<p>` | `basics.label` |
+| `.rz-photo` | `<figure>` | `basics.image` is a non-empty URL |
+| `.rz-photo-img` | `<img>` | with photo |
+| `.rz-contacts` | `<address>` | any of email / phone / url / location |
+| `.rz-contact-list` | `<ul>` | with contacts |
+| `.rz-contact` | `<li>` | plus `.rz-contact--{type}` |
+| `.rz-contact-label` | `<span>` | `Email` / `Phone` / `Website` / `Location` |
+| `.rz-contact-value` | `<a>` or `<span>` | `<a>` when an href exists |
+| `.rz-links` | `<nav>` | any `basics.profiles` |
+| `.rz-link-list` | `<ul>` | with profiles |
+| `.rz-link` | `<li>` | plus `.rz-link--{type}` |
+| `.rz-link-label` | `<span>` | `profiles[].network` |
+| `.rz-link-value` | `<a>` | visible text = `username`, else hostname |
 
-| Class | Element | Required | Notes |
-| --- | --- | --- | --- |
-| `.rz-header` | `<header>` | yes | Identity block. |
-| `.rz-identity` | `<div>` | yes | Name cluster. |
-| `.rz-name` | `<h1>` | yes | Only `h1` in the document. |
-| `.rz-title` | `<p>` | if `basics.label` | Professional headline, not a heading. |
-| `.rz-pronouns` | `<p>` | if `basics.pronouns` | |
-| `.rz-photo` | `<figure>` | if `basics.image` | Omitted when null. Optional; ATS export may drop it later. |
-| `.rz-photo-img` | `<img>` | with photo | Meaningful `alt`. |
-| `.rz-contacts` | `<address>` | if any contacts | Contact info, not a mailing-street requirement. |
-| `.rz-contact-list` | `<ul>` | with contacts | |
-| `.rz-contact` | `<li>` | each | Modifier `.rz-contact--{type}`. |
-| `.rz-contact-label` | `<span>` | each | Human label (`Email`, `Phone`). |
-| `.rz-contact-value` | `<a>` or `<span>` | each | `<a>` when `href` exists; `<span>` for plain location text. |
-| `.rz-links` | `<nav>` | if any links | Profiles / portfolio. |
-| `.rz-link-list` | `<ul>` | with links | |
-| `.rz-link` | `<li>` | each | Modifier `.rz-link--{type}`. |
-| `.rz-link-label` | `<span>` | each | `GitHub`, `Portfolio`. |
-| `.rz-link-value` | `<a>` | each | Visible text is `value` or hostname. |
+**Profile type.** Lowercase `network`, then map aliases: `twitter` and `x` → `x`; unknown → `other`. Known modifiers: `website` · `github` · `gitlab` · `linkedin` · `mastodon` · `bluesky` · `dribbble` · `behance` · `twitter` · `x` · `other`. `data-rz-type` keeps the mapped token.
 
-### Contact `type` values
+Contact types: `email` · `phone` · `location` · `url` · `other`.
 
-`email` · `phone` · `location` · `url` · `other`
+### 4.3 Shared dated-entry chrome
 
-Unknown types render as `.rz-contact--other` with `data-rz-type` preserved.
-
-### Link `type` values
-
-`website` · `github` · `gitlab` · `linkedin` · `mastodon` · `bluesky` · `dribbble` · `behance` · `twitter` · `x` · `other`
-
-Same fallback rule as contacts.
-
----
-
-## 5. Summary
+Used by `work`, `volunteer`, `education`, `projects`, and extras that are `entries`.
 
 ```html
-<section class="rz-section rz-section--summary" id="rz-summary" data-rz-section="summary">
-  <h2 class="rz-section-title">Summary</h2>
-  <div class="rz-prose rz-summary">
-    <p>…</p>
-  </div>
-</section>
-```
-
-| Class | Meaning |
-| --- | --- |
-| `.rz-summary` | Summary body. One or more `<p>`. |
-| `.rz-prose` | Shared prose wrapper (summary and `kind: "prose"` extras). |
-
-Plain text in JSON becomes a single `<p>`. A JSON array of strings becomes multiple `<p>`s. No markdown in v1.
-
----
-
-## 6. Dated entries (experience, education, projects, extra `entries`)
-
-Shared entry chrome:
-
-```html
-<li class="rz-entry rz-entry--experience rz-is-current" data-rz-entry="acme-2022">
+<li class="rz-entry rz-entry--experience rz-is-current" data-rz-entry="acme-studio-2022">
   <div class="rz-entry-header">
     <h3 class="rz-entry-primary">
       <a class="rz-entry-primary-link" href="https://acme.example">Acme Studio</a>
@@ -223,8 +229,9 @@ Shared entry chrome:
     </p>
     <p class="rz-location">Remote</p>
   </div>
+  <div class="rz-prose"><p>…</p></div>
   <ul class="rz-bullets">
-    <li class="rz-bullet">Shipped the design-system documentation site.</li>
+    <li class="rz-bullet">…</li>
   </ul>
 </li>
 ```
@@ -233,282 +240,272 @@ When the primary has no URL, `.rz-entry-primary` is plain text (no `<a>`).
 
 | Class / attr | Meaning |
 | --- | --- |
-| `.rz-entries` | `<ol>` of entries. Document order = JSON order. |
+| `.rz-entries` | `<ol>` of entries. Document order = JSON array order. |
 | `.rz-entry` | One job, school, project, or extra entry. |
 | `.rz-entry--experience` · `--education` · `--project` · `--extra` | Kind modifier. |
-| `.rz-is-current` | Present role / in-progress study. Also `data-rz-current="true"`. |
-| `data-rz-entry` | Stable id from JSON (slug). |
+| `.rz-is-current` | `startDate` present and `endDate` omitted. Also `data-rz-current="true"`. |
+| `data-rz-entry` | Renderer slug (JSON Resume has no ids): `slugify(primary + "-" + startYear)`. Collisions append `-2`, `-3`. |
 | `.rz-entry-header` | Primary / secondary / dates / location cluster. |
-| `.rz-entry-primary` | `h3`: organization, institution, or project name. |
+| `.rz-entry-primary` | `h3` |
 | `.rz-entry-primary-link` | Optional link wrapping the primary text. |
-| `.rz-entry-secondary` | Role, degree + area, or project tagline. |
-| `.rz-dates` | Date range container. Omitted if no dates. |
+| `.rz-entry-secondary` | Role, degree + area, project description, awarder, issuer, publisher. |
+| `.rz-dates` | Date range or single date. Omitted if no dates. |
 | `.rz-date` | A date token. |
-| `.rz-date--start` / `--end` | Start vs end. |
-| `.rz-date--present` | End is current (`Present`). This is a `<span>`, not `<time>`. |
+| `.rz-date--start` / `--end` | Start vs end (ranges). |
+| `.rz-date--present` | End omitted → the word `Present` (`<span>`, not `<time>`). |
 | `.rz-date-sep` | Separator (`–`). Decorative; `aria-hidden`. |
-| `.rz-location` | City / remote / campus. |
-| `.rz-bullets` | Highlight list. Omitted if empty. |
-| `.rz-bullet` | One highlight. Plain text. |
+| `.rz-location` | `work[].location` (string). |
+| `.rz-score` | `education[].score`. |
+| `.rz-prose` | `summary` / `reference` / other long strings. |
+| `.rz-bullets` / `.rz-bullet` | `highlights[]`. |
+| `.rz-tags` / `.rz-tag` | `keywords[]`, `courses[]`, name-only interests. |
+| `.rz-meta-list` / `.rz-meta` / `.rz-meta-label` / `.rz-meta-detail` | Languages; project `roles` / `entity` / `type`. |
 
-### Field mapping
+**Dates.** JSON Resume `iso8601`: `YYYY`, `YYYY-MM`, or `YYYY-MM-DD`. `datetime` is the raw value. Visible text is locale-formatted (`March 2022`, `2020`). A single date (awards, certificates, publications) uses one `.rz-date` and no separator.
 
-| Slot | Experience | Education | Project | Extra entry |
-| --- | --- | --- | --- | --- |
-| `.rz-entry-primary` | `organization` | `institution` | `name` | `title` |
-| `.rz-entry-secondary` | `role` | `{studyType} in {area}` (parts that exist) | `description` (short) or omitted if only bullets | `subtitle` |
-| `.rz-location` | `location` | `location` | `location` | `location` |
-| `.rz-dates` | `start` / `end` / `current` | same | same | `date` (single) or `start`/`end` |
+**Present.** JSON Resume has no `current` boolean. Omit `endDate` to mean present.
 
-A single extra date uses one `.rz-date` without a separator.
+### 4.4 `work[]` → experience
 
-### Date format
+`.rz-section--experience` · `.rz-entry--experience`
 
-JSON dates are ISO-8601 prefixes: `YYYY`, `YYYY-MM`, or `YYYY-MM-DD`.  
-Visible text is locale-formatted (`March 2022`). `datetime` keeps the raw ISO value.
-
-`end: null` plus `current: true` → `.rz-date--present` with the word `Present` (localized later).  
-`end: null` and not current → omit the end date and the separator.
-
----
-
-## 7. Experience
-
-```html
-<section class="rz-section rz-section--experience" id="rz-experience" data-rz-section="experience">
-  <h2 class="rz-section-title">Experience</h2>
-  <ol class="rz-entries">
-    <li class="rz-entry rz-entry--experience">…</li>
-  </ol>
-</section>
-```
-
----
-
-## 8. Education
-
-Same entry pattern. `.rz-entry--education`.
-
-If `score` is present it is a final line in the header:
-
-```html
-<p class="rz-score">GPA 3.8</p>
-```
-
-| Class | Meaning |
+| JSON Resume | HTML |
 | --- | --- |
-| `.rz-score` | Optional GPA / honors / result. |
+| `name` | `.rz-entry-primary` |
+| `url` | `.rz-entry-primary-link` |
+| `position` | `.rz-entry-secondary` |
+| `startDate` / `endDate` | `.rz-dates` (omit `endDate` → Present) |
+| `location` | `.rz-location` (string) |
+| `summary` | `.rz-prose` inside the entry |
+| `highlights[]` | `.rz-bullets` |
+| `description` | Not rendered in v1 (company tagline; stored only) |
 
----
+### 4.5 `volunteer[]`
 
-## 9. Skills
+`.rz-section--extra.rz-section--volunteer` · `data-rz-kind="entries"` · `.rz-entry--extra`
 
-Skills are **groups** of keywords. A flat list is one group with no name.
+| JSON Resume | HTML |
+| --- | --- |
+| `organization` | `.rz-entry-primary` |
+| `url` | `.rz-entry-primary-link` |
+| `position` | `.rz-entry-secondary` |
+| `startDate` / `endDate` | `.rz-dates` |
+| `summary` | `.rz-prose` |
+| `highlights[]` | `.rz-bullets` |
+
+### 4.6 `education[]`
+
+`.rz-section--education` · `.rz-entry--education`
+
+| JSON Resume | HTML |
+| --- | --- |
+| `institution` | `.rz-entry-primary` |
+| `url` | `.rz-entry-primary-link` |
+| `studyType` + `area` | `.rz-entry-secondary` as `{studyType} in {area}` (whichever parts exist) |
+| `startDate` / `endDate` | `.rz-dates` |
+| `score` | `.rz-score` (prefixed `GPA ` only if the value looks numeric; otherwise emit as-is) |
+| `courses[]` | `.rz-tags` / `.rz-tag` (**tags, not bullets** — courses are keywords) |
+
+JSON Resume education has no `location` or `highlights`.
+
+### 4.7 `awards[]`
+
+`.rz-section--extra.rz-section--awards` · `data-rz-kind="entries"`
+
+| JSON Resume | HTML |
+| --- | --- |
+| `title` | `.rz-entry-primary` (no URL in the schema) |
+| `awarder` | `.rz-entry-secondary` |
+| `date` | single `.rz-date` |
+| `summary` | `.rz-prose` |
+
+### 4.8 `certificates[]`
+
+`.rz-section--extra.rz-section--certificates` · `data-rz-kind="entries"`
+
+| JSON Resume | HTML |
+| --- | --- |
+| `name` | `.rz-entry-primary` |
+| `url` | `.rz-entry-primary-link` |
+| `issuer` | `.rz-entry-secondary` |
+| `date` | single `.rz-date` |
+
+### 4.9 `publications[]`
+
+`.rz-section--extra.rz-section--publications` · `data-rz-kind="entries"`
+
+| JSON Resume | HTML |
+| --- | --- |
+| `name` | `.rz-entry-primary` |
+| `url` | `.rz-entry-primary-link` |
+| `publisher` | `.rz-entry-secondary` |
+| `releaseDate` | single `.rz-date` |
+| `summary` | `.rz-prose` |
+
+### 4.10 `skills[]`
+
+`.rz-section--skills`
 
 ```html
-<section class="rz-section rz-section--skills" id="rz-skills" data-rz-section="skills">
-  <h2 class="rz-section-title">Skills</h2>
-  <ul class="rz-skill-groups">
-    <li class="rz-skill-group" data-rz-skill-group="engineering">
-      <h3 class="rz-skill-group-name">Engineering</h3>
-      <ul class="rz-skill-list">
-        <li class="rz-skill">Rust</li>
-        <li class="rz-skill">CSS</li>
-      </ul>
-    </li>
+<li class="rz-skill-group" data-rz-skill-group="engineering">
+  <h3 class="rz-skill-group-name">Engineering</h3>
+  <p class="rz-skill-level">Advanced</p>
+  <ul class="rz-skill-list">
+    <li class="rz-skill">Rust</li>
   </ul>
-</section>
+</li>
 ```
 
-| Class | Meaning |
+| JSON Resume | HTML |
 | --- | --- |
-| `.rz-skill-groups` | List of groups. |
-| `.rz-skill-group` | One named (or anonymous) group. |
-| `.rz-skill-group-name` | Group heading. Omitted when `name` is empty. |
-| `.rz-skill-list` | Keywords in that group. |
-| `.rz-skill` | One keyword. Text only — no links in v1. |
+| `name` | `.rz-skill-group-name` (omit the heading if empty) |
+| `level` | `.rz-skill-level` (omit if empty) |
+| `keywords[]` | `.rz-skill` items |
+| `data-rz-skill-group` | `slugify(name)` |
+
+### 4.11 `languages[]`
+
+`.rz-section--extra.rz-section--languages` · `data-rz-kind="list"`
+
+| JSON Resume | HTML |
+| --- | --- |
+| `language` | `.rz-meta-label` |
+| `fluency` | `.rz-meta-detail` (omit if empty) |
+
+### 4.12 `interests[]`
+
+`.rz-section--extra.rz-section--interests`
+
+| JSON Resume | HTML |
+| --- | --- |
+| name-only items | `.rz-tags` / `.rz-tag` (`data-rz-kind="tags"`) |
+| `name` + `keywords[]` | extra entries: primary = `name`, tags = `keywords` (`data-rz-kind="entries"`) |
+
+### 4.13 `references[]`
+
+`.rz-section--extra.rz-section--references` · `data-rz-kind="entries"`
+
+| JSON Resume | HTML |
+| --- | --- |
+| `name` | `.rz-entry-primary` |
+| `reference` | `.rz-prose` |
+
+### 4.14 `projects[]`
+
+`.rz-section--projects` · `.rz-entry--project`
+
+| JSON Resume | HTML |
+| --- | --- |
+| `name` | `.rz-entry-primary` |
+| `url` | `.rz-entry-primary-link` |
+| `description` | `.rz-entry-secondary` |
+| `startDate` / `endDate` | `.rz-dates` |
+| `highlights[]` | `.rz-bullets` |
+| `keywords[]` | `.rz-tags` |
+| `roles[]` | one `.rz-meta` labeled `Roles`, detail joined with `", "` |
+| `entity` | `.rz-meta` labeled `Affiliation` |
+| `type` | `.rz-meta` labeled `Type` |
+
+### 4.15 `meta`
+
+| JSON Resume | HTML |
+| --- | --- |
+| `meta.canonical` | Not rendered |
+| `meta.version` | Not rendered |
+| `meta.lastModified` | Not rendered |
+
+`meta` may hold tooling keys (`additionalProperties`). The converter may write `meta.x-schema-resume` for lossless schema-resume round-trips. The renderer ignores it.
 
 ---
 
-## 10. Projects
-
-Same dated-entry pattern. `.rz-entry--project`.
-
-Optional keyword row under the header, before bullets:
-
-```html
-<ul class="rz-tags">
-  <li class="rz-tag">CSS</li>
-  <li class="rz-tag">Type</li>
-</ul>
-```
-
-| Class | Meaning |
-| --- | --- |
-| `.rz-tags` | Inline keyword list (projects and `kind: "tags"` extras). |
-| `.rz-tag` | One keyword. |
-
-A long `description` that is not used as `.rz-entry-secondary` may instead appear as `.rz-prose` inside the entry. The sample uses secondary for the one-line pitch and bullets for outcomes. The renderer should prefer: secondary = `description` if it is a single short string; bullets = `highlights`.
-
----
-
-## 11. Extras (optional sections)
-
-Each extra is a `.rz-section.rz-section--extra.rz-section--{id}` with `data-rz-kind`.
-
-### `kind: "entries"`
-
-An `.rz-entries` list of `.rz-entry.rz-entry--extra` (awards, volunteer, publications, certifications).
-
-### `kind: "list"`
-
-Labeled items (languages, references):
-
-```html
-<ul class="rz-meta-list">
-  <li class="rz-meta">
-    <span class="rz-meta-label">English</span>
-    <span class="rz-meta-detail">Native</span>
-  </li>
-</ul>
-```
-
-| Class | Meaning |
-| --- | --- |
-| `.rz-meta-list` | Pair list. |
-| `.rz-meta` | One pair. |
-| `.rz-meta-label` | Term. |
-| `.rz-meta-detail` | Optional qualifier. Omitted if empty. |
-
-### `kind: "prose"`
-
-```html
-<div class="rz-prose">
-  <p>…</p>
-</div>
-```
-
-### `kind: "tags"`
-
-A `.rz-tags` list of `.rz-tag` (interests, tools dump).
-
-Unknown `kind` values must not appear. The renderer rejects or skips them.
-
----
-
-## 12. Class inventory (quick list)
+## 5. Class inventory (quick list)
 
 Themes can treat this as the complete selector surface.
 
 **Root:** `rz-resume`
 
-**Header:** `rz-header` · `rz-identity` · `rz-name` · `rz-title` · `rz-pronouns` · `rz-photo` · `rz-photo-img` · `rz-contacts` · `rz-contact-list` · `rz-contact` · `rz-contact--{type}` · `rz-contact-label` · `rz-contact-value` · `rz-links` · `rz-link-list` · `rz-link` · `rz-link--{type}` · `rz-link-label` · `rz-link-value`
+**Header:** `rz-header` · `rz-identity` · `rz-name` · `rz-title` · `rz-photo` · `rz-photo-img` · `rz-contacts` · `rz-contact-list` · `rz-contact` · `rz-contact--{type}` · `rz-contact-label` · `rz-contact-value` · `rz-links` · `rz-link-list` · `rz-link` · `rz-link--{type}` · `rz-link-label` · `rz-link-value`
 
-**Sections:** `rz-section` · `rz-section--summary` · `rz-section--experience` · `rz-section--education` · `rz-section--skills` · `rz-section--projects` · `rz-section--extra` · `rz-section--{extra-id}` · `rz-section-title`
+**Sections:** `rz-section` · `rz-section--summary` · `rz-section--experience` · `rz-section--education` · `rz-section--skills` · `rz-section--projects` · `rz-section--extra` · `rz-section--volunteer` · `rz-section--awards` · `rz-section--certificates` · `rz-section--publications` · `rz-section--languages` · `rz-section--interests` · `rz-section--references` · `rz-section-title`
 
 **Prose:** `rz-prose` · `rz-summary`
 
 **Entries:** `rz-entries` · `rz-entry` · `rz-entry--experience` · `rz-entry--education` · `rz-entry--project` · `rz-entry--extra` · `rz-is-current` · `rz-entry-header` · `rz-entry-primary` · `rz-entry-primary-link` · `rz-entry-secondary` · `rz-dates` · `rz-date` · `rz-date--start` · `rz-date--end` · `rz-date--present` · `rz-date-sep` · `rz-location` · `rz-score` · `rz-bullets` · `rz-bullet`
 
-**Skills:** `rz-skill-groups` · `rz-skill-group` · `rz-skill-group-name` · `rz-skill-list` · `rz-skill`
+**Skills:** `rz-skill-groups` · `rz-skill-group` · `rz-skill-group-name` · `rz-skill-level` · `rz-skill-list` · `rz-skill`
 
 **Tags / meta:** `rz-tags` · `rz-tag` · `rz-meta-list` · `rz-meta` · `rz-meta-label` · `rz-meta-detail`
 
 **State / data:** `data-rz-schema` · `data-rz-section` · `data-rz-kind` · `data-rz-type` · `data-rz-entry` · `data-rz-skill-group` · `data-rz-current`
 
-No other `rz-*` classes exist in v1. If you need a new one, bump the contract — do not invent it in a single theme.
+No other `rz-*` classes exist in HTML contract `1.0`. If you need a new one, bump `data-rz-schema` — do not invent it in a single theme.
 
 ---
 
-## 13. `resume.json` shape
+## 6. JSON Resume shape (storage)
 
-Schema id: `resumezen.v1`. The renderer will consume this document. Unknown fields are ignored. Extra sections use the `extras` array — do not add ad-hoc top-level keys for awards, languages, etc.
+The renderer consumes a document that validates against [resume-schema](https://github.com/jsonresume/resume-schema/blob/master/schema.json). Official sample: [`sample.resume.json`](https://github.com/jsonresume/resume-schema/blob/master/sample.resume.json).
+
+Top-level keys (all optional except that a usable résumé has `basics.name`):
 
 ```json
 {
-  "meta": {
-    "schema": "resumezen.v1",
-    "locale": "en"
-  },
+  "$schema": "https://raw.githubusercontent.com/jsonresume/resume-schema/master/schema.json",
   "basics": {
-    "name": "string",
-    "label": "string?",
-    "pronouns": "string?",
-    "image": "url?",
-    "summary": "string | string[]",
-    "contacts": [
-      { "type": "email|phone|location|url|other", "label": "string", "value": "string", "href": "string?" }
-    ],
-    "links": [
-      { "type": "website|github|…|other", "label": "string", "value": "string?", "href": "string" }
-    ]
+    "name": "",
+    "label": "",
+    "image": "",
+    "email": "",
+    "phone": "",
+    "url": "",
+    "summary": "",
+    "location": {
+      "address": "",
+      "postalCode": "",
+      "city": "",
+      "countryCode": "",
+      "region": ""
+    },
+    "profiles": [{ "network": "", "username": "", "url": "" }]
   },
-  "experience": [
-    {
-      "id": "slug",
-      "organization": "string",
-      "url": "url?",
-      "role": "string",
-      "location": "string?",
-      "start": "YYYY[-MM[-DD]]?",
-      "end": "YYYY[-MM[-DD]]?",
-      "current": false,
-      "highlights": ["string"]
-    }
-  ],
-  "education": [
-    {
-      "id": "slug",
-      "institution": "string",
-      "url": "url?",
-      "area": "string?",
-      "studyType": "string?",
-      "location": "string?",
-      "start": "date?",
-      "end": "date?",
-      "current": false,
-      "score": "string?",
-      "highlights": ["string"]
-    }
-  ],
-  "skills": [
-    { "id": "slug?", "name": "string?", "keywords": ["string"] }
-  ],
-  "projects": [
-    {
-      "id": "slug",
-      "name": "string",
-      "url": "url?",
-      "description": "string?",
-      "location": "string?",
-      "start": "date?",
-      "end": "date?",
-      "current": false,
-      "highlights": ["string"],
-      "keywords": ["string"]
-    }
-  ],
-  "extras": [
-    {
-      "id": "slug",
-      "title": "string",
-      "kind": "entries|list|prose|tags",
-      "entries": [{ "id": "slug?", "title": "string", "subtitle": "string?", "url": "url?", "location": "string?", "date": "date?", "start": "date?", "end": "date?", "highlights": ["string"] }],
-      "items": [{ "label": "string", "detail": "string?" }],
-      "prose": "string | string[]",
-      "tags": ["string"]
-    }
-  ]
+  "work": [{
+    "name": "", "location": "", "description": "", "position": "",
+    "url": "", "startDate": "YYYY-MM", "endDate": "YYYY-MM",
+    "summary": "", "highlights": [""]
+  }],
+  "volunteer": [{
+    "organization": "", "position": "", "url": "",
+    "startDate": "", "endDate": "", "summary": "", "highlights": [""]
+  }],
+  "education": [{
+    "institution": "", "url": "", "area": "", "studyType": "",
+    "startDate": "", "endDate": "", "score": "", "courses": [""]
+  }],
+  "awards": [{ "title": "", "date": "", "awarder": "", "summary": "" }],
+  "certificates": [{ "name": "", "date": "", "url": "", "issuer": "" }],
+  "publications": [{
+    "name": "", "publisher": "", "releaseDate": "", "url": "", "summary": ""
+  }],
+  "skills": [{ "name": "", "level": "", "keywords": [""] }],
+  "languages": [{ "language": "", "fluency": "" }],
+  "interests": [{ "name": "", "keywords": [""] }],
+  "references": [{ "name": "", "reference": "" }],
+  "projects": [{
+    "name": "", "description": "", "highlights": [""], "keywords": [""],
+    "startDate": "", "endDate": "", "url": "",
+    "roles": [""], "entity": "", "type": ""
+  }],
+  "meta": { "canonical": "", "version": "", "lastModified": "" }
 }
 ```
 
-Only the property bag that matches `kind` is read (`entries` / `items` / `prose` / `tags`).
-
 See [`resume.json`](resume.json) for a complete, valid example. [`example.html`](example.html) is the HTML that example must compile to.
+
+Wild JSON Resume files are valid input. Do not require ResumeZen-only keys.
 
 ---
 
-## 14. ATS and accessibility checklist
+## 7. ATS and accessibility checklist
 
 - [x] One `h1` (the name). Sections are `h2`. Entries and skill groups are `h3`.
 - [x] Lists are real lists. Jobs are an ordered list (sequence matters).
@@ -522,8 +519,9 @@ See [`resume.json`](resume.json) for a complete, valid example. [`example.html`]
 
 ---
 
-## 15. Versioning
+## 8. Versioning
 
-- Additive classes require a contract bump and a renderer release.
+- Additive `rz-*` classes require an HTML contract bump (`data-rz-schema`) and a renderer release.
 - Renames and removals are breaking. Don't.
-- `data-rz-schema` tells a theme which generation it was built against. Themes may use it for progressive enhancement; they should still render acceptably on `1.0`.
+- JSON Resume is versioned upstream. We track `resume-schema`; we do not fork it.
+- schema-resume changes belong in [`../converter/`](../converter/), not here.

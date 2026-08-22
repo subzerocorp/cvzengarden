@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Jordan Hale — Design Engineer</title>
     <!--
-      ResumeZen skeleton example (contract v1.0).
-      This file is what the Rust renderer will emit from resume.json.
+      ResumeZen skeleton example (HTML contract v1.0).
+      Emitted from a JSON Resume document (skeleton/resume.json).
+      data-rz-schema is the HTML contract version, not a JSON dialect.
 
       Try a theme:
         <link rel="stylesheet" href="../themes/your-theme.css">
@@ -22,7 +23,6 @@
         <div class="rz-identity">
           <h1 class="rz-name" itemprop="name">Jordan Hale</h1>
           <p class="rz-title" itemprop="jobTitle">Design Engineer</p>
-          <p class="rz-pronouns">they/them</p>
         </div>
 
         <address class="rz-contacts">
@@ -35,6 +35,10 @@
               <span class="rz-contact-label">Phone</span>
               <a class="rz-contact-value" href="tel:+15035550142">+1 503 555 0142</a>
             </li>
+            <li class="rz-contact rz-contact--url" data-rz-type="url">
+              <span class="rz-contact-label">Website</span>
+              <a class="rz-contact-value" itemprop="url" href="https://jordanhale.example">jordanhale.example</a>
+            </li>
             <li class="rz-contact rz-contact--location" data-rz-type="location">
               <span class="rz-contact-label">Location</span>
               <span class="rz-contact-value" itemprop="address">Portland, OR</span>
@@ -44,10 +48,6 @@
 
         <nav class="rz-links" aria-label="Profiles">
           <ul class="rz-link-list">
-            <li class="rz-link rz-link--website" data-rz-type="website">
-              <span class="rz-link-label">Portfolio</span>
-              <a class="rz-link-value" itemprop="url" href="https://jordanhale.example">jordanhale.example</a>
-            </li>
             <li class="rz-link rz-link--github" data-rz-type="github">
               <span class="rz-link-label">GitHub</span>
               <a class="rz-link-value" href="https://github.com/jordanhale">jordanhale</a>
@@ -71,7 +71,7 @@
       <section class="rz-section rz-section--experience" id="rz-experience" data-rz-section="experience">
         <h2 class="rz-section-title">Experience</h2>
         <ol class="rz-entries">
-          <li class="rz-entry rz-entry--experience rz-is-current" data-rz-entry="acme-2022" data-rz-current="true">
+          <li class="rz-entry rz-entry--experience rz-is-current" data-rz-entry="acme-studio-2022" data-rz-current="true">
             <div class="rz-entry-header">
               <h3 class="rz-entry-primary">
                 <a class="rz-entry-primary-link" href="https://acme.example">Acme Studio</a>
@@ -84,13 +84,16 @@
               </p>
               <p class="rz-location">Remote</p>
             </div>
+            <div class="rz-prose">
+              <p>Lead the shared component contract used across product teams.</p>
+            </div>
             <ul class="rz-bullets">
               <li class="rz-bullet">Lead the shared component contract used by six product teams; cut visual regressions in half by locking class names and token names as an API.</li>
               <li class="rz-bullet">Shipped the design-system documentation site as static HTML + one CSS file per theme, including a dark theme and a high-contrast theme.</li>
               <li class="rz-bullet">Mentored designers writing production CSS: cascade layers, logical properties, and what not to hide from assistive tech.</li>
             </ul>
           </li>
-          <li class="rz-entry rz-entry--experience" data-rz-entry="lumen-2018">
+          <li class="rz-entry rz-entry--experience" data-rz-entry="lumen-civic-2018">
             <div class="rz-entry-header">
               <h3 class="rz-entry-primary">
                 <a class="rz-entry-primary-link" href="https://lumen.example">Lumen Civic</a>
@@ -109,7 +112,7 @@
               <li class="rz-bullet">Partnered with engineering on an Elm admin and a boring HTML front door.</li>
             </ul>
           </li>
-          <li class="rz-entry rz-entry--experience" data-rz-entry="atlas-2015">
+          <li class="rz-entry rz-entry--experience" data-rz-entry="atlas-press-2015">
             <div class="rz-entry-header">
               <h3 class="rz-entry-primary">Atlas Press</h3>
               <p class="rz-entry-secondary">Designer &amp; Front-end Developer</p>
@@ -128,10 +131,35 @@
         </ol>
       </section>
 
+      <section class="rz-section rz-section--extra rz-section--volunteer" id="rz-volunteer" data-rz-section="volunteer" data-rz-kind="entries">
+        <h2 class="rz-section-title">Volunteer</h2>
+        <ol class="rz-entries">
+          <li class="rz-entry rz-entry--extra" data-rz-entry="aiga-portland-2019">
+            <div class="rz-entry-header">
+              <h3 class="rz-entry-primary">
+                <a class="rz-entry-primary-link" href="https://portland.aiga.org">AIGA Portland</a>
+              </h3>
+              <p class="rz-entry-secondary">Workshop mentor</p>
+              <p class="rz-dates">
+                <time class="rz-date rz-date--start" datetime="2019-09">September 2019</time>
+                <span class="rz-date-sep" aria-hidden="true">–</span>
+                <time class="rz-date rz-date--end" datetime="2021-06">June 2021</time>
+              </p>
+            </div>
+            <div class="rz-prose">
+              <p>Monthly type and CSS workshops for early-career designers.</p>
+            </div>
+            <ul class="rz-bullets">
+              <li class="rz-bullet">Ran a twelve-week semantic HTML studio for civic-tech volunteers.</li>
+            </ul>
+          </li>
+        </ol>
+      </section>
+
       <section class="rz-section rz-section--education" id="rz-education" data-rz-section="education">
         <h2 class="rz-section-title">Education</h2>
         <ol class="rz-entries">
-          <li class="rz-entry rz-entry--education" data-rz-entry="reed-2010">
+          <li class="rz-entry rz-entry--education" data-rz-entry="reed-college-2010">
             <div class="rz-entry-header">
               <h3 class="rz-entry-primary">
                 <a class="rz-entry-primary-link" href="https://www.reed.edu">Reed College</a>
@@ -142,11 +170,79 @@
                 <span class="rz-date-sep" aria-hidden="true">–</span>
                 <time class="rz-date rz-date--end" datetime="2014-05">May 2014</time>
               </p>
-              <p class="rz-location">Portland, OR</p>
             </div>
-            <ul class="rz-bullets">
-              <li class="rz-bullet">Thesis on responsive typography and the limits of presentational markup.</li>
+            <ul class="rz-tags">
+              <li class="rz-tag">Studio: Letterpress</li>
+              <li class="rz-tag">CS: Programming Languages</li>
+              <li class="rz-tag">Thesis: Responsive typography and presentational markup</li>
             </ul>
+          </li>
+        </ol>
+      </section>
+
+      <section class="rz-section rz-section--extra rz-section--awards" id="rz-awards" data-rz-section="awards" data-rz-kind="entries">
+        <h2 class="rz-section-title">Awards</h2>
+        <ol class="rz-entries">
+          <li class="rz-entry rz-entry--extra" data-rz-entry="css-design-awards-site-of-the-day-2021">
+            <div class="rz-entry-header">
+              <h3 class="rz-entry-primary">CSS Design Awards — Site of the Day</h3>
+              <p class="rz-entry-secondary">CSS Design Awards</p>
+              <p class="rz-dates">
+                <time class="rz-date" datetime="2021-08">August 2021</time>
+              </p>
+            </div>
+            <div class="rz-prose">
+              <p>Type Garden</p>
+            </div>
+          </li>
+          <li class="rz-entry rz-entry--extra" data-rz-entry="aiga-portland-fellow-2020">
+            <div class="rz-entry-header">
+              <h3 class="rz-entry-primary">AIGA Portland Fellow</h3>
+              <p class="rz-entry-secondary">AIGA Portland</p>
+              <p class="rz-dates">
+                <time class="rz-date" datetime="2020">2020</time>
+              </p>
+            </div>
+            <div class="rz-prose">
+              <p>Community education</p>
+            </div>
+          </li>
+        </ol>
+      </section>
+
+      <section class="rz-section rz-section--extra rz-section--certificates" id="rz-certificates" data-rz-section="certificates" data-rz-kind="entries">
+        <h2 class="rz-section-title">Certificates</h2>
+        <ol class="rz-entries">
+          <li class="rz-entry rz-entry--extra" data-rz-entry="iaap-was-2023">
+            <div class="rz-entry-header">
+              <h3 class="rz-entry-primary">
+                <a class="rz-entry-primary-link" href="https://www.accessibilityassociation.org">IAAP WAS</a>
+              </h3>
+              <p class="rz-entry-secondary">IAAP</p>
+              <p class="rz-dates">
+                <time class="rz-date" datetime="2023-04">April 2023</time>
+              </p>
+            </div>
+          </li>
+        </ol>
+      </section>
+
+      <section class="rz-section rz-section--extra rz-section--publications" id="rz-publications" data-rz-section="publications" data-rz-kind="entries">
+        <h2 class="rz-section-title">Publications</h2>
+        <ol class="rz-entries">
+          <li class="rz-entry rz-entry--extra" data-rz-entry="the-stylesheet-is-a-public-api-2022">
+            <div class="rz-entry-header">
+              <h3 class="rz-entry-primary">
+                <a class="rz-entry-primary-link" href="https://alistapart.example/stylesheet-api">The stylesheet is a public API</a>
+              </h3>
+              <p class="rz-entry-secondary">A List Apart</p>
+              <p class="rz-dates">
+                <time class="rz-date" datetime="2022-01">January 2022</time>
+              </p>
+            </div>
+            <div class="rz-prose">
+              <p>On locking class names so themes and tools can share one HTML tree.</p>
+            </div>
           </li>
         </ol>
       </section>
@@ -156,6 +252,7 @@
         <ul class="rz-skill-groups">
           <li class="rz-skill-group" data-rz-skill-group="design">
             <h3 class="rz-skill-group-name">Design</h3>
+            <p class="rz-skill-level">Advanced</p>
             <ul class="rz-skill-list">
               <li class="rz-skill">Design systems</li>
               <li class="rz-skill">Typographic layout</li>
@@ -166,6 +263,7 @@
           </li>
           <li class="rz-skill-group" data-rz-skill-group="engineering">
             <h3 class="rz-skill-group-name">Engineering</h3>
+            <p class="rz-skill-level">Advanced</p>
             <ul class="rz-skill-list">
               <li class="rz-skill">HTML</li>
               <li class="rz-skill">CSS</li>
@@ -186,10 +284,48 @@
         </ul>
       </section>
 
+      <section class="rz-section rz-section--extra rz-section--languages" id="rz-languages" data-rz-section="languages" data-rz-kind="list">
+        <h2 class="rz-section-title">Languages</h2>
+        <ul class="rz-meta-list">
+          <li class="rz-meta">
+            <span class="rz-meta-label">English</span>
+            <span class="rz-meta-detail">Native speaker</span>
+          </li>
+          <li class="rz-meta">
+            <span class="rz-meta-label">Spanish</span>
+            <span class="rz-meta-detail">Conversational</span>
+          </li>
+        </ul>
+      </section>
+
+      <section class="rz-section rz-section--extra rz-section--interests" id="rz-interests" data-rz-section="interests" data-rz-kind="tags">
+        <h2 class="rz-section-title">Interests</h2>
+        <ul class="rz-tags">
+          <li class="rz-tag">Letterpress</li>
+          <li class="rz-tag">Trail running</li>
+          <li class="rz-tag">Civic archives</li>
+          <li class="rz-tag">Mechanical keyboards</li>
+        </ul>
+      </section>
+
+      <section class="rz-section rz-section--extra rz-section--references" id="rz-references" data-rz-section="references" data-rz-kind="entries">
+        <h2 class="rz-section-title">References</h2>
+        <ol class="rz-entries">
+          <li class="rz-entry rz-entry--extra" data-rz-entry="sam-okonkwo">
+            <div class="rz-entry-header">
+              <h3 class="rz-entry-primary">Sam Okonkwo</h3>
+            </div>
+            <div class="rz-prose">
+              <p>Jordan treats markup as a contract. Our design system survived six product teams because they refused to let class names drift.</p>
+            </div>
+          </li>
+        </ol>
+      </section>
+
       <section class="rz-section rz-section--projects" id="rz-projects" data-rz-section="projects">
         <h2 class="rz-section-title">Projects</h2>
         <ol class="rz-entries">
-          <li class="rz-entry rz-entry--project" data-rz-entry="type-garden">
+          <li class="rz-entry rz-entry--project" data-rz-entry="type-garden-2021">
             <div class="rz-entry-header">
               <h3 class="rz-entry-primary">
                 <a class="rz-entry-primary-link" href="https://typegarden.example">Type Garden</a>
@@ -201,6 +337,16 @@
                 <time class="rz-date rz-date--end" datetime="2021-11">November 2021</time>
               </p>
             </div>
+            <ul class="rz-meta-list">
+              <li class="rz-meta">
+                <span class="rz-meta-label">Roles</span>
+                <span class="rz-meta-detail">Designer, Engineer</span>
+              </li>
+              <li class="rz-meta">
+                <span class="rz-meta-label">Type</span>
+                <span class="rz-meta-detail">application</span>
+              </li>
+            </ul>
             <ul class="rz-tags">
               <li class="rz-tag">CSS</li>
               <li class="rz-tag">Type</li>
@@ -211,7 +357,7 @@
               <li class="rz-bullet">Documented a class contract so late themes could ship without touching markup.</li>
             </ul>
           </li>
-          <li class="rz-entry rz-entry--project" data-rz-entry="minutes-plain">
+          <li class="rz-entry rz-entry--project" data-rz-entry="minutes-plain-2019">
             <div class="rz-entry-header">
               <h3 class="rz-entry-primary">
                 <a class="rz-entry-primary-link" href="https://minutes.example">Minutes, Plain</a>
@@ -232,71 +378,6 @@
             </ul>
           </li>
         </ol>
-      </section>
-
-      <section class="rz-section rz-section--extra rz-section--awards" id="rz-awards" data-rz-section="awards" data-rz-kind="entries">
-        <h2 class="rz-section-title">Awards</h2>
-        <ol class="rz-entries">
-          <li class="rz-entry rz-entry--extra" data-rz-entry="cssda-2021">
-            <div class="rz-entry-header">
-              <h3 class="rz-entry-primary">
-                <a class="rz-entry-primary-link" href="https://www.cssdesignawards.com">CSS Design Awards — Site of the Day</a>
-              </h3>
-              <p class="rz-entry-secondary">Type Garden</p>
-              <p class="rz-dates">
-                <time class="rz-date" datetime="2021-08">August 2021</time>
-              </p>
-            </div>
-          </li>
-          <li class="rz-entry rz-entry--extra" data-rz-entry="aiga-2020">
-            <div class="rz-entry-header">
-              <h3 class="rz-entry-primary">AIGA Portland Fellow</h3>
-              <p class="rz-entry-secondary">Community education</p>
-              <p class="rz-dates">
-                <time class="rz-date" datetime="2020">2020</time>
-              </p>
-            </div>
-          </li>
-        </ol>
-      </section>
-
-      <section class="rz-section rz-section--extra rz-section--certifications" id="rz-certifications" data-rz-section="certifications" data-rz-kind="entries">
-        <h2 class="rz-section-title">Certifications</h2>
-        <ol class="rz-entries">
-          <li class="rz-entry rz-entry--extra" data-rz-entry="iaap-was-2023">
-            <div class="rz-entry-header">
-              <h3 class="rz-entry-primary">IAAP WAS</h3>
-              <p class="rz-entry-secondary">Web Accessibility Specialist</p>
-              <p class="rz-dates">
-                <time class="rz-date" datetime="2023-04">April 2023</time>
-              </p>
-            </div>
-          </li>
-        </ol>
-      </section>
-
-      <section class="rz-section rz-section--extra rz-section--languages" id="rz-languages" data-rz-section="languages" data-rz-kind="list">
-        <h2 class="rz-section-title">Languages</h2>
-        <ul class="rz-meta-list">
-          <li class="rz-meta">
-            <span class="rz-meta-label">English</span>
-            <span class="rz-meta-detail">Native</span>
-          </li>
-          <li class="rz-meta">
-            <span class="rz-meta-label">Spanish</span>
-            <span class="rz-meta-detail">Conversational</span>
-          </li>
-        </ul>
-      </section>
-
-      <section class="rz-section rz-section--extra rz-section--interests" id="rz-interests" data-rz-section="interests" data-rz-kind="tags">
-        <h2 class="rz-section-title">Interests</h2>
-        <ul class="rz-tags">
-          <li class="rz-tag">Letterpress</li>
-          <li class="rz-tag">Trail running</li>
-          <li class="rz-tag">Civic archives</li>
-          <li class="rz-tag">Mechanical keyboards</li>
-        </ul>
       </section>
     </article>
   </body>

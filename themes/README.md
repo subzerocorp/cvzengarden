@@ -10,6 +10,7 @@ themes/
 ## Rules
 
 - Target the class contract in [`../skeleton/CLASS-CONTRACT.md`](../skeleton/CLASS-CONTRACT.md).
+- Do **not** use JSON Resume theme templates. Input is JSON Resume; themes only see `rz-*` HTML.
 - Style `html`, `body`, and `.rz-*` only. Do not assume product-chrome markup exists.
 - No Tailwind. No CSS-in-JS. No JavaScript. No extra HTML.
 - Do not depend on `skeleton/preview.css`. That file is a local readability aid, not part of the contract.

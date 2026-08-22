@@ -1,8 +1,8 @@
 //! ResumeZen renderer stub.
 //!
-//! Future work: parse `resume.json` and emit the fixed HTML class contract
-//! documented in `/skeleton/CLASS-CONTRACT.md`. This crate is a placeholder
-//! so the workspace layout is real before the implementation lands.
+//! Future work: parse a JSON Resume document and emit the fixed HTML class
+//! contract documented in `/skeleton/CLASS-CONTRACT.md`. This crate is a
+//! placeholder so the workspace layout is real before the implementation lands.
 
 /// Crate version. Not the HTML contract version (`data-rz-schema`).
 pub fn version() -> &'static str {
