@@ -1,0 +1,128 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jsonresume/resume-schema/master/schema.json",
+  "basics": {
+    "name": "Jordan Hale",
+    "label": "Design Engineer",
+    "email": "jordan@hale.example",
+    "phone": "+1 503 555 0142",
+    "url": "https://jordanhale.example",
+    "summary": "Design engineer who treats stylesheets as a public interface.",
+    "location": {
+      "city": "Portland",
+      "region": "OR",
+      "countryCode": "US"
+    },
+    "profiles": [
+      {
+        "network": "LinkedIn",
+        "url": "https://www.linkedin.com/in/jordanhale"
+      },
+      {
+        "network": "Github",
+        "username": "jordanhale",
+        "url": "https://github.com/jordanhale"
+      }
+    ]
+  },
+  "work": [
+    {
+      "name": "Acme Studio",
+      "location": "Remote",
+      "description": "Product design studio",
+      "position": "Staff Design Engineer",
+      "url": "https://acme.example",
+      "startDate": "2022-03",
+      "highlights": [
+        "Locked class names and token names as an API."
+      ]
+    }
+  ],
+  "volunteer": [
+    {
+      "organization": "AIGA Portland",
+      "position": "Workshop mentor",
+      "url": "https://portland.aiga.org",
+      "startDate": "2019-09",
+      "endDate": "2021-06",
+      "summary": "Monthly type and CSS workshops for early-career designers."
+    }
+  ],
+  "education": [
+    {
+      "institution": "Reed College",
+      "url": "https://www.reed.edu",
+      "area": "Art and Computer Science",
+      "studyType": "B.A.",
+      "startDate": "2010-08",
+      "endDate": "2014-05",
+      "courses": [
+        "Studio: Letterpress"
+      ]
+    }
+  ],
+  "skills": [
+    {
+      "name": "Engineering",
+      "level": "advanced",
+      "keywords": ["HTML", "CSS", "Rust"]
+    }
+  ],
+  "languages": [
+    {
+      "language": "English",
+      "fluency": "fluent"
+    }
+  ],
+  "projects": [
+    {
+      "name": "Type Garden",
+      "description": "A fixed article skeleton restyled by invited typographers.",
+      "highlights": [
+        "Thirty submitted stylesheets, one HTML file."
+      ],
+      "keywords": ["CSS", "Type"],
+      "startDate": "2021-02",
+      "endDate": "2021-11",
+      "url": "https://typegarden.example"
+    }
+  ],
+  "meta": {
+    "lastModified": "2026-08-22T00:00:00",
+    "x-universal-resume": {
+      "schema": "https://raw.githubusercontent.com/universal-resume/json-schema/main/schema.json",
+      "basics": {
+        "availability": "ASAP",
+        "remote": true
+      },
+      "employments": {
+        "0": {
+          "type": "internal",
+          "organization": {
+            "name": "Acme Studio",
+            "description": "Product design studio",
+            "location": {
+              "city": "Portland",
+              "region": "OR",
+              "countryCode": "US"
+            }
+          },
+          "tags": ["CSS", "Design systems"]
+        }
+      },
+      "education": {
+        "0": {
+          "courses": [
+            {
+              "name": "Studio: Letterpress",
+              "format": "In-person"
+            }
+          ]
+        }
+      },
+      "initiatives": {
+        "0": { "type": "volunteering" },
+        "1": { "type": "open-source", "position": "Designer" }
+      }
+    }
+  }
+}

@@ -20,15 +20,17 @@ Themes never see that JSON. They only target the **HTML class contract** (`rz-*`
 JSON Resume  ──►  Rust renderer  ──►  fixed semantic HTML (rz-* classes)
      ▲                                      │
      │                                      └── theme.css ──► styled résumé
-schema-resume import (converter)
+Bridge import (SchemaResume | UniversalResume)
 ```
 
-1. A candidate pastes or uploads a **JSON Resume** document (or we import schema-resume into one).
+1. An Author pastes or uploads a **JSON Resume** document (or Chrome imports a Bridge dialect into one).
 2. A Rust crate turns that JSON into **one** HTML tree. Same tags, same classes, same heading order, every time.
 3. A theme is a **pure `.css` file** that styles `rz-*` classes. No Tailwind. No CSS-in-JS. No JSON Resume theme templates. Designers only touch CSS.
 4. The product chrome (gallery, theme switcher, JSON paste, forms) is a separate UI, styled after [GPUI Component](https://longbridge.github.io/gpui-component/). Chrome and themes never share class names.
 
-[schema-resume](https://schema-resume.org/) is **import/export only** — JSON-LD in, JSON Resume stored, JSON-LD out. See [`converter/`](converter/).
+**Bridge dialects** (import/export only, never stored): [SchemaResume](https://schema-resume.org/) (JSON-LD) and [UniversalResume](https://github.com/universal-resume). Detection and mappings live in [`converter/`](converter/). We do not use UniversalResume's HTML/PDF tools — our Renderer and Themes stay `rz-*`.
+
+Vocabulary: [`CONTEXT.md`](CONTEXT.md) (AVRIL glossary).
 
 Submitted resume themes are unconstrained art. They only have to target the documented classes. Product chrome is the opposite: it follows a locked design system. See [`frontend/DESIGN.md`](frontend/DESIGN.md).
 
@@ -39,7 +41,7 @@ Submitted resume themes are unconstrained art. They only have to target the docu
 | Layer | Choice | Status |
 | --- | --- | --- |
 | Data | [JSON Resume](https://jsonresume.org/schema) | Fixture in [`skeleton/resume.json`](skeleton/resume.json) |
-| Import/export | schema-resume JSON-LD | Mapping + fixtures in [`converter/`](converter/) |
+| Import/export | Bridge: SchemaResume + UniversalResume | Mapping + fixtures in [`converter/`](converter/) |
 | Core renderer | Rust crate: JSON Resume → fixed HTML | Stub in [`renderer/`](renderer/) |
 | Backend | Rust + Axum + SQLite | Later — [`backend/`](backend/) |
 | Product UI | Elm + vanilla CSS | Later — [`frontend/`](frontend/) |
@@ -56,7 +58,7 @@ Do not introduce Tailwind, CSS-in-JS, JSON Resume theme templates, or a second H
 skeleton/    HTML class contract, example output, JSON Resume fixture
 themes/      Designer-submitted .css files (one file = one theme)
 renderer/    Rust crate that will emit the skeleton from JSON Resume
-converter/   JSON Resume ↔ schema-resume mapping and fixtures
+converter/   Bridge: JSON Resume ↔ SchemaResume / UniversalResume
 frontend/    Elm product chrome (gallery, switcher, paste, forms)
 backend/     Axum + SQLite API
 ai/          System prompts that generate theme CSS
@@ -70,7 +72,7 @@ ai/          System prompts that generate theme CSS
 2. **Renderer** — Rust crate that consumes `skeleton/resume.json` and emits `skeleton/example.html` (byte-stable, test-locked).
 3. **Product chrome** — Elm gallery + theme switcher + JSON Resume paste, following [`frontend/DESIGN.md`](frontend/DESIGN.md).
 4. **Theme drop** — designers submit pure CSS against the contract.
-5. **Converter** — schema-resume JSON-LD import/export (lossless extras where possible).
+5. **Bridge** — SchemaResume and UniversalResume import/export (lossless where possible).
 6. **Backend** — Axum + SQLite for themes, submissions, and serving.
 7. **AI themes** — Grok prompts that emit CSS targeting `rz-*` classes.
 8. Later: PDF export, auth, payments, a finished artistic theme set.

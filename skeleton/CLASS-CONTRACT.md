@@ -15,7 +15,7 @@ Two interfaces, one product:
 
 Themes never see JSON. They only target documented `rz-*` classes. JSON Resume theme templates are **not** used.
 
-[`schema-resume`](https://schema-resume.org/) is **import/export only**. It is not stored. See [`../converter/`](../converter/).
+**Bridge dialects** — [SchemaResume](https://schema-resume.org/) and [UniversalResume](https://github.com/universal-resume) — are **import/export only**. They are not stored and they do not change `rz-*` or JSON Resume keys. See [`../converter/`](../converter/). Do not use UniversalResume's html-renderer or pdf-generator.
 
 There is no `resumezen.v1` JSON dialect. `data-rz-schema` is the **HTML contract version**, not a JSON schema id.
 
@@ -524,4 +524,4 @@ Wild JSON Resume files are valid input. Do not require ResumeZen-only keys.
 - Additive `rz-*` classes require an HTML contract bump (`data-rz-schema`) and a renderer release.
 - Renames and removals are breaking. Don't.
 - JSON Resume is versioned upstream. We track `resume-schema`; we do not fork it.
-- schema-resume changes belong in [`../converter/`](../converter/), not here.
+- Bridge dialect changes (SchemaResume, UniversalResume) belong in [`../converter/`](../converter/), not here.
