@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Blessed Backlog — ResumeZen</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+  <div class="max-w-4xl mx-auto px-6 py-12">
+    <p class="text-emerald-400 text-sm font-semibold tracking-wide uppercase mb-2">AVRIL · Rev 1 · Triple-blessed · Planning stop · 2026-08-22</p>
+    <h1 class="text-3xl font-bold tracking-tight mb-2">Blessed Backlog Summary</h1>
+    <p class="text-slate-400 mb-8">ResumeZen · one Skeleton · infinite Themes · JSON Resume stored · SchemaResume and UniversalResume at the door only</p>
+
+    <section class="mb-8 rounded-2xl border border-slate-800 bg-slate-900/60 p-6 space-y-3">
+      <h2 class="text-lg font-semibold">Intent</h2>
+      <p class="text-slate-300 leading-relaxed">
+        <strong class="text-white">ResumeZen</strong> is a CSS Zen Garden for résumés.
+        One <strong class="text-white">Skeleton</strong>. Infinite <strong class="text-white">Themes</strong>.
+        A <strong class="text-white">Designer</strong> restyles a <strong class="text-white">Resume</strong>;
+        an <strong class="text-white">Author</strong> pastes JSON Resume or imports
+        <strong class="text-white">SchemaResume</strong> / <strong class="text-white">UniversalResume</strong>.
+        Stored form is always JSON Resume. Dialects never persist.
+      </p>
+      <p class="text-sm text-slate-400">
+        Stack locked: Rust Renderer · Elm + vanilla CSS Chrome (GPUI) · Axum + Turso
+        (org <code class="text-slate-200">scull7</code>, db <code class="text-slate-200">cvzengarden</code>)
+        · Themes = one pure <code class="text-slate-200">.css</code> vs <code class="text-slate-200">rz-*</code>.
+        No Tailwind / CSS-in-JS on Themes. CONTEXT.md is the glossary — not rewritten here.
+      </p>
+    </section>
+
+    <section class="mb-8 rounded-2xl border border-sky-800/40 bg-sky-950/20 p-6">
+      <h2 class="text-lg font-semibold mb-3">Locked nouns</h2>
+      <ul class="text-sm text-slate-300 space-y-1">
+        <li><span class="text-sky-300 font-mono">Resume</span> — JSON Resume only. No <code>resumezen.v1</code>.</li>
+        <li><span class="text-sky-300 font-mono">UniversalResume</span> — <code>employments</code>, <code>headline</code>, <code>contact</code>, <code>initiatives</code>. Import/export only.</li>
+        <li><span class="text-sky-300 font-mono">SchemaResume</span> — JSON-LD door. Never store <code>@context</code>.</li>
+        <li><span class="text-sky-300 font-mono">Out</span> — UR html-renderer / pdf-generator · Handlebars themes · PDF / Auth / Payments / subdomains.</li>
+      </ul>
+    </section>
+
+    <section class="mb-8">
+      <h2 class="text-lg font-semibold mb-4">Blessed PBIs · <span class="font-mono text-emerald-400">2 ∥ 5 → 3 → 4 → 6 → 7 ∥ 9</span> + <span class="font-mono text-emerald-400">5 → 8</span></h2>
+      <ol class="space-y-2">
+        <li class="rounded-xl border border-amber-800/50 bg-amber-950/20 p-4 flex gap-3"><span class="font-mono text-amber-300 font-bold">RZ-2</span><div><p class="font-medium">Byte-stable Skeleton from the Jordan Hale Resume</p><p class="text-xs text-slate-400">Renderer calc · first AXEL slice (parallel with RZ-5)</p></div></li>
+        <li class="rounded-xl border border-amber-800/50 bg-amber-950/20 p-4 flex gap-3"><span class="font-mono text-amber-300 font-bold">RZ-5</span><div><p class="font-medium">Three dramatically different Themes</p><p class="text-xs text-slate-400">Garden art · parallel with RZ-2</p></div></li>
+        <li class="rounded-xl border border-slate-800 bg-slate-900/40 p-4 flex gap-3"><span class="font-mono text-emerald-400 font-bold">RZ-3</span><div><p class="font-medium">Switcher on a sandboxed Skeleton · no reload</p><p class="text-xs text-slate-400">deps RZ-5 · leak-isolated</p></div></li>
+        <li class="rounded-xl border border-slate-800 bg-slate-900/40 p-4 flex gap-3"><span class="font-mono text-emerald-400 font-bold">RZ-4</span><div><p class="font-medium">Author paste + download HTML/CSS</p><p class="text-xs text-slate-400">deps RZ-2, RZ-3 · JSON Resume paste only</p></div></li>
+        <li class="rounded-xl border border-slate-800 bg-slate-900/40 p-4 flex gap-3"><span class="font-mono text-emerald-400 font-bold">RZ-6</span><div><p class="font-medium">Turso Theme metadata + one featured name</p><p class="text-xs text-slate-400">deps RZ-3, RZ-5 · no Submission POST</p></div></li>
+        <li class="rounded-xl border border-slate-800 bg-slate-900/40 p-4 flex gap-3"><span class="font-mono text-emerald-400 font-bold">RZ-7</span><div><p class="font-medium">SchemaResume import/export · never stored</p><p class="text-xs text-slate-400">deps RZ-4, RZ-6</p></div></li>
+        <li class="rounded-xl border border-slate-800 bg-slate-900/40 p-4 flex gap-3"><span class="font-mono text-emerald-400 font-bold">RZ-9</span><div><p class="font-medium">UniversalResume import/export · never store <code>employments</code></p><p class="text-xs text-slate-400">deps RZ-4, RZ-6</p></div></li>
+        <li class="rounded-xl border border-slate-800 bg-slate-900/40 p-4 flex gap-3"><span class="font-mono text-emerald-400 font-bold">RZ-8</span><div><p class="font-medium">Generate a Theme (prompt + recorded fixture + allowlist)</p><p class="text-xs text-slate-400">deps RZ-5 · no live-model AC</p></div></li>
+      </ol>
+      <p class="text-xs text-slate-500 mt-3">RZ-1 cancelled — leftover docs, no user-visible outcome.</p>
+    </section>
+
+    <section class="mb-8 rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+      <h2 class="text-lg font-semibold mb-3">Explicit cuts</h2>
+      <p class="text-sm text-slate-400 leading-relaxed">
+        rewrite CONTEXT.md · resumezen.v1 · Handlebars themes · UR html-renderer / pdf-generator ·
+        store dialects · Submission POST · Gallery catalog · Chrome token dump ·
+        Postgres · CSS in Turso · live Grok AC · Preview CSS as a Theme ·
+        PDF / Auth / Payments / custom subdomains
+      </p>
+    </section>
+
+    <section class="rounded-2xl border border-emerald-900/40 bg-emerald-950/20 p-6">
+      <h2 class="text-lg font-semibold mb-2">Planning stop — AXEL handoff</h2>
+      <p class="text-slate-300 text-sm">
+        AVRIL is complete. Every active PBI is triple-blessed.
+        Do <strong class="text-white">not</strong> implement in this session.
+        Start AXEL at <strong>RZ-2</strong> or <strong>RZ-5</strong> (parallel).
+        Pinto is not in this repo — the Markdown backlog is the artifact.
+      </p>
+    </section>
+
+    <footer class="text-xs text-slate-600 border-t border-zinc-900 pt-6 mt-10">
+      Conductor: AVRIL · Generator: planning-architect · Adversaries: product-owner → qa-architect → visionary-cto · Board: portable Markdown (no pinto)
+    </footer>
+  </div>
+</body>
+</html>
