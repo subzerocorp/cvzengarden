@@ -44,7 +44,7 @@ Submitted resume themes are unconstrained art. They only have to target the docu
 | Import/export | Bridge: SchemaResume + UniversalResume | Mapping + fixtures in [`converter/`](converter/) |
 | Core renderer | Rust crate: JSON Resume → fixed HTML | Stub in [`renderer/`](renderer/) |
 | Backend | Rust + Axum + SQLite | Later — [`backend/`](backend/) |
-| Product UI | Elm + vanilla CSS | Later — [`frontend/`](frontend/) |
+| Product UI | Elm + vanilla CSS | RZ-3 switcher — [`frontend/`](frontend/) |
 | Themes | Pure `.css` against `rz-*` only | First-party: Nightgarden (web), Quarto (print), Switchyard (both) in [`themes/`](themes/) |
 | AI themes | Grok prompts that emit CSS against the class contract | Later — [`ai/`](ai/) |
 

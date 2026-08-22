@@ -6,6 +6,8 @@ renderer/target
 # Elm
 elm-stuff
 frontend/elm-stuff
+frontend/dist
+frontend/node_modules
 
 # Netlify
 .netlify
