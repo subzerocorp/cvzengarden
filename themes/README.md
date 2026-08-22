@@ -4,8 +4,14 @@ One file, one theme. Pure CSS. Nothing else.
 
 ```
 themes/
+  nightgarden.css   web    — foxfire motion, sticky identity rail
+  quarto.css        print  — laid paper, oxblood ink, @page letter
+  switchyard.css    both   — civic grid on screen, A4 ink in print
+  _blank.css        (template, not a visual theme)
   your-theme-name.css
 ```
+
+First-party set (RZ-5): three different designers, three targets. Open [`../skeleton/example.html`](../skeleton/example.html), unlink `preview.css`, and link one of the files above.
 
 ## Rules
 

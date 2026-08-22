@@ -45,7 +45,7 @@ Submitted resume themes are unconstrained art. They only have to target the docu
 | Core renderer | Rust crate: JSON Resume → fixed HTML | Stub in [`renderer/`](renderer/) |
 | Backend | Rust + Axum + SQLite | Later — [`backend/`](backend/) |
 | Product UI | Elm + vanilla CSS | Later — [`frontend/`](frontend/) |
-| Themes | Pure `.css` against `rz-*` only | Drop files in [`themes/`](themes/) |
+| Themes | Pure `.css` against `rz-*` only | First-party: Nightgarden (web), Quarto (print), Switchyard (both) in [`themes/`](themes/) |
 | AI themes | Grok prompts that emit CSS against the class contract | Later — [`ai/`](ai/) |
 
 Do not introduce Tailwind, CSS-in-JS, JSON Resume theme templates, or a second HTML skeleton.

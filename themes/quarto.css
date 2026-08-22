@@ -1,0 +1,363 @@
+/* rz-target: print */
+
+/**
+ * ResumeZen theme
+ * Name:        Quarto
+ * Author:      ResumeZen first-party
+ * License:     MIT
+ * Target:      print
+ *
+ * A book typographer's sheet: laid paper, oxblood ink, Garamond,
+ * page boxes, and break discipline. Screen is only a quiet proof.
+ *
+ * Spec: /skeleton/CLASS-CONTRACT.md
+ * Example: /skeleton/example.html
+ */
+
+@font-face {
+  font-family: "EB Garamond";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local("EB Garamond"), local("Garamond"),
+    url("https://cdn.jsdelivr.net/fontsource/fonts/eb-garamond@5.2.5/latin-400-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "EB Garamond";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local("EB Garamond Italic"),
+    url("https://cdn.jsdelivr.net/fontsource/fonts/eb-garamond@5.2.5/latin-400-italic.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "EB Garamond";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local("EB Garamond SemiBold"),
+    url("https://cdn.jsdelivr.net/fontsource/fonts/eb-garamond@5.2.5/latin-600-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "EB Garamond";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local("EB Garamond Bold"),
+    url("https://cdn.jsdelivr.net/fontsource/fonts/eb-garamond@5.2.5/latin-700-normal.woff2") format("woff2");
+}
+
+@page {
+  size: letter;
+  margin: 0.55in 0.7in 0.6in;
+}
+
+@page :first {
+  margin-top: 0.48in;
+}
+
+html {
+  box-sizing: border-box;
+  background: #c4b8a4;
+  color-scheme: light;
+}
+
+html *,
+html *::before,
+html *::after {
+  box-sizing: inherit;
+}
+
+body {
+  margin: 0;
+  background: #c4b8a4;
+  color: #1c1612;
+  font-family: "EB Garamond", Garamond, "Palatino Linotype", Palatino, serif;
+}
+
+.rz-resume {
+  --rz-paper: #f3ead8;
+  --rz-oxblood: #6e1f1a;
+  --rz-iron: #1c1612;
+  --rz-rule: #8a7460;
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 0;
+  background: #f3ead8;
+  color: var(--rz-iron);
+  font-size: 12.5pt;
+  line-height: 1.35;
+  font-variant-ligatures: common-ligatures;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+}
+
+.rz-resume a {
+  color: var(--rz-oxblood);
+  text-decoration: none;
+  border-bottom: 0.4pt solid rgb(110 31 26 / 0.35);
+}
+
+.rz-header {
+  display: block;
+  margin: 0 0 1.1rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 2.25pt double var(--rz-oxblood);
+  text-align: center;
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+.rz-identity {
+  margin-bottom: 0.55rem;
+}
+
+.rz-name {
+  margin: 0;
+  color: #6e1f1a;
+  font-size: 28pt;
+  font-weight: 700;
+  font-variant: small-caps;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+
+.rz-title {
+  margin: 0.35rem 0 0;
+  font-size: 13pt;
+  font-style: italic;
+  font-weight: 400;
+}
+
+.rz-contacts,
+.rz-links {
+  font-style: normal;
+}
+
+.rz-contact-list,
+.rz-link-list,
+.rz-entries,
+.rz-bullets,
+.rz-skill-groups,
+.rz-skill-list,
+.rz-tags,
+.rz-meta-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rz-contact-list,
+.rz-link-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.15rem 0.9rem;
+  margin-top: 0.55rem;
+  font-size: 10pt;
+}
+
+.rz-contact-label,
+.rz-link-label {
+  font-variant: small-caps;
+  letter-spacing: 0.06em;
+}
+
+.rz-contact-label::after,
+.rz-link-label::after {
+  content: " · ";
+}
+
+.rz-section {
+  margin: 0 0 0.85rem;
+  break-inside: avoid-page;
+  page-break-inside: avoid;
+}
+
+.rz-section-title {
+  margin: 0 0 0.35rem;
+  color: var(--rz-oxblood);
+  font-size: 11pt;
+  font-weight: 700;
+  font-variant: small-caps;
+  letter-spacing: 0.16em;
+  border-bottom: 0.6pt solid var(--rz-rule);
+}
+
+.rz-summary .rz-prose p:first-child::first-letter {
+  float: left;
+  margin: 0.08em 0.12em 0 0;
+  color: var(--rz-oxblood);
+  font-size: 2.7em;
+  font-weight: 700;
+  line-height: 0.8;
+}
+
+.rz-prose p,
+.rz-summary p {
+  margin: 0 0 0.45em;
+  orphans: 3;
+  widows: 3;
+}
+
+.rz-entry {
+  margin: 0 0 0.65rem;
+  break-inside: avoid-page;
+  page-break-inside: avoid;
+}
+
+.rz-entry-header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 0.75rem;
+  align-items: baseline;
+}
+
+.rz-entry-primary {
+  grid-column: 1;
+  margin: 0;
+  font-size: 12.5pt;
+  font-weight: 700;
+}
+
+.rz-entry-secondary {
+  grid-column: 1;
+  margin: 0;
+  font-style: italic;
+}
+
+.rz-dates {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0;
+  color: var(--rz-rule);
+  font-size: 10pt;
+  font-variant-numeric: oldstyle-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.rz-location,
+.rz-score {
+  grid-column: 1;
+  margin: 0;
+  font-size: 10pt;
+}
+
+.rz-bullets {
+  margin-top: 0.2rem;
+}
+
+.rz-bullet {
+  margin: 0 0 0.15rem;
+  padding-left: 1em;
+  text-indent: -1em;
+  orphans: 2;
+  widows: 2;
+}
+
+.rz-bullet::before {
+  content: "– ";
+}
+
+.rz-skill-groups {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.55rem 0.9rem;
+}
+
+.rz-skill-group-name {
+  margin: 0;
+  font-size: 11pt;
+}
+
+.rz-skill-level {
+  margin: 0;
+  font-size: 9.5pt;
+  font-style: italic;
+}
+
+.rz-skill-list,
+.rz-tags {
+  margin-top: 0.15rem;
+}
+
+.rz-skill,
+.rz-tag {
+  display: inline;
+  font-size: 10.5pt;
+}
+
+.rz-skill:not(:last-child)::after,
+.rz-tag:not(:last-child)::after {
+  content: ", ";
+}
+
+.rz-meta {
+  margin: 0.1rem 0;
+  font-size: 10.5pt;
+}
+
+.rz-meta-label {
+  font-variant: small-caps;
+}
+
+.rz-meta-label::after {
+  content: ": ";
+}
+
+@media screen {
+  body {
+    padding: 1.5rem 0 3rem;
+  }
+
+  .rz-resume {
+    width: 8.5in;
+    max-width: 8.5in;
+    min-height: 11in;
+    margin: 0 auto;
+    padding: 0.7in 0.75in 0.8in;
+    box-shadow: 0 0.35rem 1.8rem rgb(28 22 18 / 0.18);
+  }
+}
+
+@media print {
+  html,
+  body {
+    background: #f3ead8;
+  }
+
+  .rz-resume {
+    width: auto;
+    max-width: none;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+    background: #f3ead8;
+    font-size: 11pt;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .rz-name,
+  .rz-section,
+  .rz-entry,
+  .rz-resume a {
+    animation: none;
+    transition: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rz-resume,
+  .rz-name,
+  .rz-section,
+  .rz-entry {
+    animation: none;
+    transition: none;
+  }
+}
