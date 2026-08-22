@@ -95,7 +95,7 @@ Known extras (not rendered to `rz-*` HTML):
 | `tools[]` | Top-level array; pass-through at root |
 | Per-item `@type` | Pass-through; used by JSON-LD |
 
-The renderer **ignores** every key not listed in [`../skeleton/CLASS-CONTRACT.md`](../skeleton/CLASS-CONTRACT.md) §4.
+The renderer **ignores** every key not listed in [`../skeleton/CLASS-CONTRACT.md`](../skeleton/CLASS-CONTRACT.md) §5.
 
 ---
 
@@ -154,7 +154,7 @@ Best effort, not a guarantee:
 - Pass-through extras: lossless if they remain `additionalProperties` on the stored JSON Resume.
 - Type conflicts (`work.location` object): lossless via `meta.x-schema-resume`.
 - Unknown future schema-resume keys: keep in place when valid JSON Resume; otherwise park under `meta.x-schema-resume.unknown`.
-- HTML rendering is lossy by design (see class contract §4 — e.g. `work.description` is stored, not shown).
+- HTML rendering is lossy by design (see class contract §5 — e.g. `work.description` is stored, not shown).
 
 ---
 

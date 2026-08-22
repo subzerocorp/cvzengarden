@@ -91,7 +91,7 @@ Themes, the renderer, ATS parsers, and AI generators all depend on:
 
 Read [`skeleton/CLASS-CONTRACT.md`](skeleton/CLASS-CONTRACT.md). Open [`skeleton/example.html`](skeleton/example.html) in a browser. Edit [`skeleton/resume.json`](skeleton/resume.json) once the renderer exists.
 
-A designer should be able to write a theme against the HTML contract **today**, before any Rust or Elm ships. A JSON Resume from the wild should be droppable **today** as data.
+A designer should be able to write a theme against the HTML contract **today**, before any Rust or Elm ships. Theme rules (web / print / both, motion, `@font-face`, no JS) are in [`skeleton/CLASS-CONTRACT.md`](skeleton/CLASS-CONTRACT.md) §2. A JSON Resume from the wild should be droppable **today** as data.
 
 ---
 
