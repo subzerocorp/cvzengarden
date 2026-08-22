@@ -1,0 +1,15 @@
+[package]
+name = "resumezen-renderer"
+version = "0.0.0"
+edition = "2021"
+description = "Turns resume.json into ResumeZen's fixed semantic HTML."
+license = "MIT OR Apache-2.0"
+publish = false
+repository = "https://github.com/subzerocorp/cvzengarden"
+readme = "README.md"
+
+[lib]
+name = "resumezen_renderer"
+path = "src/lib.rs"
+
+[dependencies]

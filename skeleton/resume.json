@@ -1,0 +1,248 @@
+{
+  "meta": {
+    "schema": "resumezen.v1",
+    "locale": "en"
+  },
+  "basics": {
+    "name": "Jordan Hale",
+    "label": "Design Engineer",
+    "pronouns": "they/them",
+    "image": null,
+    "summary": [
+      "Design engineer who treats stylesheets as a public interface. I build design systems, documentation sites, and the quiet HTML underneath them — the kind of markup a parser and a person can both read.",
+      "I want tools that stay out of the way: one semantic skeleton, many skins, no framework tax on the page a hiring manager opens."
+    ],
+    "contacts": [
+      {
+        "type": "email",
+        "label": "Email",
+        "value": "jordan@hale.example",
+        "href": "mailto:jordan@hale.example"
+      },
+      {
+        "type": "phone",
+        "label": "Phone",
+        "value": "+1 503 555 0142",
+        "href": "tel:+15035550142"
+      },
+      {
+        "type": "location",
+        "label": "Location",
+        "value": "Portland, OR"
+      }
+    ],
+    "links": [
+      {
+        "type": "website",
+        "label": "Portfolio",
+        "value": "jordanhale.example",
+        "href": "https://jordanhale.example"
+      },
+      {
+        "type": "github",
+        "label": "GitHub",
+        "value": "jordanhale",
+        "href": "https://github.com/jordanhale"
+      },
+      {
+        "type": "linkedin",
+        "label": "LinkedIn",
+        "value": "jordanhale",
+        "href": "https://www.linkedin.com/in/jordanhale"
+      }
+    ]
+  },
+  "experience": [
+    {
+      "id": "acme-2022",
+      "organization": "Acme Studio",
+      "url": "https://acme.example",
+      "role": "Staff Design Engineer",
+      "location": "Remote",
+      "start": "2022-03",
+      "end": null,
+      "current": true,
+      "highlights": [
+        "Lead the shared component contract used by six product teams; cut visual regressions in half by locking class names and token names as an API.",
+        "Shipped the design-system documentation site as static HTML + one CSS file per theme, including a dark theme and a high-contrast theme.",
+        "Mentored designers writing production CSS: cascade layers, logical properties, and what not to hide from assistive tech."
+      ]
+    },
+    {
+      "id": "lumen-2018",
+      "organization": "Lumen Civic",
+      "url": "https://lumen.example",
+      "role": "Product Designer",
+      "location": "Portland, OR",
+      "start": "2018-06",
+      "end": "2022-02",
+      "current": false,
+      "highlights": [
+        "Redesigned the public-records request flow; completion rate rose from 41% to 73% without adding a JavaScript framework to the citizen-facing pages.",
+        "Wrote the first content model for agendas and minutes so the same HTML could print, archive, and screen-read.",
+        "Partnered with engineering on an Elm admin and a boring HTML front door."
+      ]
+    },
+    {
+      "id": "atlas-2015",
+      "organization": "Atlas Press",
+      "url": null,
+      "role": "Designer & Front-end Developer",
+      "location": "Oakland, CA",
+      "start": "2015-01",
+      "end": "2018-05",
+      "current": false,
+      "highlights": [
+        "Designed and implemented catalog and essay templates as semantic articles with print stylesheets.",
+        "Produced type specimens and CSS themes for a seasonal design-showcase series."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "id": "reed-2010",
+      "institution": "Reed College",
+      "url": "https://www.reed.edu",
+      "area": "Art and Computer Science",
+      "studyType": "B.A.",
+      "location": "Portland, OR",
+      "start": "2010-08",
+      "end": "2014-05",
+      "current": false,
+      "score": null,
+      "highlights": [
+        "Thesis on responsive typography and the limits of presentational markup."
+      ]
+    }
+  ],
+  "skills": [
+    {
+      "id": "design",
+      "name": "Design",
+      "keywords": [
+        "Design systems",
+        "Typographic layout",
+        "Prototyping",
+        "User research",
+        "Accessibility"
+      ]
+    },
+    {
+      "id": "engineering",
+      "name": "Engineering",
+      "keywords": [
+        "HTML",
+        "CSS",
+        "Elm",
+        "Rust",
+        "Design tokens"
+      ]
+    },
+    {
+      "id": "tools",
+      "name": "Tools",
+      "keywords": [
+        "Figma",
+        "Git",
+        "Eleventy",
+        "SQLite"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "id": "type-garden",
+      "name": "Type Garden",
+      "url": "https://typegarden.example",
+      "description": "A fixed article skeleton restyled by invited typographers.",
+      "location": null,
+      "start": "2021-02",
+      "end": "2021-11",
+      "current": false,
+      "highlights": [
+        "Thirty submitted stylesheets, one HTML file, no preprocessor in the published artifacts.",
+        "Documented a class contract so late themes could ship without touching markup."
+      ],
+      "keywords": [
+        "CSS",
+        "Type",
+        "Publishing"
+      ]
+    },
+    {
+      "id": "minutes-plain",
+      "name": "Minutes, Plain",
+      "url": "https://minutes.example",
+      "description": "City-council minutes as readable HTML with an ATS-safe export.",
+      "location": null,
+      "start": "2019-04",
+      "end": "2020-01",
+      "current": false,
+      "highlights": [
+        "Plain-language templates adopted by two neighboring municipalities."
+      ],
+      "keywords": [
+        "Civic tech",
+        "HTML"
+      ]
+    }
+  ],
+  "extras": [
+    {
+      "id": "awards",
+      "title": "Awards",
+      "kind": "entries",
+      "entries": [
+        {
+          "id": "cssda-2021",
+          "title": "CSS Design Awards — Site of the Day",
+          "subtitle": "Type Garden",
+          "url": "https://www.cssdesignawards.com",
+          "date": "2021-08",
+          "highlights": []
+        },
+        {
+          "id": "aiga-2020",
+          "title": "AIGA Portland Fellow",
+          "subtitle": "Community education",
+          "date": "2020",
+          "highlights": []
+        }
+      ]
+    },
+    {
+      "id": "certifications",
+      "title": "Certifications",
+      "kind": "entries",
+      "entries": [
+        {
+          "id": "iaap-was-2023",
+          "title": "IAAP WAS",
+          "subtitle": "Web Accessibility Specialist",
+          "date": "2023-04",
+          "highlights": []
+        }
+      ]
+    },
+    {
+      "id": "languages",
+      "title": "Languages",
+      "kind": "list",
+      "items": [
+        { "label": "English", "detail": "Native" },
+        { "label": "Spanish", "detail": "Conversational" }
+      ]
+    },
+    {
+      "id": "interests",
+      "title": "Interests",
+      "kind": "tags",
+      "tags": [
+        "Letterpress",
+        "Trail running",
+        "Civic archives",
+        "Mechanical keyboards"
+      ]
+    }
+  ]
+}
