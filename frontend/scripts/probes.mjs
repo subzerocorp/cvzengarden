@@ -243,7 +243,7 @@ function staticProbes() {
   } else {
     pass("U3 Garden Print still prints the child document via contentWindow.print()");
   }
-  if (!/data-rz-shell-printing/.test(ports) || !/rz-shell-print-host/.test(ports)) {
+  if (!/data-garden-shell-printing/.test(ports) || !/garden-print-host/.test(ports)) {
     fail("U3 stub: File → Print no longer hoists .rz-resume into the chrome shell");
   } else {
     pass("U3 File → Print / Ctrl+P hoists .rz-resume so Theme page-breaks apply");
@@ -874,7 +874,7 @@ async function u3IframePrintProbes(browser, page) {
       window.dispatchEvent(new Event("beforeprint"));
     });
     const late = await page.evaluate((wanted) => {
-      const host = document.getElementById("rz-shell-print-host");
+      const host = document.getElementById("garden-print-host");
       const doc = host || document.getElementById("garden-frame")?.contentDocument;
       const last = [...(doc?.querySelectorAll("[data-rz-section]") || [])]
         .at(-1)

@@ -243,20 +243,20 @@
     }
 
     const style = document.createElement("style");
-    style.setAttribute("data-rz-shell-print", "true");
+    style.setAttribute("data-garden-shell-print", "true");
     style.textContent = collectChildCss(doc);
 
     const themeHref = doc.getElementById(THEME_LINK_ID)?.href || "";
     const themeLink = document.createElement("link");
     themeLink.rel = "stylesheet";
-    themeLink.setAttribute("data-rz-shell-print", "true");
+    themeLink.setAttribute("data-garden-shell-print", "true");
     if (themeHref) {
       themeLink.href = themeHref;
     }
 
     const host = document.createElement("div");
-    host.id = "rz-shell-print-host";
-    host.setAttribute("data-rz-shell-print", "true");
+    host.id = "garden-print-host";
+    host.setAttribute("data-garden-shell-print", "true");
     host.appendChild(resume.cloneNode(true));
 
     document.head.appendChild(style);
@@ -264,14 +264,14 @@
       document.head.appendChild(themeLink);
     }
     document.body.appendChild(host);
-    document.documentElement.setAttribute("data-rz-shell-printing", "true");
+    document.documentElement.setAttribute("data-garden-shell-printing", "true");
     void host.offsetHeight;
 
     return () => {
       host.remove();
       style.remove();
       themeLink.remove();
-      document.documentElement.removeAttribute("data-rz-shell-printing");
+      document.documentElement.removeAttribute("data-garden-shell-printing");
     };
   }
 

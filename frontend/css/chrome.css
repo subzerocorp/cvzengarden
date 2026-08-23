@@ -430,13 +430,13 @@ body {
     box-shadow: none;
   }
 
-  /* File → Print / Ctrl+P hoist .rz-resume into the parent so Theme
-     page breaks apply. Hide the chrome + replaced iframe. */
-  html[data-rz-shell-printing] .app-shell {
+  /* File → Print / Ctrl+P hoist the sandbox résumé into the parent so
+     Theme page breaks apply. Hide the chrome + replaced iframe. */
+  html[data-garden-shell-printing] .app-shell {
     display: none !important;
   }
 
-  html[data-rz-shell-printing] #rz-shell-print-host {
+  html[data-garden-shell-printing] #garden-print-host {
     display: block;
     margin: 0;
     padding: 0;
