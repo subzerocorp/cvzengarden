@@ -46,17 +46,65 @@ A designer should be able to write a complete theme from this spec and `example.
 
 ### What themes must not do
 
-- Add or require extra HTML, scripts, webfont loader JS, or build tools.
+- Add or require extra HTML, `<script>`, webfont-loader JavaScript, or a JS build step.
 - Depend on Tailwind, CSS-in-JS, or a preprocessor at ship time. Ship a single `.css` file.
 - Assume a section is present, or assume a photo, end date, or extras block exists.
 - Use class names that collide with chrome. Stay in `rz-*`.
 - Target JSON Resume field names. There are no `.basics` / `.work` classes.
 
-Custom properties are fine. Prefer `--rz-*` inside a theme so they cannot collide with chrome tokens (`--background`, `--primary`, …).
+Custom properties are fine. Prefer `--rz-*` inside a theme so they cannot collide with chrome tokens (`--background`, `--primary`, …). `@font-face` is allowed (see §2).
 
 ---
 
-## 2. Document shell
+## 2. Designer themes
+
+This is the locked theme rule set. A designer writes **one** `.css` file. Target lives on that file, not on the HTML. Do not add a `data-` attribute for web/print. `data-rz-schema` stays the HTML contract version.
+
+### One file, one tree
+
+A theme is one pure `.css` file against `html`, `body`, `.rz-*`, and `[data-rz-*]` of the résumé document. It restyles the existing Skeleton. It does not add a second tree.
+
+Two-column and sidebar layouts are a **CSS Grid** (or flex) job on `.rz-header` and `.rz-section` in that tree. Reorder visually with `grid-template-areas` / `order` if you must; do not ask the renderer for a sidebar skeleton.
+
+### Target: `web` | `print` | `both`
+
+Declare the target in a file-header comment. That is enough:
+
+```css
+/* rz-target: both */
+```
+
+| Target | Intent |
+| --- | --- |
+| `web` | May be loud on screen. On paper, fall back to the readable unstyled/minimally-styled Skeleton (do not fight `@media print` unless you mean to). |
+| `print` | May be quiet on screen. Obsessive about `@page`, page breaks, widows/orphans, and ink. |
+| `both` | Same file owns `@media screen` and `@media print`. |
+
+Chrome and the gallery may later filter by this comment. The Skeleton HTML does not change.
+
+### Advanced CSS is allowed
+
+Use the platform: `@keyframes`, transitions, animations, `@font-face`, Grid, container queries, `@page`, `@layer`, `@property`, scroll-driven effects, and whatever else ships in a `.css` file.
+
+`@import` is **discouraged** (supply chain). Prefer one self-contained file. Fonts go through `@font-face` pointing at a hosted or allowlisted face — not a JavaScript webfont loader. We do **not** forbid `@font-face` or webfonts as such.
+
+### JavaScript is forbidden
+
+No `<script`. No webfont-loader JS. No Tailwind. No CSS-in-JS. No extra HTML. If it is not CSS, it is not a Theme.
+
+### Words stay in HTML
+
+Resume words — name, titles, dates, section labels, contact values, bullets — must remain HTML text nodes. `content:` must not be the only place those words live. Decorative `content:` that does not replace ATS-relevant text is a designer choice.
+
+Do not emit pronouns. Do not invent fields the JSON Resume map does not have. A theme cannot create a `.rz-pronouns` node; the renderer will not either.
+
+### Motion is for screens
+
+Animate on screen if you want. In `@media print`, animation and transition must be off or harmless (`animation: none`, `transition: none`, or a print stylesheet that never starts them). Honor `prefers-reduced-motion: reduce` the same way: snap to the end state, no required motion on ordinary reading.
+
+---
+
+## 3. Document shell
 
 ```html
 <!DOCTYPE html>
@@ -90,7 +138,7 @@ JSON Resume `meta` (`canonical`, `version`, `lastModified`) is **not** rendered.
 
 ---
 
-## 3. Canonical section order
+## 4. Canonical section order
 
 The renderer emits this order — JSON Resume's top-level property order, with `basics.summary` lifted into its own section. Missing sections are skipped, not left blank.
 
@@ -150,17 +198,17 @@ Each body section is:
 
 ---
 
-## 4. Field map (JSON Resume → `rz-*`)
+## 5. Field map (JSON Resume → `rz-*`)
 
 This is the renderer contract. Paths are JSON Resume. Slots are HTML classes.
 
-### 4.1 `$schema`
+### 5.1 `$schema`
 
 | JSON Resume | HTML |
 | --- | --- |
 | `$schema` | Not rendered. Must be a URI that identifies resume-schema when present. |
 
-### 4.2 `basics`
+### 5.2 `basics`
 
 | JSON Resume | HTML |
 | --- | --- |
@@ -211,7 +259,7 @@ JSON Resume has **no** pronouns field. Do not emit a pronouns node.
 
 Contact types: `email` · `phone` · `location` · `url` · `other`.
 
-### 4.3 Shared dated-entry chrome
+### 5.3 Shared dated-entry chrome
 
 Used by `work`, `volunteer`, `education`, `projects`, and extras that are `entries`.
 
@@ -265,7 +313,7 @@ When the primary has no URL, `.rz-entry-primary` is plain text (no `<a>`).
 
 **Present.** JSON Resume has no `current` boolean. Omit `endDate` to mean present.
 
-### 4.4 `work[]` → experience
+### 5.4 `work[]` → experience
 
 `.rz-section--experience` · `.rz-entry--experience`
 
@@ -280,7 +328,7 @@ When the primary has no URL, `.rz-entry-primary` is plain text (no `<a>`).
 | `highlights[]` | `.rz-bullets` |
 | `description` | Not rendered in v1 (company tagline; stored only) |
 
-### 4.5 `volunteer[]`
+### 5.5 `volunteer[]`
 
 `.rz-section--extra.rz-section--volunteer` · `data-rz-kind="entries"` · `.rz-entry--extra`
 
@@ -293,7 +341,7 @@ When the primary has no URL, `.rz-entry-primary` is plain text (no `<a>`).
 | `summary` | `.rz-prose` |
 | `highlights[]` | `.rz-bullets` |
 
-### 4.6 `education[]`
+### 5.6 `education[]`
 
 `.rz-section--education` · `.rz-entry--education`
 
@@ -308,7 +356,7 @@ When the primary has no URL, `.rz-entry-primary` is plain text (no `<a>`).
 
 JSON Resume education has no `location` or `highlights`.
 
-### 4.7 `awards[]`
+### 5.7 `awards[]`
 
 `.rz-section--extra.rz-section--awards` · `data-rz-kind="entries"`
 
@@ -319,7 +367,7 @@ JSON Resume education has no `location` or `highlights`.
 | `date` | single `.rz-date` |
 | `summary` | `.rz-prose` |
 
-### 4.8 `certificates[]`
+### 5.8 `certificates[]`
 
 `.rz-section--extra.rz-section--certificates` · `data-rz-kind="entries"`
 
@@ -330,7 +378,7 @@ JSON Resume education has no `location` or `highlights`.
 | `issuer` | `.rz-entry-secondary` |
 | `date` | single `.rz-date` |
 
-### 4.9 `publications[]`
+### 5.9 `publications[]`
 
 `.rz-section--extra.rz-section--publications` · `data-rz-kind="entries"`
 
@@ -342,7 +390,7 @@ JSON Resume education has no `location` or `highlights`.
 | `releaseDate` | single `.rz-date` |
 | `summary` | `.rz-prose` |
 
-### 4.10 `skills[]`
+### 5.10 `skills[]`
 
 `.rz-section--skills`
 
@@ -363,7 +411,7 @@ JSON Resume education has no `location` or `highlights`.
 | `keywords[]` | `.rz-skill` items |
 | `data-rz-skill-group` | `slugify(name)` |
 
-### 4.11 `languages[]`
+### 5.11 `languages[]`
 
 `.rz-section--extra.rz-section--languages` · `data-rz-kind="list"`
 
@@ -372,7 +420,7 @@ JSON Resume education has no `location` or `highlights`.
 | `language` | `.rz-meta-label` |
 | `fluency` | `.rz-meta-detail` (omit if empty) |
 
-### 4.12 `interests[]`
+### 5.12 `interests[]`
 
 `.rz-section--extra.rz-section--interests`
 
@@ -381,7 +429,7 @@ JSON Resume education has no `location` or `highlights`.
 | name-only items | `.rz-tags` / `.rz-tag` (`data-rz-kind="tags"`) |
 | `name` + `keywords[]` | extra entries: primary = `name`, tags = `keywords` (`data-rz-kind="entries"`) |
 
-### 4.13 `references[]`
+### 5.13 `references[]`
 
 `.rz-section--extra.rz-section--references` · `data-rz-kind="entries"`
 
@@ -390,7 +438,7 @@ JSON Resume education has no `location` or `highlights`.
 | `name` | `.rz-entry-primary` |
 | `reference` | `.rz-prose` |
 
-### 4.14 `projects[]`
+### 5.14 `projects[]`
 
 `.rz-section--projects` · `.rz-entry--project`
 
@@ -406,7 +454,7 @@ JSON Resume education has no `location` or `highlights`.
 | `entity` | `.rz-meta` labeled `Affiliation` |
 | `type` | `.rz-meta` labeled `Type` |
 
-### 4.15 `meta`
+### 5.15 `meta`
 
 | JSON Resume | HTML |
 | --- | --- |
@@ -418,7 +466,7 @@ JSON Resume education has no `location` or `highlights`.
 
 ---
 
-## 5. Class inventory (quick list)
+## 6. Class inventory (quick list)
 
 Themes can treat this as the complete selector surface.
 
@@ -442,7 +490,7 @@ No other `rz-*` classes exist in HTML contract `1.0`. If you need a new one, bum
 
 ---
 
-## 6. JSON Resume shape (storage)
+## 7. JSON Resume shape (storage)
 
 The renderer consumes a document that validates against [resume-schema](https://github.com/jsonresume/resume-schema/blob/master/schema.json). Official sample: [`sample.resume.json`](https://github.com/jsonresume/resume-schema/blob/master/sample.resume.json).
 
@@ -505,7 +553,7 @@ Wild JSON Resume files are valid input. Do not require ResumeZen-only keys.
 
 ---
 
-## 7. ATS and accessibility checklist
+## 8. ATS and accessibility checklist
 
 - [x] One `h1` (the name). Sections are `h2`. Entries and skill groups are `h3`.
 - [x] Lists are real lists. Jobs are an ordered list (sequence matters).
@@ -519,9 +567,10 @@ Wild JSON Resume files are valid input. Do not require ResumeZen-only keys.
 
 ---
 
-## 8. Versioning
+## 9. Versioning
 
 - Additive `rz-*` classes require an HTML contract bump (`data-rz-schema`) and a renderer release.
 - Renames and removals are breaking. Don't.
+- Theme **target** (`web` / `print` / `both`) lives in the CSS file header, not on the HTML. It does not bump `data-rz-schema`.
 - JSON Resume is versioned upstream. We track `resume-schema`; we do not fork it.
 - Bridge dialect changes (SchemaResume, UniversalResume) belong in [`../converter/`](../converter/), not here.
