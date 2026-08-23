@@ -214,80 +214,79 @@
   });
 
   /**
-   * Garden Print already prints the child (contentWindow.print()).
-   * Browser/OS Print paints the chrome shell. The iframe is a replaced
-   * element: a viewport-height box becomes one page and page 2 is
-   * dropped. chrome.css must not keep 100vh on .garden-frame in print.
-   * Grow the replaced box to the sandbox paint height so shell Print
-   * paginates the same résumé.
+   * Garden Print prints the child document (contentWindow.print()).
+   * File → Print / Ctrl+P print the chrome shell. The iframe is a
+   * replaced element: child break-before does not paginate the parent,
+   * and a viewport-height box drops page 2. Hoist .rz-resume plus the
+   * already-loaded Theme sheet into the parent so shell print paginates
+   * like the child document (Nightgarden 2, Quarto/Switchyard 3).
    */
-  function sandboxPaintHeight(doc) {
-    const html = doc.documentElement;
-    const body = doc.body;
-    const resume = doc.querySelector(".rz-resume");
-    const scrollY = doc.defaultView ? doc.defaultView.scrollY : 0;
-    const resumeBottom = resume ? resume.getBoundingClientRect().bottom + scrollY : 0;
-    return Math.ceil(
-      Math.max(
-        html.scrollHeight,
-        html.offsetHeight,
-        body ? body.scrollHeight : 0,
-        body ? body.offsetHeight : 0,
-        resumeBottom,
-      ),
-    );
+  let restoreShellPrint = null;
+
+  function collectChildCss(doc) {
+    const chunks = [];
+    for (const sheet of Array.from(doc.styleSheets)) {
+      try {
+        chunks.push(Array.from(sheet.cssRules).map((rule) => rule.cssText).join("\n"));
+      } catch {
+        // Cross-origin or unreadable sheet — ignore.
+      }
+    }
+    return chunks.join("\n");
   }
 
-  let restoreShellFrame = null;
-
-  function growFrameForShellPrint(iframe) {
+  function hoistResumeForShellPrint(iframe) {
     const doc = iframe.contentDocument;
-    if (!doc) {
+    const resume = doc?.querySelector(".rz-resume");
+    if (!doc || !resume) {
       return null;
     }
 
-    iframe.contentWindow?.scrollTo(0, 0);
-    const painted = sandboxPaintHeight(doc);
-    const prev = {
-      height: iframe.style.height,
-      minHeight: iframe.style.minHeight,
-      maxHeight: iframe.style.maxHeight,
-      overflow: iframe.style.overflow,
-      attrHeight: iframe.getAttribute("height"),
-    };
+    const style = document.createElement("style");
+    style.setAttribute("data-rz-shell-print", "true");
+    style.textContent = collectChildCss(doc);
 
-    iframe.style.height = `${painted}px`;
-    iframe.style.minHeight = `${painted}px`;
-    iframe.style.maxHeight = "none";
-    iframe.style.overflow = "visible";
-    iframe.setAttribute("height", String(painted));
-    void iframe.offsetHeight;
+    const themeHref = doc.getElementById(THEME_LINK_ID)?.href || "";
+    const themeLink = document.createElement("link");
+    themeLink.rel = "stylesheet";
+    themeLink.setAttribute("data-rz-shell-print", "true");
+    if (themeHref) {
+      themeLink.href = themeHref;
+    }
+
+    const host = document.createElement("div");
+    host.id = "rz-shell-print-host";
+    host.setAttribute("data-rz-shell-print", "true");
+    host.appendChild(resume.cloneNode(true));
+
+    document.head.appendChild(style);
+    if (themeHref) {
+      document.head.appendChild(themeLink);
+    }
+    document.body.appendChild(host);
+    document.documentElement.setAttribute("data-rz-shell-printing", "true");
+    void host.offsetHeight;
 
     return () => {
-      iframe.style.height = prev.height;
-      iframe.style.minHeight = prev.minHeight;
-      iframe.style.maxHeight = prev.maxHeight;
-      iframe.style.overflow = prev.overflow;
-      if (prev.attrHeight == null) {
-        iframe.removeAttribute("height");
-      } else {
-        iframe.setAttribute("height", prev.attrHeight);
-      }
+      host.remove();
+      style.remove();
+      themeLink.remove();
+      document.documentElement.removeAttribute("data-rz-shell-printing");
     };
   }
 
   function onShellBeforePrint() {
     const iframe = gardenFrame();
-    if (!iframe || restoreShellFrame) {
+    if (!iframe || restoreShellPrint) {
       return;
     }
-    restoreShellFrame = growFrameForShellPrint(iframe);
+    restoreShellPrint = hoistResumeForShellPrint(iframe);
   }
 
   function onShellAfterPrint() {
-    if (restoreShellFrame) {
-      restoreShellFrame();
-      restoreShellFrame = null;
+    if (restoreShellPrint) {
+      restoreShellPrint();
+      restoreShellPrint = null;
     }
   }
 
@@ -301,10 +300,14 @@
     }
   });
 
-  app.ports.printGarden.subscribe(() => {
+  function printChildDocument() {
     waitForFrame().then((iframe) => {
       iframe.contentWindow.print();
     });
+  }
+
+  app.ports.printGarden.subscribe(() => {
+    printChildDocument();
   });
 
   app.ports.pushThemeQuery.subscribe((id) => {

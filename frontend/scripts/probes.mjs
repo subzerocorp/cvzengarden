@@ -238,10 +238,15 @@ function staticProbes() {
     pass("S1 ports.js keeps the outgoing Theme sheet until the incoming sheet is ready");
   }
 
-  if (!/printGarden\.subscribe[\s\S]{0,200}contentWindow\.print/.test(ports)) {
+  if (!/printGarden\.subscribe/.test(ports) || !/contentWindow\.print/.test(ports)) {
     fail("U3 stub: Garden Print no longer calls iframe.contentWindow.print()");
   } else {
     pass("U3 Garden Print still prints the child document via contentWindow.print()");
+  }
+  if (!/data-rz-shell-printing/.test(ports) || !/rz-shell-print-host/.test(ports)) {
+    fail("U3 stub: File → Print no longer hoists .rz-resume into the chrome shell");
+  } else {
+    pass("U3 File → Print / Ctrl+P hoists .rz-resume so Theme page-breaks apply");
   }
 
   const nightgarden = readTheme("nightgarden");
@@ -674,37 +679,66 @@ const REQUIRED_PRINT_SECTIONS = [
   { id: "projects", title: "Projects" },
   { id: "certificates", title: "Certificates" },
 ];
-const LETTER_PAGE_PX = 11 * 96;
+const U3_PRINT_PAGES = {
+  nightgarden: 2,
+  quarto: 3,
+  switchyard: 3,
+};
 
-async function pdfPagesForTheme(browser, href) {
-  const page = await browser.newPage();
-  await page.goto(origin + "/sandbox.html", { waitUntil: "networkidle" });
+async function printToPdf(page) {
+  const client = await page.context().newCDPSession(page);
+  const result = await client.send("Page.printToPDF", {
+    printBackground: true,
+    preferCSSPageSize: true,
+    scale: 1,
+  });
+  await client.detach();
+  return Buffer.from(result.data, "base64");
+}
+
+async function waitThemeReady(page, href) {
   await page.evaluate((nextHref) => {
-    const link = document.getElementById("theme-stylesheet");
-    link.setAttribute("href", nextHref);
+    document.getElementById("theme-stylesheet").setAttribute("href", nextHref);
   }, href);
   await page.waitForFunction((nextHref) => {
     const link = document.getElementById("theme-stylesheet");
     return link.getAttribute("href") === nextHref && link.sheet && link.sheet.cssRules.length > 0;
   }, href);
-  await page.emulateMedia({ media: "print" });
-  const pdf = await page.pdf({ format: "Letter", printBackground: true });
-  const pages = countPdfPages(pdf);
-  const sections = await page.evaluate((wanted) => {
+  await page.evaluate(() => document.fonts.ready);
+}
+
+function missingPrintSections(sections) {
+  return sections.filter((section) => !section.present || section.titleText !== section.want);
+}
+
+async function readPrintSections(page, root = "document") {
+  return page.evaluate((wanted) => {
+    const doc = document;
     return wanted.map((section) => {
       const el =
-        document.getElementById(`rz-${section.id}`) ||
-        document.querySelector(`[data-rz-section="${section.id}"]`);
-      const titleText = (el?.querySelector(".rz-section-title")?.textContent || "").trim();
+        doc.getElementById(`rz-${section.id}`) || doc.querySelector(`[data-rz-section="${section.id}"]`);
       return {
         id: section.id,
         want: section.title,
         present: Boolean(el),
-        titleText,
-        bottom: el ? el.getBoundingClientRect().bottom : 0,
+        titleText: (el?.querySelector(".rz-section-title")?.textContent || "").trim(),
       };
     });
   }, REQUIRED_PRINT_SECTIONS);
+}
+
+async function pdfPagesForTheme(browser, href) {
+  const page = await browser.newPage();
+  await page.goto(origin + "/sandbox.html", { waitUntil: "networkidle" });
+  await waitThemeReady(page, href);
+  const pdf = await printToPdf(page);
+  const pages = countPdfPages(pdf);
+  const sections = await readPrintSections(page);
+  const lastSection = await page.evaluate(() => {
+    const nodes = [...document.querySelectorAll("[data-rz-section]")];
+    return nodes.at(-1)?.getAttribute("data-rz-section") || "";
+  });
+  await page.emulateMedia({ media: "print" });
   const fills = await page.evaluate(() => {
     const resume = document.querySelector(".rz-resume");
     return {
@@ -714,7 +748,7 @@ async function pdfPagesForTheme(browser, href) {
     };
   });
   await page.close();
-  return { pages, fills, sections };
+  return { pages, fills, sections, lastSection, pdf };
 }
 
 async function s3Probes(browser, page) {
@@ -773,23 +807,21 @@ async function s3Probes(browser, page) {
     ["quarto", quarto],
     ["switchyard", switchyard],
   ]) {
-    const missing = (result.sections || []).filter(
-      (section) => !section.present || section.titleText !== section.want,
-    );
-    const pastFirstPage = (result.sections || []).some((section) => section.bottom > LETTER_PAGE_PX);
-    if (result.pages < 2) {
-      fail(`U3 ${id} iframe-document print is ${result.pages} page(s); sample résumé must paginate`);
+    const missing = missingPrintSections(result.sections || []);
+    const wantPages = U3_PRINT_PAGES[id];
+    if (result.pages !== wantPages) {
+      fail(`U3 ${id} Garden/iframe printToPDF is ${result.pages} page(s); walk bar is ${wantPages}`);
     } else if (missing.length) {
       fail(`U3 ${id} print document is missing ${missing.map((section) => section.want).join(", ")}`);
-    } else if (!pastFirstPage) {
-      fail(`U3 ${id} late sections sit inside one letter page; clip would be invisible`);
+    } else if (result.lastSection !== "projects") {
+      fail(`U3 ${id} print document ends at ${result.lastSection || "(none)"}; walk bar ends at Projects`);
     } else {
-      pass(`U3 ${id} iframe-document print is ${result.pages} pages and keeps education/awards/projects/certificates`);
+      pass(`U3 ${id} Garden/iframe printToPDF is ${result.pages} pages and ends at Projects`);
     }
   }
 }
 
-async function u3IframePrintProbes(page) {
+async function u3IframePrintProbes(browser, page) {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.getByRole("button", { name: "Screen" }).click();
 
@@ -826,78 +858,67 @@ async function u3IframePrintProbes(page) {
       pass(`U3 ${id}: Garden Print still calls iframe.contentWindow.print()`);
     }
 
-    await page.emulateMedia({ media: "print" });
-    const printBox = await page.evaluate(() => {
-      const iframe = document.getElementById("garden-frame");
-      const saved = {
-        height: iframe.style.height,
-        minHeight: iframe.style.minHeight,
-        maxHeight: iframe.style.maxHeight,
-      };
-      iframe.style.height = "";
-      iframe.style.minHeight = "";
-      iframe.style.maxHeight = "";
-      const style = getComputedStyle(iframe);
-      const box = {
-        minHeightPx: parseFloat(style.minHeight) || 0,
-        height: style.height,
-      };
-      iframe.style.height = saved.height;
-      iframe.style.minHeight = saved.minHeight;
-      iframe.style.maxHeight = saved.maxHeight;
-      return box;
-    });
-    if (printBox.minHeightPx >= 400) {
-      fail(
-        `U3 ${id}: shell Print left .garden-frame min-height at ${printBox.minHeightPx}px (viewport leftover clips after Volunteer)`,
-      );
+    const wantPages = U3_PRINT_PAGES[id];
+    const garden = await pdfPagesForTheme(browser, `themes/${id}.css`);
+    if (garden.pages !== wantPages) {
+      fail(`U3 ${id}: Garden printToPDF is ${garden.pages} page(s); walk bar is ${wantPages}`);
+    } else if (missingPrintSections(garden.sections).length) {
+      fail(`U3 ${id}: Garden printToPDF is missing a required section`);
+    } else if (garden.lastSection !== "projects") {
+      fail(`U3 ${id}: Garden printToPDF ends at ${garden.lastSection}; walk bar ends at Projects`);
     } else {
-      pass(`U3 ${id}: shell Print .garden-frame min-height is ${printBox.minHeightPx}px (not a viewport)`);
+      pass(`U3 ${id}: Garden printToPDF is ${garden.pages} pages and ends at Projects`);
     }
 
     await page.evaluate(() => {
       window.dispatchEvent(new Event("beforeprint"));
     });
     const late = await page.evaluate((wanted) => {
-      const iframe = document.getElementById("garden-frame");
-      const doc = iframe.contentDocument;
-      return wanted.map((section) => {
-        const el =
-          doc.getElementById(`rz-${section.id}`) || doc.querySelector(`[data-rz-section="${section.id}"]`);
-        const titleText = (el?.querySelector(".rz-section-title")?.textContent || "").trim();
-        const bottom = el ? el.getBoundingClientRect().bottom : 0;
-        return {
-          id: section.id,
-          want: section.title,
-          present: Boolean(el),
-          titleText,
-          bottom,
-          insideCanvas: Boolean(el) && bottom <= iframe.clientHeight + 1,
-        };
-      });
+      const host = document.getElementById("rz-shell-print-host");
+      const doc = host || document.getElementById("garden-frame")?.contentDocument;
+      const last = [...(doc?.querySelectorAll("[data-rz-section]") || [])]
+        .at(-1)
+        ?.getAttribute("data-rz-section") || "";
+      return {
+        hoisted: Boolean(host),
+        last,
+        sections: wanted.map((section) => {
+          const el =
+            doc?.querySelector(`#rz-${section.id}`) ||
+            doc?.querySelector(`[data-rz-section="${section.id}"]`);
+          return {
+            id: section.id,
+            want: section.title,
+            present: Boolean(el),
+            titleText: (el?.querySelector(".rz-section-title")?.textContent || "").trim(),
+          };
+        }),
+      };
     }, REQUIRED_PRINT_SECTIONS);
-    const pdf = await page.pdf({ format: "Letter", printBackground: true });
+
+    const shellPdf = await printToPdf(page);
     await page.evaluate(() => {
       window.dispatchEvent(new Event("afterprint"));
     });
-    await page.emulateMedia({ media: "screen" });
-
-    const pages = countPdfPages(pdf);
-    const missing = late.filter((section) => !section.present || section.titleText !== section.want);
-    const clipped = late.filter((section) => section.present && !section.insideCanvas);
-    const pastFirstPage = late.some((section) => section.bottom > LETTER_PAGE_PX);
-    if (pages < 2) {
-      fail(`U3 ${id}: chrome-shell Print is ${pages} page(s); sample résumé must paginate past Volunteer`);
+    const shellPages = countPdfPages(shellPdf);
+    const missing = missingPrintSections(late.sections);
+    if (!late.hoisted) {
+      fail(`U3 ${id}: File → Print did not hoist .rz-resume into the chrome shell`);
+    } else if (shellPages !== wantPages) {
+      fail(`U3 ${id}: chrome-shell printToPDF is ${shellPages} page(s); walk bar is ${wantPages}`);
     } else if (missing.length) {
-      fail(`U3 ${id}: chrome-shell Print is missing ${missing.map((section) => section.want).join(", ")}`);
-    } else if (clipped.length) {
-      fail(
-        `U3 ${id}: ${clipped.map((section) => section.id).join(", ")} sit below the shell-print iframe box (dead after Volunteer)`,
-      );
-    } else if (!pastFirstPage) {
-      fail(`U3 ${id}: late sections sit inside one letter page; a 1-page clip would hide nothing`);
+      fail(`U3 ${id}: chrome-shell print is missing ${missing.map((section) => section.want).join(", ")}`);
+    } else if (late.last !== "projects") {
+      fail(`U3 ${id}: chrome-shell print ends at ${late.last}; walk bar ends at Projects`);
     } else {
-      pass(`U3 ${id}: chrome-shell Print is ${pages} pages and keeps education/awards/projects/certificates`);
+      pass(`U3 ${id}: chrome-shell printToPDF is ${shellPages} pages and ends at Projects`);
+    }
+
+    const artifactDir = process.env.U3_ARTIFACT_DIR;
+    if (artifactDir) {
+      fs.mkdirSync(artifactDir, { recursive: true });
+      fs.writeFileSync(path.join(artifactDir, `u3_${id}_garden_printtopdf.pdf`), garden.pdf);
+      fs.writeFileSync(path.join(artifactDir, `u3_${id}_shell_printtopdf.pdf`), shellPdf);
     }
   }
 }
@@ -1080,7 +1101,7 @@ async function browserProbes() {
     await s1Probes(browser, page, identity);
     await s2Probes(page);
     await s3Probes(browser, page);
-    await u3IframePrintProbes(page);
+    await u3IframePrintProbes(browser, page);
     await s4Probes(page);
     await s5Probes(page);
   }

@@ -398,6 +398,13 @@ body {
     page-break-inside: avoid;
   }
 
+  .rz-section--projects {
+    break-before: page;
+    page-break-before: always;
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
   .rz-section-title {
     margin-bottom: 3pt;
     color: #111111;

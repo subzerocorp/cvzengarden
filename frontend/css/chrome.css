@@ -383,6 +383,11 @@ body {
 }
 
 @media print {
+  @page {
+    size: letter;
+    margin: 0.55in 0.65in 0.6in;
+  }
+
   html,
   body,
   .app-shell,
@@ -392,6 +397,9 @@ body {
     min-height: 0;
     max-height: none;
     overflow: visible;
+    margin: 0;
+    padding: 0;
+    background: transparent;
   }
 
   .app-sidebar {
@@ -420,6 +428,19 @@ body {
     border: 0;
     border-radius: 0;
     box-shadow: none;
+  }
+
+  /* File → Print / Ctrl+P hoist .rz-resume into the parent so Theme
+     page breaks apply. Hide the chrome + replaced iframe. */
+  html[data-rz-shell-printing] .app-shell {
+    display: none !important;
+  }
+
+  html[data-rz-shell-printing] #rz-shell-print-host {
+    display: block;
+    margin: 0;
+    padding: 0;
+    background: transparent;
   }
 }
 

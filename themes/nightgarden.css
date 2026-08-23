@@ -403,7 +403,7 @@ body {
 @media print {
   @page {
     size: letter;
-    margin: 0.55in 0.65in 0.6in;
+    margin: 0.36in 0.5in 0.28in;
   }
 
   html,
@@ -426,8 +426,8 @@ body {
     padding: 0;
     background: #ffffff;
     color: #1a1f28;
-    font-size: 10.4pt;
-    line-height: 1.28;
+    font-size: 9.5pt;
+    line-height: 1.2;
     print-color-adjust: economy;
     -webkit-print-color-adjust: economy;
   }
@@ -437,8 +437,8 @@ body {
     grid-column: auto;
     grid-row: auto;
     display: block;
-    margin: 0 0 8pt;
-    padding: 0 0 6pt;
+    margin: 0 0 6pt;
+    padding: 0 0 4pt;
     border-top: 0;
     border-bottom: 1.25pt solid #1a1f28;
     break-after: avoid;
@@ -451,7 +451,7 @@ body {
 
   .rz-name {
     color: #0d4f38;
-    font-size: 18pt;
+    font-size: 16pt;
     line-height: 1.05;
   }
 
@@ -475,7 +475,7 @@ body {
 
   .rz-section {
     grid-column: auto;
-    margin: 7pt 0 0;
+    margin: 5pt 0 0;
     padding-top: 0;
   }
 
@@ -491,7 +491,7 @@ body {
   }
 
   .rz-entry {
-    margin: 0 0 6pt;
+    margin: 0 0 4pt;
     padding: 0;
     border: 0;
     border-radius: 0;
@@ -499,6 +499,11 @@ body {
     box-shadow: none;
     break-inside: avoid;
     page-break-inside: avoid;
+  }
+
+  .rz-section--projects .rz-entry {
+    break-inside: auto;
+    page-break-inside: auto;
   }
 
   .rz-entry:hover {
