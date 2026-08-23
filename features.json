@@ -1,0 +1,17 @@
+{
+  "integration": {
+    "status": "completed",
+    "commits": [
+      {
+        "id": "merge-cursor-stack",
+        "title": "Merge the nine cursor/* PRs (scaffold, RZ-2 renderer, RZ-5 themes, RZ-3 switcher, RZ-S1..S5 harden, U3 print, roadmap, QZ-1 bar, AVRIL backlog) into garden/persona-loop",
+        "status": "completed",
+        "features": ["renderer_crate", "elm_chrome_switcher", "three_first_party_themes", "class_contract_1_0", "roadmap", "market_quality_bar"]
+      }
+    ]
+  },
+  "persona_loop": {
+    "status": "in_progress",
+    "commits": []
+  }
+}
