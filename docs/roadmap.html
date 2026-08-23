@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ResumeZen — Product roadmap (approved 22 August 2026)</title>
+  <style>
+    :root {
+      --ink: #1a1a1a;
+      --muted: #444;
+      --rule: #ccc;
+      --paper: #fff;
+      --accent: #222;
+    }
+    * { box-sizing: border-box; }
+    html { font-size: 16px; }
+    body {
+      margin: 0 auto;
+      max-width: 42rem;
+      padding: 2.5rem 1.5rem 4rem;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
+      line-height: 1.55;
+    }
+    header { margin-bottom: 2rem; border-bottom: 1px solid var(--rule); padding-bottom: 1.25rem; }
+    h1 {
+      font-size: 1.85rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      margin: 0 0 0.25rem;
+    }
+    .subtitle {
+      font-size: 1.15rem;
+      font-style: italic;
+      margin: 0 0 0.5rem;
+    }
+    .meta, .status, .lede {
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    .meta { color: var(--muted); font-size: 0.9rem; margin: 0 0 0.75rem; }
+    .status { font-size: 0.95rem; margin: 0; }
+    h2 {
+      font-size: 1.25rem;
+      margin: 2rem 0 0.75rem;
+      padding-top: 0.25rem;
+      border-top: 1px solid var(--rule);
+    }
+    h2:first-of-type { border-top: 0; }
+    h3 { font-size: 1.05rem; margin: 1.25rem 0 0.5rem; }
+    p, li { font-size: 1rem; }
+    p { margin: 0 0 0.85rem; }
+    ol, ul { margin: 0 0 0.85rem; padding-left: 1.35rem; }
+    li { margin-bottom: 0.35rem; }
+    .spine {
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 0.95rem;
+      letter-spacing: 0.01em;
+      margin: 0.5rem 0 1.25rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 0.88rem;
+      margin: 0 0 1rem;
+    }
+    th, td {
+      text-align: left;
+      vertical-align: top;
+      padding: 0.4rem 0.5rem 0.4rem 0;
+      border-bottom: 1px solid var(--rule);
+    }
+    th { font-weight: 650; }
+    .note { color: var(--muted); font-size: 0.95rem; }
+    footer {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--rule);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    a { color: var(--accent); }
+    @media print {
+      body { max-width: none; padding: 0; }
+      a { text-decoration: none; color: inherit; }
+      h2 { break-after: avoid; }
+      table, ul, ol { break-inside: avoid; }
+      @page { margin: 1.6cm 1.8cm; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ResumeZen</h1>
+    <p class="subtitle">Product roadmap — approved</p>
+    <p class="meta"><time datetime="2026-08-22">22 August 2026</time> · cvzengarden.com · resumezengarden.com</p>
+    <p class="status">Status: <strong>approved 22 August 2026.</strong> This is the plan we execute against. It is written so someone who has not been in the product chat can read it in one sitting.</p>
+  </header>
+
+  <h2>The product in one paragraph</h2>
+  <p>ResumeZen is a CSS Zen Garden for résumés. Every résumé is the same semantic HTML. Designers restyle it with a single CSS file. Job seekers pick a design, publish a public page, and print a clean paper copy. JSON Resume is the data. The HTML class contract is the design API. Themes never see the JSON, and they never ship JavaScript.</p>
+
+  <h2>Who it is for</h2>
+  <h3>Job seekers (first paying customers)</h3>
+  <p>They pay for two things, together:</p>
+  <ol>
+    <li>A <strong>web presence</strong> — a public page that looks designed, not like a template farm.</li>
+    <li>A <strong>paper result</strong> — the same résumé, printed clean, that they can hand over or send as a PDF from the browser.</li>
+  </ol>
+  <p>They do not pay for a CSS file, and they should not need to know what JSON Resume is. Early builds may accept a JSON Resume paste so we can prove the loop. The paid product is the hosted page plus print.</p>
+
+  <h3>Designers (the original Zen Garden audience)</h3>
+  <p>They submit one CSS file that restyles the fixed HTML. A designer may target:</p>
+  <ul>
+    <li><strong>Web</strong> — motion, hover, type, layout for a screen.</li>
+    <li><strong>Print</strong> — <code>@page</code>, breaks, ink, paper. Quiet on screen is fine.</li>
+    <li><strong>Both</strong> — <code>@media screen</code> and <code>@media print</code> in the same file.</li>
+  </ul>
+  <p>That split is deliberate. It gives print designers and web designers a real home, instead of forcing everyone to fake a paper look in the browser.</p>
+
+  <h2>The bet</h2>
+  <p>JSON Resume already has hundreds of themes. Each theme owns its own HTML. You cannot switch skins live, and you cannot ask a print designer to work in Handlebars.</p>
+  <p>ResumeZen inverts that. One HTML tree. Infinite CSS. Switching a theme is changing a stylesheet. Printing a theme is the print stylesheet. A designer who already knows CSS can contribute without learning our stack.</p>
+  <p>If the HTML is rich enough, and we never fork it per theme, the garden compounds. If we let themes invent markup, we become another theme pack.</p>
+
+  <h2>Principles</h2>
+  <ol>
+    <li><strong>One skeleton.</strong> Same tags, same order, same <code>rz-*</code> classes. Themes restyle. They do not rearrange the DOM.</li>
+    <li><strong>Two surfaces, one file.</strong> Web and print are first-class. A theme declares web, print, or both.</li>
+    <li><strong>CSS is the art.</strong> Animations, <code>@font-face</code>, grid, container queries, <code>@page</code>, scroll-driven effects — allowed. JavaScript is not. Words that matter (name, titles, dates) live in the HTML, never only in <code>content:</code>.</li>
+    <li><strong>Motion is for screens.</strong> Animation must be harmless in print and must honor <code>prefers-reduced-motion</code>.</li>
+    <li><strong>ATS-honest HTML.</strong> Real headings, lists, links, and dates. Pretty on the outside, parseable underneath.</li>
+    <li><strong>JSON Resume is the stored résumé.</strong> Other formats may import and export. They are never the database.</li>
+    <li><strong>Chrome is not the résumé.</strong> Product UI follows its own design language. Theme CSS cannot leak into it.</li>
+  </ol>
+
+  <h2>Where we are (August 2026)</h2>
+  <ul>
+    <li>Product name <strong>ResumeZen</strong>. Domains cvzengarden.com and resumezengarden.com.</li>
+    <li>Public repo: <a href="https://github.com/subzerocorp/cvzengarden">https://github.com/subzerocorp/cvzengarden</a></li>
+    <li>HTML class contract and sample résumé (Jordan Hale) are drafted.</li>
+    <li>Preview of the unthemed skeleton: <a href="https://cvzengarden.netlify.app">https://cvzengarden.netlify.app</a></li>
+    <li>Stack is locked: Rust renderer and API, SQLite on Turso, Elm chrome, pure CSS themes.</li>
+    <li>Renderer, live gallery, hosted pages, submissions, and payments are <strong>not</strong> built yet.</li>
+  </ul>
+
+  <h2>Roadmap</h2>
+  <p>Five phases. Each phase has a user-visible outcome. We do not start the next phase until the current one can be shown to a designer or a job seeker.</p>
+  <p class="spine">Foundation → Wear it → Publish → Open the gate → Business</p>
+
+  <h3>Phase 1 — Foundation</h3>
+  <p><strong>Outcome:</strong> The garden is real on a sample résumé.</p>
+  <ul>
+    <li>Finish the class contract, including web / print / both targets and motion rules.</li>
+    <li>Ship a Rust renderer: any valid JSON Resume becomes that HTML, stably.</li>
+    <li>Ship three first-party themes that are actually different — not three color tweaks. Across the set, web and print both have to be taken seriously.</li>
+    <li>Ship a live theme switcher on the sample résumé, with a screen view and a print preview.</li>
+  </ul>
+  <p><strong>Done when:</strong> A designer can flip themes without a reload, see motion on a web theme, and print a print theme without the screen choreography.</p>
+  <p><strong>Not in this phase:</strong> accounts, payments, foreign JSON dialects, AI.</p>
+
+  <h3>Phase 2 — Wear it</h3>
+  <p><strong>Outcome:</strong> A job seeker can see <em>themselves</em> in the garden.</p>
+  <ul>
+    <li>Paste or import a JSON Resume.</li>
+    <li>The renderer replaces only the résumé, not the page.</li>
+    <li>Theme switch and print preview run on their data.</li>
+    <li>Browser print uses the active theme’s print CSS.</li>
+  </ul>
+  <p><strong>Done when:</strong> Someone other than us drops in a real résumé, switches skins, and prints a page they would actually hand to a hiring manager.</p>
+  <p><strong>Not in this phase:</strong> a public URL, a form editor, LinkedIn import. Those wait until the wear-loop is true.</p>
+
+  <h3>Phase 3 — Publish</h3>
+  <p><strong>Outcome:</strong> The paid job-seeker product exists.</p>
+  <ul>
+    <li>An account.</li>
+    <li>A stable public URL for their résumé.</li>
+    <li>Chosen theme persists.</li>
+    <li>The public page is the web presence; print from that page is the paper result.</li>
+  </ul>
+  <p><strong>Done when:</strong> A job seeker can put a ResumeZen URL on LinkedIn and print the same document from that page.</p>
+  <p>This is the first phase we can charge for. Charging itself is Phase 5. Phase 3 proves the thing they pay for.</p>
+
+  <h3>Phase 4 — Open the gate</h3>
+  <p><strong>Outcome:</strong> The garden is no longer only our themes.</p>
+  <ul>
+    <li>A designer submits one CSS file and declares web, print, or both.</li>
+    <li>We accept (manually at first — a pull request is enough).</li>
+    <li>Accepted themes appear in the switcher and on published résumés.</li>
+  </ul>
+  <p><strong>Done when:</strong> A stranger’s theme is live on the sample and available to a published job-seeker page.</p>
+  <p>No JavaScript in submissions. Lint for <code>rz-*</code> selectors, forbid script, and do not flatten expression.</p>
+
+  <h3>Phase 5 — Business</h3>
+  <p><strong>Outcome:</strong> It is a company, not a demo.</p>
+  <ul>
+    <li>Payments for the hosted page (and later, extras).</li>
+    <li>A real ingest path for people who do not have a JSON Resume (guided form first; other imports after).</li>
+    <li>Optional: Grok generates a starting theme against the class contract. The output is just another CSS file, still reviewed.</li>
+    <li>Optional: SchemaResume and UniversalResume import/export for people who already have those files.</li>
+    <li>Optional: a dedicated PDF pipeline if browser print is not enough.</li>
+    <li>Optional: custom subdomains.</li>
+  </ul>
+  <p><strong>Done when:</strong> A job seeker can pay, publish, and print without talking to us — and a designer can land a theme without us writing it.</p>
+
+  <h2>What we are not doing (on purpose)</h2>
+  <ul>
+    <li>A second HTML skeleton “for sidebar themes.” CSS grid on the one tree is the answer.</li>
+    <li>JSON Resume Handlebars / npm theme packages as the theme format.</li>
+    <li>JavaScript inside themes.</li>
+    <li>Storing SchemaResume or UniversalResume as the résumé of record.</li>
+    <li>A job board, ATS vendor integrations, or “AI writes your bullets.”</li>
+    <li>Rebuilding a desktop design system in the website chrome.</li>
+  </ul>
+  <p>PDF-as-a-service, custom domains, and foreign-format bridges are later options, not the spine.</p>
+
+  <h2>Stack (for technical readers)</h2>
+  <table>
+    <thead>
+      <tr><th>Piece</th><th>Choice</th><th>Why</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Résumé data</td><td>JSON Resume</td><td>Wild files are valid. Existing ecosystem.</td></tr>
+      <tr><td>Design API</td><td>Fixed <code>rz-*</code> HTML</td><td>Themes are CSS. Live switch and print both work.</td></tr>
+      <tr><td>Renderer</td><td>Rust crate</td><td>Deterministic HTML. Can run on the server or in the browser via Wasm.</td></tr>
+      <tr><td>Themes</td><td>One <code>.css</code> file</td><td>Designers do not need our repo, Tailwind, or a build.</td></tr>
+      <tr><td>Product chrome</td><td>Elm + vanilla CSS</td><td>Gallery, switcher, paste, account. Never uses <code>rz-*</code>.</td></tr>
+      <tr><td>Store</td><td>SQLite on Turso</td><td>Theme metadata, accounts, published résumés. CSS files stay files.</td></tr>
+      <tr><td>Preview today</td><td>Netlify</td><td>Static skeleton until the API exists.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>How to read the internal tickets</h2>
+  <p class="note">For the engineering thread only. Skip if you are an outside reader.</p>
+  <table>
+    <thead>
+      <tr><th>Phase</th><th>Internal work</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1 Foundation</td><td>Class contract (print/web/motion update), RZ-2 renderer, RZ-5 themes, RZ-3 switcher</td></tr>
+      <tr><td>2 Wear it</td><td>RZ-4 paste + print preview (HTML download is a side effect, not the product)</td></tr>
+      <tr><td>3 Publish</td><td>Hosted author résumés, auth</td></tr>
+      <tr><td>4 Open the gate</td><td>Designer submit + accept</td></tr>
+      <tr><td>5 Business</td><td>Payments, ingest, RZ-8 generate, RZ-7 / RZ-9 bridges</td></tr>
+    </tbody>
+  </table>
+  <p>RZ-6 (Turso featured-theme name) is infrastructure, not a phase. The store comes in when Phase 3 or 4 needs to persist something real.</p>
+
+  <h2>Approved</h2>
+  <p>Approved 22 August 2026. That approval locked these meanings:</p>
+  <ol>
+    <li>Two audiences, both real. We do not pick one.</li>
+    <li>Job seekers pay for a hosted page and a print-clean result.</li>
+    <li>Designers target web, print, or both, with full CSS including motion.</li>
+    <li>We execute Phase 1 next (renderer + three themes + switcher).</li>
+    <li>Phases 3 and 4 are on the product spine, not a parking lot.</li>
+  </ol>
+
+  <footer>
+    Source of truth: ROADMAP.md in the public repo. This page is a print-friendly briefing of the same approved text.
+  </footer>
+</body>
+</html>

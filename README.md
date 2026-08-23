@@ -7,6 +7,7 @@ One **fixed semantic HTML skeleton**. Infinite **designer-submitted CSS themes**
 - Product: **ResumeZen**
 - Domains: [cvzengarden.com](https://cvzengarden.com) / [resumezengarden.com](https://resumezengarden.com)
 - Repo: [subzerocorp/cvzengarden](https://github.com/subzerocorp/cvzengarden)
+- Product plan: [ROADMAP.md](ROADMAP.md) (approved 22 August 2026)
 
 **JSON Resume is a product feature.** The paste/import target is the public [JSON Resume schema](https://jsonresume.org/schema) ([`jsonresume/resume-schema`](https://github.com/jsonresume/resume-schema)). A file from the wild is valid input. We do not invent a storage dialect.
 
