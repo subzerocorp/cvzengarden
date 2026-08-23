@@ -1,5 +1,5 @@
 /**
- * RZ-3 + RZ-S1…S5 acceptance probes.
+ * RZ-3 + RZ-S1…S5 + U3 (reopened RZ-S3) acceptance probes.
  *
  * Named stubs these must fail:
  *   S1 — only swap #theme-stylesheet href and drop the old sheet first
@@ -7,6 +7,7 @@
  *   S3 — keep Nightgarden print as a dark full-bleed
  *   S4 — pointer-only / opacity-0 radios that Tab skips
  *   S5 — no ?theme= history (Back does nothing; unknown 500 / empty stage)
+ *   U3 — shell Print with .garden-frame still at min-height: 100vh
  */
 import { spawn } from "node:child_process";
 import fs from "node:fs";
@@ -65,6 +66,42 @@ function countPdfPages(buffer) {
   const text = buffer.toString("latin1");
   const matches = text.match(/\/Type\s*\/Page(?!s)\b/g);
   return matches ? matches.length : 0;
+}
+
+function extractMediaBlocks(css) {
+  const blocks = [];
+  const re = /@media\b/g;
+  let match = re.exec(css);
+  while (match) {
+    const start = match.index;
+    const brace = css.indexOf("{", start);
+    if (brace === -1) {
+      break;
+    }
+    let depth = 0;
+    let end = -1;
+    for (let i = brace; i < css.length; i += 1) {
+      if (css[i] === "{") {
+        depth += 1;
+      } else if (css[i] === "}") {
+        depth -= 1;
+        if (depth === 0) {
+          end = i;
+          break;
+        }
+      }
+    }
+    if (end === -1) {
+      break;
+    }
+    blocks.push({
+      prelude: css.slice(start, brace),
+      body: css.slice(brace + 1, end),
+    });
+    re.lastIndex = end + 1;
+    match = re.exec(css);
+  }
+  return blocks;
 }
 
 function parseRgb(color) {
@@ -201,6 +238,12 @@ function staticProbes() {
     pass("S1 ports.js keeps the outgoing Theme sheet until the incoming sheet is ready");
   }
 
+  if (!/printGarden\.subscribe[\s\S]{0,200}contentWindow\.print/.test(ports)) {
+    fail("U3 stub: Garden Print no longer calls iframe.contentWindow.print()");
+  } else {
+    pass("U3 Garden Print still prints the child document via contentWindow.print()");
+  }
+
   const nightgarden = readTheme("nightgarden");
   const quarto = readTheme("quarto");
   const switchyard = readTheme("switchyard");
@@ -240,6 +283,31 @@ function staticProbes() {
     fail("S4 missing :focus-visible ring on theme options");
   } else {
     pass("S4 theme options are buttons with a :focus-visible ring");
+  }
+
+  const printCss = extractMediaBlocks(chromeCss)
+    .filter((block) => /\bprint\b/.test(block.prelude))
+    .map((block) => block.body)
+    .join("\n");
+  if (/(\.garden-frame|\.garden-stage--print)[\s\S]{0,240}(?:min-)?height:\s*[^;]*\d(?:\.\d+)?(?:v[hwd]|dvh|svh|lvh)/i.test(printCss)) {
+    fail("U3 stub: @media print still sets a viewport-height on .garden-frame / .garden-stage--print");
+  } else if (!/\.garden-stage--print\s+\.garden-frame/.test(printCss) || !/min-height:\s*0/.test(printCss)) {
+    fail("U3 @media print does not beat .garden-stage--print .garden-frame { min-height: 100vh }");
+  } else {
+    pass("U3 @media print drops viewport-height on .garden-frame and .garden-stage--print");
+  }
+
+  const leftoverNarrowVh = extractMediaBlocks(chromeCss).some((block) => {
+    if (!/max-width/.test(block.prelude)) {
+      return false;
+    }
+    const isScreen = /\bscreen\b/.test(block.prelude);
+    return !isScreen && /\.garden-frame[\s\S]{0,80}\d(?:\.\d+)?vh/.test(block.body);
+  });
+  if (leftoverNarrowVh) {
+    fail("U3 leftover: a non-screen max-width rule still sets .garden-frame to a vh height (clips letter-width print)");
+  } else {
+    pass("U3 narrow .garden-frame vh is screen-only");
   }
 }
 
@@ -600,6 +668,19 @@ async function s2Probes(page) {
   }
 }
 
+const REQUIRED_PRINT_WORDS = ["Education", "Awards", "Projects", "Certificates"];
+
+function pdfHasWord(latin1, word) {
+  if (latin1.includes(word)) {
+    return true;
+  }
+  const pattern = word
+    .split("")
+    .map((ch) => ch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("\\)?\\s*\\(?");
+  return new RegExp(pattern).test(latin1);
+}
+
 async function pdfPagesForTheme(browser, href) {
   const page = await browser.newPage();
   await page.goto(origin + "/sandbox.html", { waitUntil: "networkidle" });
@@ -614,6 +695,8 @@ async function pdfPagesForTheme(browser, href) {
   await page.emulateMedia({ media: "print" });
   const pdf = await page.pdf({ format: "Letter", printBackground: true });
   const pages = countPdfPages(pdf);
+  const latin1 = pdf.toString("latin1");
+  const words = Object.fromEntries(REQUIRED_PRINT_WORDS.map((word) => [word, pdfHasWord(latin1, word)]));
   const fills = await page.evaluate(() => {
     const resume = document.querySelector(".rz-resume");
     return {
@@ -623,7 +706,7 @@ async function pdfPagesForTheme(browser, href) {
     };
   });
   await page.close();
-  return { pages, fills };
+  return { pages, fills, words };
 }
 
 async function s3Probes(browser, page) {
@@ -675,6 +758,109 @@ async function s3Probes(browser, page) {
     fail(`S3 Nightgarden print is ${night.pages} pages; budget is max(${quarto.pages}, ${switchyard.pages})+1 = ${budget}`);
   } else {
     pass(`S3 Nightgarden print is ${night.pages} pages (Quarto ${quarto.pages}, Switchyard ${switchyard.pages})`);
+  }
+
+  for (const [id, result] of [
+    ["nightgarden", night],
+    ["quarto", quarto],
+    ["switchyard", switchyard],
+  ]) {
+    const missing = REQUIRED_PRINT_WORDS.filter((word) => !result.words[word]);
+    if (result.pages < 2) {
+      fail(`U3 ${id} iframe-document print is ${result.pages} page(s); sample résumé must paginate`);
+    } else if (missing.length) {
+      fail(`U3 ${id} print PDF is missing ${missing.join(", ")}`);
+    } else {
+      pass(`U3 ${id} iframe-document print is ${result.pages} pages and keeps education/awards/projects/certificates`);
+    }
+  }
+}
+
+async function u3IframePrintProbes(page) {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.getByRole("button", { name: "Screen" }).click();
+
+  for (const id of THEME_IDS) {
+    await selectTheme(page, id);
+    await page.waitForTimeout(150);
+
+    await page.evaluate(() => {
+      const iframe = document.getElementById("garden-frame");
+      const win = iframe.contentWindow;
+      win.__originalPrint = win.print.bind(win);
+      win.__printCalled = false;
+      win.print = function () {
+        win.__printCalled = true;
+      };
+    });
+
+    await page.getByRole("button", { name: "Print", exact: true }).click();
+    const buttonPath = await page.waitForFunction(() => {
+      return Boolean(document.getElementById("garden-frame")?.contentWindow?.__printCalled);
+    });
+
+    await page.evaluate(() => {
+      const win = document.getElementById("garden-frame")?.contentWindow;
+      if (win && win.__originalPrint) {
+        win.print = win.__originalPrint;
+        win.__printCalled = false;
+      }
+    });
+
+    if (!buttonPath) {
+      fail(`U3 ${id}: Garden Print did not call iframe.contentWindow.print()`);
+    } else {
+      pass(`U3 ${id}: Garden Print still calls iframe.contentWindow.print()`);
+    }
+
+    await page.emulateMedia({ media: "print" });
+    const printBox = await page.evaluate(() => {
+      const iframe = document.getElementById("garden-frame");
+      const saved = {
+        height: iframe.style.height,
+        minHeight: iframe.style.minHeight,
+        maxHeight: iframe.style.maxHeight,
+      };
+      iframe.style.height = "";
+      iframe.style.minHeight = "";
+      iframe.style.maxHeight = "";
+      const style = getComputedStyle(iframe);
+      const box = {
+        minHeightPx: parseFloat(style.minHeight) || 0,
+        height: style.height,
+      };
+      iframe.style.height = saved.height;
+      iframe.style.minHeight = saved.minHeight;
+      iframe.style.maxHeight = saved.maxHeight;
+      return box;
+    });
+    if (printBox.minHeightPx >= 400) {
+      fail(
+        `U3 ${id}: shell Print left .garden-frame min-height at ${printBox.minHeightPx}px (viewport leftover clips after Volunteer)`,
+      );
+    } else {
+      pass(`U3 ${id}: shell Print .garden-frame min-height is ${printBox.minHeightPx}px (not a viewport)`);
+    }
+
+    await page.evaluate(() => {
+      window.dispatchEvent(new Event("beforeprint"));
+    });
+    const pdf = await page.pdf({ format: "Letter", printBackground: true });
+    await page.evaluate(() => {
+      window.dispatchEvent(new Event("afterprint"));
+    });
+    await page.emulateMedia({ media: "screen" });
+
+    const pages = countPdfPages(pdf);
+    const latin1 = pdf.toString("latin1");
+    const missing = REQUIRED_PRINT_WORDS.filter((word) => !pdfHasWord(latin1, word));
+    if (pages < 2) {
+      fail(`U3 ${id}: chrome-shell Print is ${pages} page(s); sample résumé must paginate past Volunteer`);
+    } else if (missing.length) {
+      fail(`U3 ${id}: chrome-shell Print PDF is missing ${missing.join(", ")} (dead after Volunteer)`);
+    } else {
+      pass(`U3 ${id}: chrome-shell Print is ${pages} pages and keeps education/awards/projects/certificates`);
+    }
   }
 }
 
@@ -856,6 +1042,7 @@ async function browserProbes() {
     await s1Probes(browser, page, identity);
     await s2Probes(page);
     await s3Probes(browser, page);
+    await u3IframePrintProbes(page);
     await s4Probes(page);
     await s5Probes(page);
   }
@@ -877,4 +1064,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log("\nAll RZ-3 and RZ-S1…S5 probes passed.");
+console.log("\nAll RZ-3, RZ-S1…S5, and U3 print probes passed.");

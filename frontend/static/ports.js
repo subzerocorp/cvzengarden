@@ -213,6 +213,94 @@
     setPreviewMedia(media);
   });
 
+  /**
+   * Garden Print already prints the child (contentWindow.print()).
+   * Browser/OS Print paints the chrome shell. The iframe is a replaced
+   * element: a viewport-height box becomes one page and page 2 is
+   * dropped. chrome.css must not keep 100vh on .garden-frame in print.
+   * Grow the replaced box to the sandbox paint height so shell Print
+   * paginates the same résumé.
+   */
+  function sandboxPaintHeight(doc) {
+    const html = doc.documentElement;
+    const body = doc.body;
+    const resume = doc.querySelector(".rz-resume");
+    const scrollY = doc.defaultView ? doc.defaultView.scrollY : 0;
+    const resumeBottom = resume ? resume.getBoundingClientRect().bottom + scrollY : 0;
+    return Math.ceil(
+      Math.max(
+        html.scrollHeight,
+        html.offsetHeight,
+        body ? body.scrollHeight : 0,
+        body ? body.offsetHeight : 0,
+        resumeBottom,
+      ),
+    );
+  }
+
+  let restoreShellFrame = null;
+
+  function growFrameForShellPrint(iframe) {
+    const doc = iframe.contentDocument;
+    if (!doc) {
+      return null;
+    }
+
+    iframe.contentWindow?.scrollTo(0, 0);
+    const painted = sandboxPaintHeight(doc);
+    const prev = {
+      height: iframe.style.height,
+      minHeight: iframe.style.minHeight,
+      maxHeight: iframe.style.maxHeight,
+      overflow: iframe.style.overflow,
+      attrHeight: iframe.getAttribute("height"),
+    };
+
+    iframe.style.height = `${painted}px`;
+    iframe.style.minHeight = `${painted}px`;
+    iframe.style.maxHeight = "none";
+    iframe.style.overflow = "visible";
+    iframe.setAttribute("height", String(painted));
+    void iframe.offsetHeight;
+
+    return () => {
+      iframe.style.height = prev.height;
+      iframe.style.minHeight = prev.minHeight;
+      iframe.style.maxHeight = prev.maxHeight;
+      iframe.style.overflow = prev.overflow;
+      if (prev.attrHeight == null) {
+        iframe.removeAttribute("height");
+      } else {
+        iframe.setAttribute("height", prev.attrHeight);
+      }
+    };
+  }
+
+  function onShellBeforePrint() {
+    const iframe = gardenFrame();
+    if (!iframe || restoreShellFrame) {
+      return;
+    }
+    restoreShellFrame = growFrameForShellPrint(iframe);
+  }
+
+  function onShellAfterPrint() {
+    if (restoreShellFrame) {
+      restoreShellFrame();
+      restoreShellFrame = null;
+    }
+  }
+
+  window.addEventListener("beforeprint", onShellBeforePrint);
+  window.addEventListener("afterprint", onShellAfterPrint);
+  window.matchMedia("print").addEventListener("change", (event) => {
+    if (event.matches) {
+      onShellBeforePrint();
+    } else {
+      onShellAfterPrint();
+    }
+  });
+
   app.ports.printGarden.subscribe(() => {
     waitForFrame().then((iframe) => {
       iframe.contentWindow.print();

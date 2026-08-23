@@ -383,6 +383,17 @@ body {
 }
 
 @media print {
+  html,
+  body,
+  .app-shell,
+  .garden-stage,
+  .garden-stage--print {
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+  }
+
   .app-sidebar {
     display: none;
   }
@@ -397,8 +408,15 @@ body {
     background: transparent;
   }
 
-  .garden-frame {
-    min-height: 100vh;
+  /* Replaced iframe: any viewport-height here makes Chrome paint one
+     screen and drop page 2 (dead after Volunteer on shell Print).
+     Beat .garden-stage--print .garden-frame { min-height: calc(100vh…) }. */
+  .garden-frame,
+  .garden-stage--print .garden-frame {
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
     border: 0;
     border-radius: 0;
     box-shadow: none;
@@ -413,7 +431,7 @@ body {
   }
 }
 
-@media (max-width: 52rem) {
+@media screen and (max-width: 52rem) {
   .app-shell {
     grid-template-columns: 1fr;
   }
