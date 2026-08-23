@@ -408,9 +408,9 @@ body {
     background: transparent;
   }
 
-  /* Replaced iframe: any viewport-height here makes Chrome paint one
-     screen and drop page 2 (dead after Volunteer on shell Print).
-     Beat .garden-stage--print .garden-frame { min-height: calc(100vh…) }. */
+  /* Replaced iframe: a viewport-sized min-height paints one screen
+     and drops page 2 (dead after Volunteer on shell Print).
+     This pair beats the screen preview rule on the same element. */
   .garden-frame,
   .garden-stage--print .garden-frame {
     height: auto;

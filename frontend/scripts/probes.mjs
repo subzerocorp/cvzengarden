@@ -287,7 +287,7 @@ function staticProbes() {
 
   const printCss = extractMediaBlocks(chromeCss)
     .filter((block) => /\bprint\b/.test(block.prelude))
-    .map((block) => block.body)
+    .map((block) => block.body.replace(/\/\*[\s\S]*?\*\//g, " "))
     .join("\n");
   if (/(\.garden-frame|\.garden-stage--print)[\s\S]{0,240}(?:min-)?height:\s*[^;]*\d(?:\.\d+)?(?:v[hwd]|dvh|svh|lvh)/i.test(printCss)) {
     fail("U3 stub: @media print still sets a viewport-height on .garden-frame / .garden-stage--print");
@@ -668,18 +668,13 @@ async function s2Probes(page) {
   }
 }
 
-const REQUIRED_PRINT_WORDS = ["Education", "Awards", "Projects", "Certificates"];
-
-function pdfHasWord(latin1, word) {
-  if (latin1.includes(word)) {
-    return true;
-  }
-  const pattern = word
-    .split("")
-    .map((ch) => ch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-    .join("\\)?\\s*\\(?");
-  return new RegExp(pattern).test(latin1);
-}
+const REQUIRED_PRINT_SECTIONS = [
+  { id: "education", title: "Education" },
+  { id: "awards", title: "Awards" },
+  { id: "projects", title: "Projects" },
+  { id: "certificates", title: "Certificates" },
+];
+const LETTER_PAGE_PX = 11 * 96;
 
 async function pdfPagesForTheme(browser, href) {
   const page = await browser.newPage();
@@ -695,8 +690,21 @@ async function pdfPagesForTheme(browser, href) {
   await page.emulateMedia({ media: "print" });
   const pdf = await page.pdf({ format: "Letter", printBackground: true });
   const pages = countPdfPages(pdf);
-  const latin1 = pdf.toString("latin1");
-  const words = Object.fromEntries(REQUIRED_PRINT_WORDS.map((word) => [word, pdfHasWord(latin1, word)]));
+  const sections = await page.evaluate((wanted) => {
+    return wanted.map((section) => {
+      const el =
+        document.getElementById(`rz-${section.id}`) ||
+        document.querySelector(`[data-rz-section="${section.id}"]`);
+      const titleText = (el?.querySelector(".rz-section-title")?.textContent || "").trim();
+      return {
+        id: section.id,
+        want: section.title,
+        present: Boolean(el),
+        titleText,
+        bottom: el ? el.getBoundingClientRect().bottom : 0,
+      };
+    });
+  }, REQUIRED_PRINT_SECTIONS);
   const fills = await page.evaluate(() => {
     const resume = document.querySelector(".rz-resume");
     return {
@@ -706,7 +714,7 @@ async function pdfPagesForTheme(browser, href) {
     };
   });
   await page.close();
-  return { pages, fills, words };
+  return { pages, fills, sections };
 }
 
 async function s3Probes(browser, page) {
@@ -765,11 +773,16 @@ async function s3Probes(browser, page) {
     ["quarto", quarto],
     ["switchyard", switchyard],
   ]) {
-    const missing = REQUIRED_PRINT_WORDS.filter((word) => !result.words[word]);
+    const missing = (result.sections || []).filter(
+      (section) => !section.present || section.titleText !== section.want,
+    );
+    const pastFirstPage = (result.sections || []).some((section) => section.bottom > LETTER_PAGE_PX);
     if (result.pages < 2) {
       fail(`U3 ${id} iframe-document print is ${result.pages} page(s); sample résumé must paginate`);
     } else if (missing.length) {
-      fail(`U3 ${id} print PDF is missing ${missing.join(", ")}`);
+      fail(`U3 ${id} print document is missing ${missing.map((section) => section.want).join(", ")}`);
+    } else if (!pastFirstPage) {
+      fail(`U3 ${id} late sections sit inside one letter page; clip would be invisible`);
     } else {
       pass(`U3 ${id} iframe-document print is ${result.pages} pages and keeps education/awards/projects/certificates`);
     }
@@ -794,7 +807,7 @@ async function u3IframePrintProbes(page) {
       };
     });
 
-    await page.getByRole("button", { name: "Print", exact: true }).click();
+    await page.locator(".preview-controls__print").click();
     const buttonPath = await page.waitForFunction(() => {
       return Boolean(document.getElementById("garden-frame")?.contentWindow?.__printCalled);
     });
@@ -845,6 +858,24 @@ async function u3IframePrintProbes(page) {
     await page.evaluate(() => {
       window.dispatchEvent(new Event("beforeprint"));
     });
+    const late = await page.evaluate((wanted) => {
+      const iframe = document.getElementById("garden-frame");
+      const doc = iframe.contentDocument;
+      return wanted.map((section) => {
+        const el =
+          doc.getElementById(`rz-${section.id}`) || doc.querySelector(`[data-rz-section="${section.id}"]`);
+        const titleText = (el?.querySelector(".rz-section-title")?.textContent || "").trim();
+        const bottom = el ? el.getBoundingClientRect().bottom : 0;
+        return {
+          id: section.id,
+          want: section.title,
+          present: Boolean(el),
+          titleText,
+          bottom,
+          insideCanvas: Boolean(el) && bottom <= iframe.clientHeight + 1,
+        };
+      });
+    }, REQUIRED_PRINT_SECTIONS);
     const pdf = await page.pdf({ format: "Letter", printBackground: true });
     await page.evaluate(() => {
       window.dispatchEvent(new Event("afterprint"));
@@ -852,12 +883,19 @@ async function u3IframePrintProbes(page) {
     await page.emulateMedia({ media: "screen" });
 
     const pages = countPdfPages(pdf);
-    const latin1 = pdf.toString("latin1");
-    const missing = REQUIRED_PRINT_WORDS.filter((word) => !pdfHasWord(latin1, word));
+    const missing = late.filter((section) => !section.present || section.titleText !== section.want);
+    const clipped = late.filter((section) => section.present && !section.insideCanvas);
+    const pastFirstPage = late.some((section) => section.bottom > LETTER_PAGE_PX);
     if (pages < 2) {
       fail(`U3 ${id}: chrome-shell Print is ${pages} page(s); sample résumé must paginate past Volunteer`);
     } else if (missing.length) {
-      fail(`U3 ${id}: chrome-shell Print PDF is missing ${missing.join(", ")} (dead after Volunteer)`);
+      fail(`U3 ${id}: chrome-shell Print is missing ${missing.map((section) => section.want).join(", ")}`);
+    } else if (clipped.length) {
+      fail(
+        `U3 ${id}: ${clipped.map((section) => section.id).join(", ")} sit below the shell-print iframe box (dead after Volunteer)`,
+      );
+    } else if (!pastFirstPage) {
+      fail(`U3 ${id}: late sections sit inside one letter page; a 1-page clip would hide nothing`);
     } else {
       pass(`U3 ${id}: chrome-shell Print is ${pages} pages and keeps education/awards/projects/certificates`);
     }
