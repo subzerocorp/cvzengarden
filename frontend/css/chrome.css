@@ -194,35 +194,33 @@ body {
   margin: 0;
 }
 
-.theme-switcher__item input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.theme-switcher__label {
+.theme-switcher__option {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.6rem;
+  width: 100%;
   padding: 0.55rem 0.65rem;
   border: 1px solid var(--sidebar-border);
   border-radius: var(--radius);
   background: var(--sidebar);
+  color: inherit;
+  font: inherit;
+  text-align: left;
   cursor: pointer;
 }
 
-.theme-switcher__item input:checked + .theme-switcher__label {
+.theme-switcher__option--selected {
   background: var(--sidebar-accent);
   border-color: var(--ring);
 }
 
-.theme-switcher__item:not(:has(input:disabled)) .theme-switcher__label:hover {
+.theme-switcher__option:hover:not(:disabled) {
   background: var(--accent);
   color: var(--accent-foreground);
 }
 
-.theme-switcher__item input:focus-visible + .theme-switcher__label {
+.theme-switcher__option:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
 }

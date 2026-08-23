@@ -5,15 +5,19 @@ port module Main exposing (main)
 The iframe `src` is constant (`sandbox.html`). Switching a Theme changes only
 the Theme stylesheet href inside that document. `.rz-resume` inner HTML is
 never rewritten. Chrome class names never use the `rz-` prefix.
+
+Theme id resolution is pure (`ThemeId`). History and the iframe stylesheet
+are isolated actions (ports).
 -}
 
 import Browser
 import Generated.Themes as Themes exposing (Target(..), Theme)
-import Html exposing (Html, button, div, h1, h2, iframe, input, label, li, p, span, ul)
-import Html.Attributes as Attr exposing (attribute, class, classList, id, name, src, title, type_)
+import Html exposing (Html, button, div, h1, h2, iframe, li, p, span, ul)
+import Html.Attributes as Attr exposing (attribute, class, classList, id, src, title, type_)
 import Html.Events exposing (onClick)
 import Html.Keyed as Keyed
 import Json.Decode as Decode
+import ThemeId
 
 
 
@@ -27,6 +31,12 @@ port setPreviewMedia : String -> Cmd msg
 
 
 port printGarden : () -> Cmd msg
+
+
+port pushThemeQuery : String -> Cmd msg
+
+
+port onThemeQuery : (String -> msg) -> Sub msg
 
 
 
@@ -52,6 +62,7 @@ type Appearance
 
 type alias Flags =
     { prefersDark : Bool
+    , themeQuery : String
     }
 
 
@@ -64,20 +75,6 @@ type alias Model =
     }
 
 
-defaultTheme : Theme
-defaultTheme =
-    case Themes.all of
-        first :: _ ->
-            first
-
-        [] ->
-            { id = ""
-            , name = "Missing"
-            , href = ""
-            , target = Both
-            }
-
-
 
 -- INIT
 
@@ -86,7 +83,7 @@ init : Flags -> ( Model, Cmd Msg )
 init flags =
     let
         theme =
-            defaultTheme
+            ThemeId.themeFromQuery flags.themeQuery
 
         model =
             { selectedId = theme.id
@@ -110,6 +107,7 @@ init flags =
 
 type Msg
     = SelectTheme String
+    | ThemeQueryChanged String
     | SetPreview Preview
     | SetFilter Filter
     | SetAppearance Appearance
@@ -121,14 +119,10 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         SelectTheme id ->
-            case Themes.themeById id of
-                Nothing ->
-                    ( model, Cmd.none )
+            applyTheme id True model
 
-                Just theme ->
-                    ( { model | selectedId = theme.id }
-                    , setThemeHref theme.href
-                    )
+        ThemeQueryChanged raw ->
+            applyTheme (ThemeId.fromQuery raw) False model
 
         SetPreview preview ->
             ( { model | preview = preview }
@@ -146,6 +140,32 @@ update msg model =
 
         PrintRequested ->
             ( model, printGarden () )
+
+
+applyTheme : String -> Bool -> Model -> ( Model, Cmd Msg )
+applyTheme id pushQuery model =
+    case Themes.themeById id of
+        Nothing ->
+            applyTheme ThemeId.fallback pushQuery model
+
+        Just theme ->
+            let
+                next =
+                    { model | selectedId = theme.id }
+
+                hrefCmd =
+                    setThemeHref theme.href
+
+                historyCmd =
+                    if pushQuery then
+                        pushThemeQuery theme.id
+
+                    else
+                        Cmd.none
+            in
+            ( next
+            , Cmd.batch [ hrefCmd, historyCmd ]
+            )
 
 
 previewMedia : Preview -> String
@@ -166,8 +186,7 @@ view : Model -> Html Msg
 view model =
     let
         selected =
-            Themes.themeById model.selectedId
-                |> Maybe.withDefault defaultTheme
+            ThemeId.themeFromQuery model.selectedId
     in
     div
         [ class "app-shell"
@@ -226,7 +245,10 @@ viewSwitcher model selected =
             , Html.text ". A print Theme is not judged on hover."
             ]
         , viewFilters model.filter
-        , ul [ class "theme-switcher__list", attribute "role" "list" ]
+        , ul
+            [ class "theme-switcher__list"
+            , attribute "role" "list"
+            ]
             (visibleThemes model.filter
                 |> List.map (viewThemeItem selected.id)
             )
@@ -286,20 +308,21 @@ visibleThemes filter =
 
 viewThemeItem : String -> Theme -> Html Msg
 viewThemeItem selectedId theme =
-    let
-        inputId =
-            "theme-option-" ++ theme.id
-    in
     li [ class "theme-switcher__item" ]
-        [ input
-            [ type_ "radio"
-            , name "garden-theme"
-            , id inputId
-            , Attr.checked (theme.id == selectedId)
+        [ button
+            [ type_ "button"
+            , id ("theme-option-" ++ theme.id)
+            , class "theme-switcher__option"
+            , classList [ ( "theme-switcher__option--selected", theme.id == selectedId ) ]
+            , attribute "aria-pressed"
+                (if theme.id == selectedId then
+                    "true"
+
+                 else
+                    "false"
+                )
             , onClick (SelectTheme theme.id)
             ]
-            []
-        , label [ Attr.for inputId, class "theme-switcher__label" ]
             [ span [ class "theme-switcher__name" ] [ Html.text theme.name ]
             , span
                 [ class "badge"
@@ -436,7 +459,10 @@ viewStage preview =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    preferDarkChanged SystemPrefersDark
+    Sub.batch
+        [ preferDarkChanged SystemPrefersDark
+        , onThemeQuery ThemeQueryChanged
+        ]
 
 
 port preferDarkChanged : (Bool -> msg) -> Sub msg
@@ -448,8 +474,9 @@ port preferDarkChanged : (Bool -> msg) -> Sub msg
 
 flagsDecoder : Decode.Decoder Flags
 flagsDecoder =
-    Decode.map Flags
+    Decode.map2 Flags
         (Decode.field "prefersDark" Decode.bool)
+        (Decode.field "themeQuery" Decode.string)
 
 
 main : Program Decode.Value Model Msg
@@ -459,7 +486,7 @@ main =
             \value ->
                 init
                     (Decode.decodeValue flagsDecoder value
-                        |> Result.withDefault { prefersDark = False }
+                        |> Result.withDefault { prefersDark = False, themeQuery = "" }
                     )
         , view = view
         , update = update

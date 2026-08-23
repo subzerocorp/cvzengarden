@@ -24,4 +24,6 @@ Opens the Garden at [http://127.0.0.1:4173/](http://127.0.0.1:4173/). The Theme 
 npm test
 ```
 
-runs the RZ-3 acceptance probes (static chrome checks + a headless browser).
+runs the RZ-3 + RZ-S1…S5 acceptance probes (static chrome checks + a headless browser).
+
+Harden coverage: FOUC-free dual-link Theme swap, 1280×800 date geometry, Nightgarden paper-honest print, keyboard-focusable switcher, and `?theme=` permalink + Back (unknown/empty → Nightgarden).

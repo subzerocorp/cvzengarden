@@ -143,8 +143,10 @@ const themes = files.map((fileName) => {
   return parseTheme(fileName, source);
 });
 
+const defaultTheme = themes.find((theme) => theme.id === "nightgarden") ?? themes[0];
+
 writeThemesElm(themes);
-writeSandbox(themes[0].href);
+writeSandbox(defaultTheme.href);
 
 console.log(
   `Generated ${themes.length} theme(s): ${themes.map((theme) => theme.id).join(", ")}`,

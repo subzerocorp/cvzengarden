@@ -238,6 +238,8 @@ body {
   .rz-dates {
     color: var(--rz-rule);
     font-variant-numeric: tabular-nums;
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 
   .rz-entry-secondary {

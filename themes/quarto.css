@@ -211,33 +211,39 @@ body {
 
 .rz-entry-header {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, max-content);
   column-gap: 0.75rem;
   align-items: baseline;
 }
 
 .rz-entry-primary {
   grid-column: 1;
+  min-width: 0;
   margin: 0;
   font-size: 12.5pt;
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .rz-entry-secondary {
   grid-column: 1;
+  min-width: 0;
   margin: 0;
   font-style: italic;
+  overflow-wrap: anywhere;
 }
 
 .rz-dates {
   grid-column: 2;
   grid-row: 1;
+  min-width: 0;
   margin: 0;
   color: var(--rz-rule);
   font-size: 10pt;
   font-variant-numeric: oldstyle-nums;
   text-align: right;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .rz-location,
@@ -311,16 +317,17 @@ body {
 
 @media screen {
   body {
-    padding: 1.5rem 0 3rem;
+    padding: 1.5rem 0.75rem 3rem;
   }
 
   .rz-resume {
-    width: 8.5in;
+    width: 100%;
     max-width: 8.5in;
     min-height: 11in;
     margin: 0 auto;
     padding: 0.7in 0.75in 0.8in;
     box-shadow: 0 0.35rem 1.8rem rgb(28 22 18 / 0.18);
+    overflow: visible;
   }
 }
 
