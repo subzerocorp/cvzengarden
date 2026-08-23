@@ -89,7 +89,7 @@ No shareable theme URL (query or path) and Back does nothing FAILS. Today's live
 
 ### BAR-L1 Look-and-feel
 
-Pairwise visual distinctness (computed color or font-family of `.rz-name` differs for every pair); a first-party theme that loads a third-party webfont CDN (jsDelivr etc.) with no self-hosted/@font-face fallback **FAILS**.
+Pairwise visual distinctness (computed color or font-family of `.rz-name` differs for every pair); a first-party theme that loads a third-party webfont CDN (jsDelivr etc.) with no self-hosted/@font-face fallback FAILS.
 
 **FAIL** if any first-party theme pair shares both computed color and font-family of `.rz-name`, or if a first-party theme loads a third-party webfont CDN (jsDelivr etc.) with no self-hosted/@font-face fallback.
 
