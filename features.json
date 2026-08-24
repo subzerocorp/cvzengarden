@@ -27,6 +27,17 @@
         "features": [
           "renderer_clippy_pedantic_clean"
         ]
+      },
+      {
+        "id": "zg-23-phase-1",
+        "title": "ZG-23 phase 1: deterministic cold-load FOUC probe (748892a)",
+        "status": "completed",
+        "features": [
+          "probe_cold_paint_order",
+          "probe_cold_paint_present",
+          "probe_cold_sheet_blocking",
+          "probes_lib_layout"
+        ]
       }
     ]
   }

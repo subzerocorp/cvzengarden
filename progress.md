@@ -25,3 +25,11 @@ Harness scaffolded: `AGENTS.md`, `justfile`, `features.json`, this file, `.pinto
 AVRIL round 1 on `docs/plans/round-1-avril-intent.md`: 22 PBIs ZG-1…ZG-22 proposed; as of this entry 17 are triple-blessed (`avril-blessed`), ZG-11/12/19/20/21 are in their final PO→QA→CTO pass, and ZG-23 (deterministic cold-load FOUC probe) is being proposed. Planning docs: `docs/plans/round-1-avril-*.md`.
 
 ZG-1 (renderer clippy pedantic): Generator → Reviewer BLESS → Tester BLESS → Architect BLESS. Commit `59f52ca`. Board `review`, not `done`: the AC "`just verify` exits 0" is blocked by the pre-existing flaky probe `S1 cold load FOUC` (computed-style race; frontend untouched; passes 2 of 3 identical runs). Follow-ups logged in `docs/plans/zg-1-gan-report.md` (Err-path tests for `render_json`, `nonempty` trim test, filter-then-unwrap sites, `RenderError` façade for ZG-4).
+
+## 2026-08-24 — ZG-23 done; ZG-1 done; AVRIL round 1 complete (23/23)
+
+AVRIL round 1 planning stop: `docs/plans/round-1-avril-blessed-backlog.md`. Human decision recorded: license (MIT code / CC BY 4.0 themes / Nathan Sculli). Fonts decision in discussion (ZG-13 may be amended).
+
+ZG-23 (deterministic cold-load FOUC probe): Generator → Reviewer BLESS → Tester BLESS → Architect BLESS. Commit `748892a`. Paint-order oracle inside the sandbox frame; new `frontend/scripts/probes/lib/{paint,sheet-blocking}.mjs`. 10/10 deterministic. Board `done`.
+
+ZG-1: `just verify` green on the same tree (PROBE_PORT=4331). Board `done`. Completion records: `docs/plans/zg-1-completion.md`, `docs/plans/zg-23-completion.md`.

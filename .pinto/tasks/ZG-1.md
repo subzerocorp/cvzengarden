@@ -1,12 +1,13 @@
 +++
 id = "ZG-1"
 title = "Make the renderer pass clippy pedantic so just verify is green"
-status = "review"
+status = "done"
 rank = "i"
 labels = ["avril", "round-1", "harness", "avril-blessed"]
 start_at = "2026-08-24T01:14:02.663584Z"
+done_at = "2026-08-24T18:44:37.979121Z"
 created = "2026-08-23T23:52:45.617948Z"
-updated = "2026-08-24T01:34:16.619801Z"
+updated = "2026-08-24T18:44:37.979121Z"
 +++
 
 ## Why
@@ -34,7 +35,7 @@ none (harness debt named in the intent's repo facts and `progress.md`)
 ## Execution Evidence
 
 - [x] clippy pedantic exits 0 — `cd renderer && cargo clippy --all-targets -- -D warnings -D clippy::pedantic` → exit 0 (commit 59f52ca)
-- [ ] `just verify` exits 0 — Rust legs green (fmt, clippy, cargo test 19/0 failed); frontend leg fails intermittently on the pre-existing probe `S1 cold load FOUC` (frontend unchanged by this PBI; identical tree passes 2 of 3 runs). Blocked on harness PBI ZG-23. Re-run after ZG-23 lands.
+- [x] `just verify` exits 0 — PROBE_PORT=4331 just verify green after ZG-23 (748892a): fmt, clippy pedantic, cargo test 19/0 failed, all probes PASS incl. ZG-23/cold-paint-order 452ms >= 418ms
 - [x] no allow(clippy) — `grep -rn "allow(clippy" renderer/src renderer/tests` → empty
 - [x] cargo test 0 failed, no test removed, ≥ 19 — `cargo test -- --list` name set identical before/after (19/19); `git diff --stat skeleton/` empty
 - [x] diff scope — `git diff --name-only HEAD~1..HEAD` on 59f52ca: renderer/src/{emit,html,lib,resume}.rs, renderer/tests/acceptance.rs + harness files (docs/plans/zg-1-*.md, .pinto/tasks/ZG-1.md)
