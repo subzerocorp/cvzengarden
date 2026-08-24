@@ -1,13 +1,14 @@
 +++
 id = "ZG-2"
 title = "Never panic on a wild date: tolerate timestamps, drop unparseable dates"
-status = "in-progress"
+status = "done"
 rank = "j"
 labels = ["avril", "round-1", "renderer", "avril-blessed"]
 depends_on = ["ZG-1"]
 start_at = "2026-08-24T19:51:31.351168Z"
+done_at = "2026-08-24T20:05:40.613403Z"
 created = "2026-08-23T23:53:41.365926Z"
-updated = "2026-08-24T19:51:31.351168Z"
+updated = "2026-08-24T20:05:40.613403Z"
 +++
 
 ## Why
@@ -39,3 +40,15 @@ D1, D3 — Devon, Marcus
 - ZG-1
 ## Notes
 - none
+
+## Execution Evidence (commit 696ef18)
+- [x] wild::multibyte_start_date_does_not_panic (２０２０, 日本語, €€, 20€0) Ok
+- [x] timestamp → <time class="rz-date" datetime="2023-05-31">May 31, 2023</time>
+- [x] March 2020 → <span class="rz-date rz-date--start">March 2020</span>, no datetime, no rz-is-current
+- [x] 2020-13 → no <time, no rz-is-current/data-rz-current, <h3 class="rz-entry-primary"> present
+- [x] 2020-02-30 unparseable; 2024-02-29 datetime="2024-02-29"
+- [x] endDate Present → <span class="rz-date rz-date--end">Present</span> without datetime
+- [x] acceptance + fixtures locks unchanged
+- [x] §5.3 contains 'unparseable' (lines 303, 318)
+- [x] just verify exit 0 (PROBE_PORT=4374)
+GAN report: docs/plans/zg-2-gan-report.md

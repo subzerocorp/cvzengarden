@@ -63,6 +63,17 @@
           "bullets_pre_line",
           "css_structure_lib"
         ]
+      },
+      {
+        "id": "zg-2",
+        "title": "ZG-2: wild dates never panic; unparseable \u2192 span",
+        "status": "completed",
+        "features": [
+          "iso_date_calc",
+          "unparseable_date_span",
+          "current_from_parsed_start",
+          "wild_tests"
+        ]
       }
     ]
   }
