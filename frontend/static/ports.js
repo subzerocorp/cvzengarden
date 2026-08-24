@@ -1,325 +1,348 @@
 /**
- * Chrome ↔ sandbox bridge. Isolated actions only.
+ * Chrome ↔ sandbox bridge. Wiring only: ports subscribe to per-concern
+ * modules (`render.js` for the Wasm renderer and the sandbox swap).
  *
  * Theme id math lives in Elm (`ThemeId`). This file pushes history and
  * swaps Theme sheets. The live edit inside the iframe is the Theme
  * <link> set: keep the outgoing sheet until the incoming sheet is ready
  * so a committed frame never paints UA-default serif on a blank canvas.
- * .rz-resume inner HTML is never rewritten. iframe.src stays sandbox.html.
+ * article.rz-resume is replaced only by crate output (`swapResume`).
+ * iframe.src stays sandbox.html.
  */
-(() => {
-  const FRAME_ID = "garden-frame";
-  const THEME_LINK_ID = "theme-stylesheet";
+import { contractVersion, render, swapResume, version } from "./render.js";
 
-  const app = Elm.Main.init({
-    node: document.getElementById("root"),
-    flags: {
-      prefersDark: window.matchMedia("(prefers-color-scheme: dark)").matches,
-      themeQuery: new URLSearchParams(window.location.search).get("theme") || "",
-    },
-  });
+const FRAME_ID = "garden-frame";
+const THEME_LINK_ID = "theme-stylesheet";
 
-  let previewMedia = "screen";
-  const originalMedia = new WeakMap();
-  let themeSwapGen = 0;
+const app = Elm.Main.init({
+  node: document.getElementById("root"),
+  flags: {
+    prefersDark: window.matchMedia("(prefers-color-scheme: dark)").matches,
+    themeQuery: new URLSearchParams(window.location.search).get("theme") || "",
+  },
+});
 
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)");
-  prefersDark.addEventListener("change", (event) => {
-    app.ports.preferDarkChanged.send(event.matches);
-  });
+let previewMedia = "screen";
+const originalMedia = new WeakMap();
+let themeSwapGen = 0;
 
-  function gardenFrame() {
-    return document.getElementById(FRAME_ID);
-  }
+const prefersDark = window.matchMedia("(prefers-color-scheme: dark)");
+prefersDark.addEventListener("change", (event) => {
+  app.ports.preferDarkChanged.send(event.matches);
+});
 
-  function waitForFrame() {
-    const iframe = gardenFrame();
-    if (!iframe) {
-      return new Promise((resolve) => {
-        requestAnimationFrame(() => resolve(waitForFrame()));
-      });
-    }
+function gardenFrame() {
+  return document.getElementById(FRAME_ID);
+}
 
-    const doc = iframe.contentDocument;
-    if (doc && doc.readyState !== "loading" && doc.querySelector(".rz-resume")) {
-      return Promise.resolve(iframe);
-    }
-
+function waitForFrame() {
+  const iframe = gardenFrame();
+  if (!iframe) {
     return new Promise((resolve) => {
-      const onLoad = () => resolve(iframe);
-      iframe.addEventListener("load", onLoad, { once: true });
+      requestAnimationFrame(() => resolve(waitForFrame()));
     });
   }
 
-  function walkMediaRules(rules, visit) {
-    if (!rules) {
-      return;
-    }
-
-    for (const rule of Array.from(rules)) {
-      if (rule.type === CSSRule.MEDIA_RULE) {
-        visit(rule);
-      }
-
-      if (rule.cssRules) {
-        walkMediaRules(rule.cssRules, visit);
-      }
-    }
+  const doc = iframe.contentDocument;
+  if (doc && doc.readyState !== "loading" && doc.querySelector(".rz-resume")) {
+    return Promise.resolve(iframe);
   }
 
-  function rememberMedia(rule) {
-    if (!originalMedia.has(rule)) {
-      originalMedia.set(rule, rule.media.mediaText);
-    }
-    return originalMedia.get(rule);
+  return new Promise((resolve) => {
+    const onLoad = () => resolve(iframe);
+    iframe.addEventListener("load", onLoad, { once: true });
+  });
+}
+
+function walkMediaRules(rules, visit) {
+  if (!rules) {
+    return;
   }
 
-  function emulatePrint(doc) {
-    for (const sheet of Array.from(doc.styleSheets)) {
-      try {
-        walkMediaRules(sheet.cssRules, (rule) => {
-          const original = rememberMedia(rule);
-          if (/\bprint\b/.test(original)) {
-            rule.media.mediaText = "all";
-          } else if (/\bscreen\b/.test(original)) {
-            rule.media.mediaText = "not all";
-          }
-        });
-      } catch {
-        // Cross-origin or unreadable sheet — ignore.
-      }
+  for (const rule of Array.from(rules)) {
+    if (rule.type === CSSRule.MEDIA_RULE) {
+      visit(rule);
+    }
+
+    if (rule.cssRules) {
+      walkMediaRules(rule.cssRules, visit);
     }
   }
+}
 
-  function restoreScreen(doc) {
-    for (const sheet of Array.from(doc.styleSheets)) {
-      try {
-        walkMediaRules(sheet.cssRules, (rule) => {
-          if (originalMedia.has(rule)) {
-            rule.media.mediaText = originalMedia.get(rule);
-          }
-        });
-      } catch {
-        // ignore
-      }
+function rememberMedia(rule) {
+  if (!originalMedia.has(rule)) {
+    originalMedia.set(rule, rule.media.mediaText);
+  }
+  return originalMedia.get(rule);
+}
+
+function emulatePrint(doc) {
+  for (const sheet of Array.from(doc.styleSheets)) {
+    try {
+      walkMediaRules(sheet.cssRules, (rule) => {
+        const original = rememberMedia(rule);
+        if (/\bprint\b/.test(original)) {
+          rule.media.mediaText = "all";
+        } else if (/\bscreen\b/.test(original)) {
+          rule.media.mediaText = "not all";
+        }
+      });
+    } catch {
+      // Cross-origin or unreadable sheet — ignore.
     }
   }
+}
 
-  function applyPreview(doc) {
-    if (previewMedia === "print") {
-      emulatePrint(doc);
-    } else {
-      restoreScreen(doc);
+function restoreScreen(doc) {
+  for (const sheet of Array.from(doc.styleSheets)) {
+    try {
+      walkMediaRules(sheet.cssRules, (rule) => {
+        if (originalMedia.has(rule)) {
+          rule.media.mediaText = originalMedia.get(rule);
+        }
+      });
+    } catch {
+      // ignore
     }
   }
+}
 
-  function whenStylesheetReady(link) {
-    if (!link) {
+function applyPreview(doc) {
+  if (previewMedia === "print") {
+    emulatePrint(doc);
+  } else {
+    restoreScreen(doc);
+  }
+}
+
+function whenStylesheetReady(link) {
+  if (!link) {
+    return Promise.resolve();
+  }
+
+  try {
+    const sheet = link.sheet;
+    if (sheet && sheet.cssRules) {
       return Promise.resolve();
     }
+  } catch {
+    // sheet exists but is not readable yet
+  }
 
+  return new Promise((resolve) => {
+    const done = () => resolve();
+    link.addEventListener("load", done, { once: true });
+    link.addEventListener("error", done, { once: true });
+  });
+}
+
+/**
+ * Dual-link swap: insert the incoming Theme sheet, wait until it has
+ * rules, then drop the outgoing sheet. A stub that only writes
+ * #theme-stylesheet href (dropping the old sheet first) flashes
+ * UA-default serif on a white canvas.
+ */
+async function setThemeHref(href) {
+  const iframe = await waitForFrame();
+  const doc = iframe.contentDocument;
+  if (!doc) {
+    return;
+  }
+
+  const gen = ++themeSwapGen;
+  const current = doc.getElementById(THEME_LINK_ID);
+  const currentHref = current?.getAttribute("href") || "";
+
+  if (current && currentHref === href) {
     try {
-      const sheet = link.sheet;
-      if (sheet && sheet.cssRules) {
-        return Promise.resolve();
+      if (current.sheet && current.sheet.cssRules) {
+        applyPreview(doc);
+        return;
       }
     } catch {
-      // sheet exists but is not readable yet
+      // fall through and rebuild
     }
-
-    return new Promise((resolve) => {
-      const done = () => resolve();
-      link.addEventListener("load", done, { once: true });
-      link.addEventListener("error", done, { once: true });
-    });
   }
 
-  /**
-   * Dual-link swap: insert the incoming Theme sheet, wait until it has
-   * rules, then drop the outgoing sheet. A stub that only writes
-   * #theme-stylesheet href (dropping the old sheet first) flashes
-   * UA-default serif on a white canvas.
-   */
-  async function setThemeHref(href) {
-    const iframe = await waitForFrame();
-    const doc = iframe.contentDocument;
-    if (!doc) {
-      return;
-    }
+  const incoming = doc.createElement("link");
+  incoming.rel = "stylesheet";
+  incoming.setAttribute("href", href);
+  incoming.setAttribute("data-theme-incoming", "true");
 
-    const gen = ++themeSwapGen;
-    const current = doc.getElementById(THEME_LINK_ID);
-    const currentHref = current?.getAttribute("href") || "";
-
-    if (current && currentHref === href) {
-      try {
-        if (current.sheet && current.sheet.cssRules) {
-          applyPreview(doc);
-          return;
-        }
-      } catch {
-        // fall through and rebuild
-      }
-    }
-
-    const incoming = doc.createElement("link");
-    incoming.rel = "stylesheet";
-    incoming.setAttribute("href", href);
-    incoming.setAttribute("data-theme-incoming", "true");
-
-    if (current && current.parentNode) {
-      current.parentNode.insertBefore(incoming, current.nextSibling);
-    } else {
-      doc.head.appendChild(incoming);
-    }
-
-    await whenStylesheetReady(incoming);
-    if (gen !== themeSwapGen) {
-      incoming.remove();
-      return;
-    }
-
-    incoming.id = THEME_LINK_ID;
-    incoming.removeAttribute("data-theme-incoming");
-
-    if (current && current !== incoming) {
-      current.remove();
-    }
-
-    applyPreview(doc);
+  if (current && current.parentNode) {
+    current.parentNode.insertBefore(incoming, current.nextSibling);
+  } else {
+    doc.head.appendChild(incoming);
   }
 
-  async function setPreviewMedia(media) {
-    previewMedia = media === "print" ? "print" : "screen";
-    const iframe = await waitForFrame();
-    const doc = iframe.contentDocument;
-    if (!doc) {
-      return;
+  await whenStylesheetReady(incoming);
+  if (gen !== themeSwapGen) {
+    incoming.remove();
+    return;
+  }
+
+  incoming.id = THEME_LINK_ID;
+  incoming.removeAttribute("data-theme-incoming");
+
+  if (current && current !== incoming) {
+    current.remove();
+  }
+
+  applyPreview(doc);
+}
+
+async function setPreviewMedia(media) {
+  previewMedia = media === "print" ? "print" : "screen";
+  const iframe = await waitForFrame();
+  const doc = iframe.contentDocument;
+  if (!doc) {
+    return;
+  }
+  applyPreview(doc);
+}
+
+function themeUrl(id) {
+  const url = new URL(window.location.href);
+  url.searchParams.set("theme", id);
+  return url.pathname + url.search + url.hash;
+}
+
+app.ports.setThemeHref.subscribe((href) => {
+  setThemeHref(href);
+});
+
+app.ports.setPreviewMedia.subscribe((media) => {
+  setPreviewMedia(media);
+});
+
+/**
+ * Garden Print prints the child document (contentWindow.print()).
+ * File → Print / Ctrl+P print the chrome shell. The iframe is a
+ * replaced element: child break-before does not paginate the parent,
+ * and a viewport-height box drops page 2. Hoist .rz-resume plus the
+ * already-loaded Theme sheet into the parent so shell print paginates
+ * like the child document (Nightgarden 2, Quarto/Switchyard 3).
+ */
+let restoreShellPrint = null;
+
+function collectChildCss(doc) {
+  const chunks = [];
+  for (const sheet of Array.from(doc.styleSheets)) {
+    try {
+      chunks.push(Array.from(sheet.cssRules).map((rule) => rule.cssText).join("\n"));
+    } catch {
+      // Cross-origin or unreadable sheet — ignore.
     }
-    applyPreview(doc);
+  }
+  return chunks.join("\n");
+}
+
+function hoistResumeForShellPrint(iframe) {
+  const doc = iframe.contentDocument;
+  const resume = doc?.querySelector(".rz-resume");
+  if (!doc || !resume) {
+    return null;
   }
 
-  function themeUrl(id) {
-    const url = new URL(window.location.href);
-    url.searchParams.set("theme", id);
-    return url.pathname + url.search + url.hash;
+  const style = document.createElement("style");
+  style.setAttribute("data-garden-shell-print", "true");
+  style.textContent = collectChildCss(doc);
+
+  const themeHref = doc.getElementById(THEME_LINK_ID)?.href || "";
+  const themeLink = document.createElement("link");
+  themeLink.rel = "stylesheet";
+  themeLink.setAttribute("data-garden-shell-print", "true");
+  if (themeHref) {
+    themeLink.href = themeHref;
   }
 
-  app.ports.setThemeHref.subscribe((href) => {
-    setThemeHref(href);
+  const host = document.createElement("div");
+  host.id = "garden-print-host";
+  host.setAttribute("data-garden-shell-print", "true");
+  host.appendChild(resume.cloneNode(true));
+
+  document.head.appendChild(style);
+  if (themeHref) {
+    document.head.appendChild(themeLink);
+  }
+  document.body.appendChild(host);
+  document.documentElement.setAttribute("data-garden-shell-printing", "true");
+  void host.offsetHeight;
+
+  return () => {
+    host.remove();
+    style.remove();
+    themeLink.remove();
+    document.documentElement.removeAttribute("data-garden-shell-printing");
+  };
+}
+
+function onShellBeforePrint() {
+  const iframe = gardenFrame();
+  if (!iframe || restoreShellPrint) {
+    return;
+  }
+  restoreShellPrint = hoistResumeForShellPrint(iframe);
+}
+
+function onShellAfterPrint() {
+  if (restoreShellPrint) {
+    restoreShellPrint();
+    restoreShellPrint = null;
+  }
+}
+
+window.addEventListener("beforeprint", onShellBeforePrint);
+window.addEventListener("afterprint", onShellAfterPrint);
+window.matchMedia("print").addEventListener("change", (event) => {
+  if (event.matches) {
+    onShellBeforePrint();
+  } else {
+    onShellAfterPrint();
+  }
+});
+
+function printChildDocument() {
+  waitForFrame().then((iframe) => {
+    iframe.contentWindow.print();
   });
+}
 
-  app.ports.setPreviewMedia.subscribe((media) => {
-    setPreviewMedia(media);
-  });
+app.ports.printGarden.subscribe(() => {
+  printChildDocument();
+});
 
-  /**
-   * Garden Print prints the child document (contentWindow.print()).
-   * File → Print / Ctrl+P print the chrome shell. The iframe is a
-   * replaced element: child break-before does not paginate the parent,
-   * and a viewport-height box drops page 2. Hoist .rz-resume plus the
-   * already-loaded Theme sheet into the parent so shell print paginates
-   * like the child document (Nightgarden 2, Quarto/Switchyard 3).
-   */
-  let restoreShellPrint = null;
-
-  function collectChildCss(doc) {
-    const chunks = [];
-    for (const sheet of Array.from(doc.styleSheets)) {
-      try {
-        chunks.push(Array.from(sheet.cssRules).map((rule) => rule.cssText).join("\n"));
-      } catch {
-        // Cross-origin or unreadable sheet — ignore.
-      }
-    }
-    return chunks.join("\n");
+app.ports.pushThemeQuery.subscribe((id) => {
+  const next = themeUrl(id);
+  const current = window.location.pathname + window.location.search + window.location.hash;
+  if (next !== current) {
+    window.history.pushState({ theme: id }, "", next);
   }
+});
 
-  function hoistResumeForShellPrint(iframe) {
-    const doc = iframe.contentDocument;
-    const resume = doc?.querySelector(".rz-resume");
-    if (!doc || !resume) {
-      return null;
-    }
+window.addEventListener("popstate", () => {
+  const raw = new URLSearchParams(window.location.search).get("theme") || "";
+  app.ports.onThemeQuery.send(raw);
+});
 
-    const style = document.createElement("style");
-    style.setAttribute("data-garden-shell-print", "true");
-    style.textContent = collectChildCss(doc);
+/**
+ * Renderer port: JSON in, `{ ok, html, error }` out. The error text is what
+ * ZG-5 displays unchanged; nothing here inspects the résumé.
+ */
+const renderedOk = (html) => ({ ok: true, html, error: "" });
+const renderedErr = (failure) => ({ ok: false, html: "", error: failure.message });
 
-    const themeHref = doc.getElementById(THEME_LINK_ID)?.href || "";
-    const themeLink = document.createElement("link");
-    themeLink.rel = "stylesheet";
-    themeLink.setAttribute("data-garden-shell-print", "true");
-    if (themeHref) {
-      themeLink.href = themeHref;
-    }
+app.ports.renderResume.subscribe((json) => {
+  render(json)
+    .then(renderedOk, renderedErr)
+    .then((message) => app.ports.onRendered.send(message));
+});
 
-    const host = document.createElement("div");
-    host.id = "garden-print-host";
-    host.setAttribute("data-garden-shell-print", "true");
-    host.appendChild(resume.cloneNode(true));
+async function swapInFrame(html) {
+  const iframe = await waitForFrame();
+  swapResume(html, iframe.contentDocument);
+}
 
-    document.head.appendChild(style);
-    if (themeHref) {
-      document.head.appendChild(themeLink);
-    }
-    document.body.appendChild(host);
-    document.documentElement.setAttribute("data-garden-shell-printing", "true");
-    void host.offsetHeight;
-
-    return () => {
-      host.remove();
-      style.remove();
-      themeLink.remove();
-      document.documentElement.removeAttribute("data-garden-shell-printing");
-    };
-  }
-
-  function onShellBeforePrint() {
-    const iframe = gardenFrame();
-    if (!iframe || restoreShellPrint) {
-      return;
-    }
-    restoreShellPrint = hoistResumeForShellPrint(iframe);
-  }
-
-  function onShellAfterPrint() {
-    if (restoreShellPrint) {
-      restoreShellPrint();
-      restoreShellPrint = null;
-    }
-  }
-
-  window.addEventListener("beforeprint", onShellBeforePrint);
-  window.addEventListener("afterprint", onShellAfterPrint);
-  window.matchMedia("print").addEventListener("change", (event) => {
-    if (event.matches) {
-      onShellBeforePrint();
-    } else {
-      onShellAfterPrint();
-    }
-  });
-
-  function printChildDocument() {
-    waitForFrame().then((iframe) => {
-      iframe.contentWindow.print();
-    });
-  }
-
-  app.ports.printGarden.subscribe(() => {
-    printChildDocument();
-  });
-
-  app.ports.pushThemeQuery.subscribe((id) => {
-    const next = themeUrl(id);
-    const current = window.location.pathname + window.location.search + window.location.hash;
-    if (next !== current) {
-      window.history.pushState({ theme: id }, "", next);
-    }
-  });
-
-  window.addEventListener("popstate", () => {
-    const raw = new URLSearchParams(window.location.search).get("theme") || "";
-    app.ports.onThemeQuery.send(raw);
-  });
-})();
+// Probe seam and ZG-5 hook. Thin wrappers only; the logic is in render.js.
+window.resumezen = { render, contractVersion, version, swap: swapInFrame };

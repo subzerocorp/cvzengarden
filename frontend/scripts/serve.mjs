@@ -17,6 +17,7 @@ const TYPES = {
   ".json": "application/json; charset=utf-8",
   ".woff2": "font/woff2",
   ".svg": "image/svg+xml",
+  ".wasm": "application/wasm",
 };
 
 const server = http.createServer((req, res) => {

@@ -39,6 +39,15 @@ port pushThemeQuery : String -> Cmd msg
 port onThemeQuery : (String -> msg) -> Sub msg
 
 
+{-| Render a JSON Resume text with the Wasm renderer; the answer arrives on
+`onRendered` as `{ ok, html, error }` (decoded to a `Result`).
+-}
+port renderResume : String -> Cmd msg
+
+
+port onRendered : (Decode.Value -> msg) -> Sub msg
+
+
 
 -- MODEL
 
@@ -72,6 +81,7 @@ type alias Model =
     , filter : Filter
     , appearance : Appearance
     , prefersDark : Bool
+    , rendered : Maybe (Result String String)
     }
 
 
@@ -91,6 +101,7 @@ init flags =
             , filter = FilterAll
             , appearance = FollowSystem
             , prefersDark = flags.prefersDark
+            , rendered = Nothing
             }
     in
     ( model
@@ -113,6 +124,8 @@ type Msg
     | SetAppearance Appearance
     | SystemPrefersDark Bool
     | PrintRequested
+    | RenderRequested String
+    | Rendered (Result String String)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -140,6 +153,12 @@ update msg model =
 
         PrintRequested ->
             ( model, printGarden () )
+
+        RenderRequested json ->
+            ( model, renderResume json )
+
+        Rendered result ->
+            ( { model | rendered = Just result }, Cmd.none )
 
 
 applyTheme : String -> Bool -> Model -> ( Model, Cmd Msg )
@@ -462,7 +481,35 @@ subscriptions _ =
     Sub.batch
         [ preferDarkChanged SystemPrefersDark
         , onThemeQuery ThemeQueryChanged
+        , onRendered (decodeRendered >> Rendered)
         ]
+
+
+{-| `{ ok : Bool, html : String, error : String }` from the port, as a Result.
+An undecodable value is itself a render failure.
+-}
+decodeRendered : Decode.Value -> Result String String
+decodeRendered value =
+    let
+        decoder =
+            Decode.map3
+                (\ok html error ->
+                    if ok then
+                        Ok html
+
+                    else
+                        Err error
+                )
+                (Decode.field "ok" Decode.bool)
+                (Decode.field "html" Decode.string)
+                (Decode.field "error" Decode.string)
+    in
+    case Decode.decodeValue decoder value of
+        Ok result ->
+            result
+
+        Err problem ->
+            Err (Decode.errorToString problem)
 
 
 port preferDarkChanged : (Bool -> msg) -> Sub msg

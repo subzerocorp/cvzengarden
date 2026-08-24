@@ -112,7 +112,7 @@ function writeSandbox(defaultHref) {
       /<!--[\s\S]*?-->/,
       `<!--
       ResumeZen Garden sandbox (HTML contract v1.0).
-      Chrome swaps #theme-stylesheet href only. Do not change .rz-resume.
+      Chrome swaps #theme-stylesheet href and, for a pasted résumé, article.rz-resume (crate output only).
     -->`,
     )
     .replace(

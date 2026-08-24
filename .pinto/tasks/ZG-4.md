@@ -1,13 +1,14 @@
 +++
 id = "ZG-4"
 title = "Run the Renderer in the browser via Wasm and prove it matches the crate"
-status = "in-progress"
+status = "done"
 rank = "l"
 labels = ["avril", "round-1", "renderer", "chrome", "avril-blessed"]
 depends_on = ["ZG-1"]
 start_at = "2026-08-24T20:24:05.057059Z"
+done_at = "2026-08-24T20:48:27.167122Z"
 created = "2026-08-23T23:53:41.440185Z"
-updated = "2026-08-24T20:24:05.057059Z"
+updated = "2026-08-24T20:48:27.167122Z"
 +++
 
 ## Why
@@ -44,3 +45,17 @@ enables A1 (no complaint id of its own; render-side decision from the intent)
 - ZG-1
 ## Notes
 - `wasm-bindgen` / `wasm-pack` are pre-approved by the intent. Netlify's build image lacks Rust; production deploy needs either a Rust build step or a CI artifact — deployment is a human step and out of AC, but AXEL must not commit artifacts.
+
+## Execution Evidence (commits 81739dd, 08b8a17)
+- [x] npm run build → dist/wasm/resumezen_renderer_wasm.js + _bg.wasm; 0 tracked artifacts
+- [x] wasm-pack absent → exit 1, prints wasm-pack + https://rustwasm.github.io/wasm-pack/installer/ (build-wasm.test.mjs)
+- [x] cargo run --example render: exit 0, 18575 B; example_render_matches_render_json byte-equal; '{' → exit 1, 'line 1' on stderr, empty stdout
+- [x] ZG-4/wasm-parity ×3 byte-equal (18575 / 499 / 1086 B); cargo absent → FAIL prerequisite line
+- [x] ZG-4/wasm-error 'line 1', no pageerror
+- [x] ZG-4/wasm-load-failure plain message with 'renderer', no 'at ', sandbox still Jordan Hale
+- [x] ZG-4/wasm-large 4.80 MiB (9942 jobs) in 82 ms; Job 9942 present
+- [x] ZG-4/wasm-swap Ada Lovelace; src/href unchanged; no Jordan Hale
+- [x] ZG-4/wasm-no-network 0 requests during render+swap
+- [x] renderer-wasm clippy pedantic exit 0; just verify exit 0 (4396/4398)
+- [x] stub render → parity ×3 + swap FAIL
+GAN report: docs/plans/zg-4-gan-report.md

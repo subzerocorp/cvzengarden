@@ -1,6 +1,7 @@
 # Rust
 /target
 renderer/target
+renderer-wasm/target
 **/*.rs.bk
 
 # Elm
@@ -8,6 +9,9 @@ elm-stuff
 frontend/elm-stuff
 frontend/dist
 frontend/node_modules
+
+# Wasm build output (just wasm); never committed
+frontend/static/wasm/
 
 # Netlify
 .netlify

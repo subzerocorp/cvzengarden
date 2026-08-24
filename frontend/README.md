@@ -24,6 +24,6 @@ Opens the Garden at [http://127.0.0.1:4173/](http://127.0.0.1:4173/). The Theme 
 npm test
 ```
 
-runs the RZ-3 + RZ-S1…S5 acceptance probes (static chrome checks + a headless browser).
+runs the unit tests and the acceptance probes (static chrome checks + a headless browser). The build compiles the renderer to Wasm with [`wasm-pack`](https://rustwasm.github.io/wasm-pack/installer/) into `static/wasm/` (gitignored), and the ZG-4 parity probe runs `cargo run --example render` in `../renderer`, so `npm test` needs a Rust toolchain plus `wasm-pack` on `PATH`. Port `4173` is often taken; set `PROBE_PORT` / `PORT`.
 
 Harden coverage: FOUC-free dual-link Theme swap, 1280×800 date geometry, Nightgarden paper-honest print, keyboard-focusable switcher, and `?theme=` permalink + Back (unknown/empty → Nightgarden).
