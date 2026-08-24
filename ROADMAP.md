@@ -104,6 +104,7 @@ This is the first phase we can charge for. Charging itself is Phase 5. Phase 3 p
 - A designer submits one CSS file and declares web, print, or both.
 - We accept (manually at first — a pull request is enough).
 - Accepted themes appear in the switcher and on published résumés.
+- Designers may also submit original fonts to the **Font Library** (CC BY 4.0). Submitted Themes may instead `@font-face` any public font from an HTTPS CDN (no host allowlist; CSS only). First-party Themes never phone a CDN.
 
 **Done when:** A stranger’s theme is live on the sample and available to a published job-seeker page.
 

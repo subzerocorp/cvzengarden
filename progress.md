@@ -67,3 +67,7 @@ Renderer runs in the browser (`08b8a17`): render.js bridge, sandbox swap, byte p
 ## 2026-08-24 — ZG-5 phase 1 of 2
 
 Paste panel with humane, positioned errors (JsonScan/Classify pure Elm calcs), render through the Wasm bridge, article-only swap. GAN: Reviewer BLESS → Tester REJECT → fix → BLESS ×3. Phase 2 (file/drop, storage, copy) in progress.
+
+## 2026-08-24 — Fonts policy locked
+
+Human decision (`docs/plans/fonts-decision.md`): Font Library (submit original fonts, inbound CC BY 4.0; OFL seeds keep OFL); first-party Themes origin-only; submitted Themes may `@font-face` any public HTTPS CDN font — no host allowlist, CSS only. ZG-13 amended (README AC + notes); Font Library submit product deferred to a later AVRIL PBI. CONTEXT.md + ROADMAP Phase 4 updated. ZG-5 phase 2 continues.

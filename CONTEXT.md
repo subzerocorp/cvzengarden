@@ -60,8 +60,12 @@ The Rust crate that turns a Resume into a Skeleton. Drop empty nodes. ATS-honest
 _Avoid_: Client-side HTML assembly as the source of truth, markdown-in-JSON in v1
 
 **Theme**:
-One pure `.css` file that targets the Class Contract. Unconstrained art. No Tailwind. No CSS-in-JS. No extra HTML, JS, or webfont loader. Ship one file.
+One pure `.css` file that targets the Class Contract. Unconstrained art. No Tailwind. No CSS-in-JS. No extra HTML, JS, or webfont loader. Ship one file. Faces come from the Font Library or from a public HTTPS CDN `@font-face` / CSS `@import`.
 _Avoid_: Template, skin that edits HTML, JSON Resume theme (those are HTML/Handlebars packages, not this)
+
+**Font Library**:
+Garden-hosted fonts Designers may submit. Inbound license is CC BY 4.0. First-party Themes, and Themes that use a Library face, load from our origin only. Seed families that arrived under SIL OFL keep SIL OFL and ship `OFL.txt`; we do not relicense them.
+_Avoid_: Calling a CDN the Library, relicensing OFL faces as CC BY 4.0, a JS webfont loader
 
 **Preview CSS**:
 A local readability aid in `skeleton/preview.css`. Not a Theme. Themes must not depend on it.
