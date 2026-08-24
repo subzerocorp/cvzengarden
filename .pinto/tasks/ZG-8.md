@@ -3,9 +3,9 @@ id = "ZG-8"
 title = "Copy a link to this exact view and say so when a theme in the URL does not exist"
 status = "todo"
 rank = "p"
-labels = ["avril", "round-1", "avril-blessed"]
+labels = ["avril", "round-1", "chrome", "avril-blessed"]
 created = "2026-08-23T23:55:14.295176Z"
-updated = "2026-08-24T01:13:07.434155Z"
+updated = "2026-08-24T01:13:24.349108Z"
 +++
 
 ## Why
