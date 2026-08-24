@@ -1,0 +1,71 @@
+# AVRIL round 1 — Generator revise pass (cycle 5, after QA Architect cycle 5)
+
+**Generator:** `planning-architect-agent` · **Date:** 2026-08-23 · **Board:** Pinto `ZG` (labels `avril`, `round-1`)
+**Inputs read in full:** `docs/plans/round-1-avril-qa-round5.md` (the three REJECT sections and the set-level notes), `docs/plans/round-1-avril-generator-round4.md`, `docs/plans/round-1-avril-intent.md`, `pinto show ZG-11 ZG-12 ZG-20 --plain` (rejected), `pinto show ZG-13 ZG-19 --plain` (QA-blessed, read for consistency only), plus `themes/quarto.css`, `themes/switchyard.css`, `themes/nightgarden.css`, `frontend/scripts/probes.mjs`, `frontend/package.json`, `justfile`.
+
+Only the three QA-cited REJECTs were applied, plus the non-blocking notes QA asked to fold in with the fix (ZG-11: fixture ranges are not a ceiling, oversize-atomic-block placement in `paginate`, `--hide-scrollbars` in `openResumePage`; ZG-12: computed-opacity as the primary oracle for `painted-with-support`, `pre-line` on the top-level page; ZG-20: `--static` flag on `probes.mjs` and its `just verify` wiring, `@page :first{}` and pseudo-element unit cases). ZG-13, ZG-17, ZG-19, ZG-21 (QA-blessed in cycle 5) and every other id are untouched. No dependency changed. Nothing is BLESSed by this document.
+
+## Facts verified before writing
+
+| Fact | How | Used by |
+| --- | --- | --- |
+| `.rz-bullets { list-style: none }` in all three sheets (quarto 143–148, switchyard 110–115, nightgarden 194–199); bar markers `content: ""` — switchyard 256–264 (print block), nightgarden 309–318 (top level); Quarto `::before { content: "– " }` (268–270) | `grep -n 'rz-bullets\|list-style\|::before'`, `sed` | ZG-11 `bullets-print` |
+| Quarto `.rz-section { break-inside: avoid-page; page-break-inside: avoid }` is top-level at 174–178; Quarto's print block (334–360) has no `.rz-section` break rule; Switchyard `.rz-section { break-inside: avoid }` (397) and `.rz-section--projects { break-before: page }` (402) are inside `@media print`; Nightgarden has no section-level avoid | `grep -n break-` | ZG-11 scope-in break line, `no-forced-break` |
+| `extractMediaBlocks` returns `@media` bodies only (QA fact; not re-derived) | QA round 5 | ZG-11 `no-forced-break` no longer uses it |
+| Nightgarden: `.rz-name { animation: rz-name-sheen 3.6s ease-in-out infinite alternate }` (173), `.rz-entry.rz-is-current { animation: rz-foxfire 2.8s ease-in-out infinite alternate }` (271), `.rz-section { animation: rz-rise 0.7s … both }` (225), `@supports (animation-timeline: view())` at 364, print/reduced-motion guard at 390; `html`/`body` background `#070b14` (100–116; `#0c1220` is `--rz-panel`) | `grep -n '@keyframes\|animation'`, `sed` | ZG-12 sheen/foxfire scope line, `painted-without-support`, `painted-with-support` |
+| `名前` is two code points, U+540D U+524D (`e5 90 8d e5 89 8d`) | `printf \| xxd` | ZG-20 `content` rule |
+| `probes.mjs`: `staticProbes()` then `startServer()` + `browserProbes()` in one process, `process.exit(1)` on failures, no flag parsing, `chromium.launch({ headless: true })` (Playwright default args, so `--hide-scrollbars`); `staticProbes()` reads `dist/sandbox.html` and `src/Generated/Themes.elm` | read 1–36, 174–215, 1091–1126 | ZG-20 `--static`, ZG-11 scrollbar note |
+| `npm test` = `npm run probe` = `npm run build && node scripts/probes.mjs`; `just test-frontend` = `PROBE_PORT=4310 npm test`; `just verify` = `fmt clippy test`; Node v20.18.0 (`node --test`, `\p{Script=…}` with `u`) | `package.json`, `justfile`, `node --version` | ZG-20 wiring line |
+| Body stored in Pinto contains the DoD block once (`--plain` prints it twice); `pinto edit -b` replaces the whole body | `pinto show --json`, `.pinto/tasks/ZG-20.md` | edit method (exact-match replacements over the JSON body, each asserted to occur once) |
+
+---
+
+## Per-item: QA blocker → exact change
+
+### ZG-11
+| QA blocker / note | Change |
+| --- | --- |
+| **Blocker 1 — `bullets-print` marker-exists clause fails by construction on the empty-content bar its ink clause admits** (`content` serialises to `""`, `list-style-type` is `none` in all three themes) | The marker-exists clause is restated as three alternatives: `content` is a quoted string other than `""` (a glyph; the CSSOM serialises with quotes, so Quarto's dash reads as `"– "`), **or** `content` is `""` (two quote characters — named as the CSSOM serialisation of an empty string, how every bar/dot reports) / `none` / `normal` **and** the `::before` box has `getBoundingClientRect()` `width` > 0 and `height` > 0, **or** the `li`'s computed `list-style-type` is not `none` — with the note that the third branch is never how a first-party theme passes (`.rz-bullets { list-style: none }` at quarto 148 / switchyard 115 / nightgarden 199). The ink clause is unchanged. The closing parenthetical says a Switchyard or Nightgarden bar satisfies the clause through its sized box, not through `content` |
+| **Blocker 2 — `no-forced-break` greps `extractMediaBlocks` output while Quarto's `.rz-section { break-inside: avoid-page }` is top-level (line 176)** | Replaced by the browser fact: on the top-level page in print emulation (`openResumePage` with `long-resume.html` at `printableWidthPx(theme)`), every `.rz-section` in all three themes computes `breakInside` `auto`, and under Switchyard `.rz-section--projects` computes `breakBefore` other than `page` (`page-break-before: always` is an alias and computes to `page`); the Switchyard static check scans the **whole** sheet (top level and every `@media` body — explicitly not `extractMediaBlocks`). Anti-vacuity: the same probe against the pre-change Quarto sheet (`git show <base>:themes/quarto.css` injected) FAILs on line 176's `avoid-page`, and that FAIL line is evidence. The scope-in break line now states where each theme's rule lives (Quarto top-level 174–178, Switchyard inside `@media print` 397/402, Nightgarden none), that the Quarto fix edits or overrides the top-level rule, and that no static "no theme has X in print" check in this PBI reads `extractMediaBlocks` output |
+| Non-blocking — fixture sizing marginal at 682 px | Fixture spec: the ranges are a guide, not a ceiling; if `fixture-trips-e1` does not hold under Quarto (4 × 6 × 25 words ≈ 900–1000 px at 11 pt, near 952) exceed the highlight ranges until it does; highlights are the free dimension because the cargo lock counts entries (4 / 3 / 2) and only a minimum of bullets |
+| Non-blocking — `paginate` and oversize atomic blocks | `paginate` spec: an atomic block taller than the printable height starts a new simulated page and is placed alone on it (the next block begins the following page), so the pre-change run — Quarto's top-level avoid makes `#rz-experience` one atomic block — yields one deterministic page-1 ratio |
+| Non-blocking — scrollbars | `openResumePage` uses the suite's existing `chromium.launch({ headless: true })` browser; Playwright's default headless args include `--hide-scrollbars` and the helper never passes `ignoreDefaultArgs` or a scrollbar-showing flag, so an `article-width` FAIL is read as a UA margin or print-block regression, never a 15 px classic bar |
+
+### ZG-12
+| QA blocker / note | Change |
+| --- | --- |
+| **Blocker — `painted-without-support` demands `document.getAnimations()` empty, but the infinite `.rz-name` sheen (173) and `.rz-is-current` foxfire (271) must stay** (locked decision 4, BAR-T1) | The assertion is scoped to the sections: `[...document.querySelectorAll('.rz-section')].flatMap(s => s.getAnimations())` is empty — equivalently `document.getAnimations().some(a => a.animationName === 'rz-rise')` is `false`; the sheen and foxfire keep running and are outside the assertion. The pre-change claim is kept and made precise: the stripped remainder still carries the top-level `.rz-section { animation: rz-rise … both }`, so the sections report the finished fill-`both` animation, the probe fails there, and that FAIL line is evidence. `reduced-motion` now uses the identical `.rz-section`-scoped expression (one oracle for both probes; the line-390 guard also stops the sheen and foxfire, but they are not asserted). A new scope-in line records the two animations verbatim (lines 173 / 271, top-level, infinite, always present on Jordan's sandbox) and the rule that every "nothing animates" oracle in this PBI is `.rz-section`-scoped, never document-scoped |
+| Non-blocking — `painted-with-support` screenshot may trigger the `view()` entry | AC states the computed-`opacity` check is the primary oracle and the pixel count is the paint confirmation: a `fullPage` capture may make Chromium treat below-fold sections as entered, which with fill `forwards` only moves them toward `opacity: 1`; Nightgarden's light text on its `#070b14` body background (corrected from QA's `#0c1220`, which is `--rz-panel`) differs by far more than 32 per channel even at partial opacity, so a transient partial-opacity frame is not a defect |
+| Non-blocking — `pre-line` page | `pre-line` runs on the top-level page via `openResumePage({ theme, width: 1280, height: 800 })` for each first-party theme |
+
+### ZG-20
+| QA blocker / note | Change |
+| --- | --- |
+| **Blocker — unit case `content:"名前"` → `content` contradicts the stated rule `\p{L}{3,}`** (two code points) | Option taken: the script-class clause (QA's third alternative), because a CJK résumé label is exactly what the rule exists to catch and lowering the threshold to `{2,}` would flag `"Jr"`/`"vs"`. The `content` error is now "a word-run: a run of 3+ Unicode letters (`\p{L}{3,}`), **or** a run of 2+ characters from `[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]{2,}`"; the scope states that `"名前"` is U+540D U+524D and fails by the script clause; both regexes carry the `u` flag and Node 20 supports `\p{Script=…}` natively (no dependency). Unit cases now agree with the rule: `content:"名前"` → `content` (annotated: the script clause, not `\p{L}{3,}`); `content:"氏"` → no error (a single CJK character is a glyph); `content:"Jr"` and `content:"vs"` → no error (two Latin letters are not a word-run). The Notes line now asks QA to confirm the rule including the CJK clause |
+| Non-blocking — meta-test cost and wiring (no static-only mode; `node --test` not in `just verify`) | Scope-in adds `probes.mjs --static` (owner: this PBI): stops after `staticProbes()` — no server, no Chromium, `PROBE_PORT` unused — same `PASS`/`FAIL` lines and `N probe(s) failed.` summary, exit 1 on any failure, 0 otherwise; unchanged without the flag; still needs a built `dist/`. Scope-in adds the wiring statement: `frontend/package.json` `test` becomes `npm run probe && node --test scripts/*.test.mjs` (the glob picks up ZG-10's `page-estimate.test.mjs` and ZG-19's `blank-theme.test.mjs` too), so the unit tests run **after** `npm run build` and inside `just test-frontend` → `just verify`; the meta-test spawns `probes.mjs --static` and needs no free port. The meta-test AC now runs `node scripts/probes.mjs --static` for both halves and requires exit 0 after removal. New AC: `--static` on a clean built tree exits 0, prints the three `PASS  ZG-20/lint` lines, prints no browser-suite line (no `PASS  S1`…`S5`/`U3` line, no `All RZ-3` summary), finishes in under 10 s, and the flag-less run still runs the browser suite. The `grep` AC additionally requires `node --test scripts` inside `package.json`'s `test` script |
+| Non-blocking — `@page :first{}` unit case | Added to the selector unit tests: `@page :first{}` → no error (an at-rule prelude — Quarto line 58 — not a pseudo-only selector) |
+| Non-blocking — pseudo-element unit cases | Added: `.rz-name::selection{}` → no error; `.rz-resume ::marker{}` → no error (pseudo-elements are allowed) |
+
+---
+
+## Set-level notes applied
+
+- **Static greps over `extractMediaBlocks` see only `@media` bodies.** ZG-11 no longer uses it for any "no theme has X in print" claim; `no-forced-break` reads computed `breakInside`/`breakBefore` in print emulation and scans the whole Switchyard sheet for the forced break.
+- **`document.getAnimations()` is never empty on Nightgarden.** Both ZG-12 "nothing animates" probes use one `.rz-section`-scoped expression.
+- **Computed `content` serialises with quotes.** ZG-11 `bullets-print` names `""` as the two-character serialisation and admits it together with a sized box.
+- **Rule and example must agree.** ZG-20's rule now has a clause under which `"名前"` fails, and the unit list carries the negatives (`"氏"`, `"Jr"`, `"vs"`) that keep the clause from over-reaching. Each unit example in the three bodies was run against its rule by hand before submitting.
+- **Full-suite meta-tests.** ZG-20 owns `probes.mjs --static` and uses it; the browser suite is never spawned by a unit test.
+
+## Dependency changes
+
+None. Edges remain ZG-12 → ZG-11 and ZG-20 → ZG-19; `pinto show --json` confirms `depends_on` unchanged on all three and `updated` unchanged on ZG-13 and ZG-19.
+
+## Changed ids
+
+Every PBI whose body changed in this pass (prior blessings invalidated; full PO → QA → CTO chain required):
+
+- **ZG-11** — body (`bullets-print` marker-exists clause admits a sized empty-content box and names the `""` serialisation; `no-forced-break` reads computed `breakInside`/`breakBefore` in print emulation with a whole-sheet Switchyard scan and a pre-change Quarto FAIL; scope-in states where each theme's section break rule lives; fixture ranges not a ceiling; oversize atomic block placed alone on a new page; `--hide-scrollbars` note on `openResumePage`)
+- **ZG-12** — body (`painted-without-support` and `reduced-motion` scoped to `.rz-section` animations with the sheen/foxfire recorded in scope; computed-opacity named the primary oracle for `painted-with-support` with the `#070b14` body background; `pre-line` on the top-level page)
+- **ZG-20** — body (`content` rule gains the 2+ CJK-script clause so `"名前"` fails by rule, with `"氏"`/`"Jr"`/`"vs"` negatives; `probes.mjs --static` owned here and used by the meta-test; `npm test` wiring of `node --test scripts/*.test.mjs` into `just verify`; `@page :first{}`, `::selection`, `::marker` unit cases; new `--static` AC; Notes line updated)
+
+Untouched: ZG-1 … ZG-10, ZG-13, ZG-14, ZG-15, ZG-16, ZG-17, ZG-18, ZG-19, ZG-21, ZG-22.
