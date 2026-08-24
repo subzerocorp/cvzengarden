@@ -20,8 +20,27 @@ Per AC; anti-stub (string-replace stub fails Ada/no-Jordan and `work: "nope"`); 
 Line/column for invalid JSON: Elm's decoder error lacks positions — needs a pure tokenizer calc (JS or Elm). Keep it small.
 
 ## Phases
-1. **Phase 1 of 2** — panel, classification, errors, render/swap, core probes.
-2. **Phase 2 of 2** — file/drop, storage, copy, remaining probes.
+1. **Phase 1 of 2** — panel, classification, errors, render/swap, core probes. **Done** (`32ef15b`, GAN BLESS ×3).
+2. **Phase 2 of 2** — file/drop, storage, remaining probes. In progress.
+
+## Phase 2 plan (2026-08-24)
+
+**Goal.** Open a file, drop a file, restore on reload, forget, no network, remaining copy.
+
+**Approach.**
+- `not-json-file` is a `Problem` with the filename. Classification stays content-first (JSON bytes win over extension).
+- File/drop reading is ports wiring (`FileReader`); **no new Elm/npm deps** (`elm/file` not installed, do not add).
+- Extend `Paste.Effect` with `Store String` and `Forget`. Store the raw accepted JSON string (`resumezen.resume`), never HTML. Restore sets `text` + accepted datum and `Render`s; Forget clears both and restores Jordan (crate sample already in the iframe — do not re-fetch).
+- Corrupt / unparseable / un-renderable stored value: drop the key, show Jordan, no banner, no console error / pageerror.
+- `Main.update` does not grow past `applyPaste` + mapping incoming file/restore ports onto `Paste.Msg`. Smell to reject: new product branches in `Main`.
+- Drop zone: `[data-drop-zone]`; file input: `accept=".json,application/json"`.
+- Copy AC remainder: accessible name contains `résumé`; chrome still has no `rz-` class/id. Hint sentence already landed in phase 1.
+
+**Files.** `frontend/src/Paste.elm`, `Paste/Classify.elm`, `Main.elm` (seam only), `frontend/static/ports.js`, `frontend/css/chrome.css`, `frontend/scripts/probes/zg-5.mjs` + `lib/paste.mjs` tests, `frontend/fixtures/not-a-resume.pdf`.
+
+**Probes (must PASS).** `open-pdf`, `open-json`, `file-classes`, `drop-json`, `drop-pdf`, `restore`, `corrupt-storage`, `no-network`; `copy` still green; all phase-1 `ZG-5/*` stay green.
+
+**Risk.** Playwright `setInputFiles` + synthetic `DataTransfer` drop; restore race with sandbox load.
 
 ## Unresolved questions
 - none
