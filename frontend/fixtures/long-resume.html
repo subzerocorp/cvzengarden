@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Marcus Okafor-Lindqvist — Principal Software Engineer</title>
+  </head>
+  <body>
+    <article class="rz-resume" data-rz-schema="1.0" itemscope itemtype="https://schema.org/Person">
+      <header class="rz-header">
+        <div class="rz-identity">
+          <h1 class="rz-name" itemprop="name">Marcus Okafor-Lindqvist</h1>
+          <p class="rz-title" itemprop="jobTitle">Principal Software Engineer</p>
+        </div>
+        <address class="rz-contacts">
+          <ul class="rz-contact-list">
+            <li class="rz-contact rz-contact--email" data-rz-type="email">
+              <span class="rz-contact-label">Email</span>
+              <a class="rz-contact-value" itemprop="email" href="mailto:marcus@okafor-lindqvist.example">marcus@okafor-lindqvist.example</a>
+            </li>
+            <li class="rz-contact rz-contact--phone" data-rz-type="phone">
+              <span class="rz-contact-label">Phone</span>
+              <a class="rz-contact-value" href="tel:+13125550188">+1 312 555 0188</a>
+            </li>
+            <li class="rz-contact rz-contact--url" data-rz-type="url">
+              <span class="rz-contact-label">Website</span>
+              <a class="rz-contact-value" itemprop="url" href="https://okafor-lindqvist.example">okafor-lindqvist.example</a>
+            </li>
+            <li class="rz-contact rz-contact--location" data-rz-type="location">
+              <span class="rz-contact-label">Location</span>
+              <span class="rz-contact-value" itemprop="address">Chicago, IL</span>
+            </li>
+          </ul>
+        </address>
+        <nav class="rz-links" aria-label="Profiles">
+          <ul class="rz-link-list">
+            <li class="rz-link rz-link--github" data-rz-type="github">
+              <span class="rz-link-label">GitHub</span>
+              <a class="rz-link-value" href="https://github.com/mokafor">mokafor</a>
+            </li>
+            <li class="rz-link rz-link--linkedin" data-rz-type="linkedin">
+              <span class="rz-link-label">LinkedIn</span>
+              <a class="rz-link-value" href="https://www.linkedin.com/in/marcus-okafor-lindqvist">marcus-okafor-lindqvist</a>
+            </li>
+            <li class="rz-link rz-link--mastodon" data-rz-type="mastodon">
+              <span class="rz-link-label">Mastodon</span>
+              <a class="rz-link-value" href="https://hachyderm.io/@mokafor">@mokafor@hachyderm.io</a>
+            </li>
+          </ul>
+        </nav>
+      </header>
+      <section class="rz-section rz-section--summary" id="rz-summary" data-rz-section="summary">
+        <h2 class="rz-section-title">Summary</h2>
+        <div class="rz-prose rz-summary">
+          <p>Principal engineer with fourteen years across payments, logistics, and developer platforms. I lead teams that ship boring, durable systems: event-sourced ledgers that reconcile to the cent, schedulers that survive a region outage, and build pipelines that stay green for years. I write the design docs first, argue for the smallest viable architecture, and stay close enough to the code to review every migration.</p>
+          <p>I care most about the people who inherit what we build. That means readable service boundaries, on-call rotations that let engineers sleep, and interfaces documented well enough that a new hire can ship a change in their first week. Outside of work I mentor early-career engineers through a Chicago nonprofit and maintain two small open-source libraries.</p>
+        </div>
+      </section>
+      <section class="rz-section rz-section--experience" id="rz-experience" data-rz-section="experience">
+        <h2 class="rz-section-title">Experience</h2>
+        <ol class="rz-entries">
+          <li class="rz-entry rz-entry--experience rz-is-current" data-rz-entry="northwind-payments-2021" data-rz-current="true">
+            <div class="rz-entry-header">
+              <h3 class="rz-entry-primary">
+                <a class="rz-entry-primary-link" href="https://northwind.example">Northwind Payments</a>
+              </h3>
+              <p class="rz-entry-secondary">Principal Software Engineer</p>
+              <p class="rz-dates">
+                <time class="rz-date rz-date--start" datetime="2021-04">April 2021</time>
+                <span class="rz-date-sep" aria-hidden="true">–</span>
+                <span class="rz-date rz-date--end rz-date--present">Present</span>
+              </p>
+              <p class="rz-location">Chicago, IL</p>
+            </div>
+            <div class="rz-prose">
+              <p>Technical lead for the ledger and settlement platform that clears payouts for eleven thousand marketplace sellers in nine currencies.</p>
+            </div>
+            <ul class="rz-bullets">
+              <li class="rz-bullet">Designed and led the migration of the settlement ledger from nightly batch jobs to an event-sourced Rust service, cutting payout latency from eighteen hours to under four minutes.</li>
+              <li class="rz-bullet">Introduced a reconciliation harness that replays every production day against the ledger in CI, catching four rounding defects before they reached a single seller statement.</li>
+              <li class="rz-bullet">Grew the platform group from three engineers to eleven across two time zones, writing the hiring rubric, the onboarding curriculum, and the promotion cases for four staff engineers.</li>
+              <li class="rz-bullet">Negotiated the retirement of two legacy PHP services with finance and compliance, sequencing seventeen schema migrations so no reporting deadline slipped during the eight-month cutover.</li>
+              <li class="rz-bullet">Cut the fleet's cloud spend by thirty-one percent by moving idempotent settlement workers to spot capacity behind a checkpointing queue that tolerates preemption without duplicate payouts.</li>
+              <li class="rz-bullet">Wrote the incident-review template now used company-wide and ran forty-two blameless reviews, turning the top five recurring pages into permanent fixes within two quarters.</li>
+            </ul>
+          </li>
+          <li class="rz-entry rz-entry--experience" data-rz-entry="fernwood-logistics-2017">
+            <div class="rz-entry-header">
+              <h3 class="rz-entry-primary">
+                <a class="rz-entry-primary-link" href="https://fernwood.example">Fernwood Logistics</a>
+              </h3>
+              <p class="rz-entry-secondary">Staff Software Engineer</p>
+              <p class="rz-dates">
+                <time class="rz-date rz-date--start" datetime="2017-02">February 2017</time>
+                <span class="rz-date-sep" aria-hidden="true">–</span>
+                <time class="rz-date rz-date--end" datetime="2021-03">March 2021</time>
+              </p>
+              <p class="rz-location">Minneapolis, MN</p>
+            </div>
+            <div class="rz-prose">
+              <p>Owned the dispatch scheduler and the driver-facing APIs for a fleet of six thousand trucks across the upper Midwest.</p>
+            </div>
+            <ul class="rz-bullets">
+              <li class="rz-bullet">Rebuilt the dispatch scheduler as a constraint solver with explicit cost functions, raising on-time delivery from eighty-six to ninety-five percent without adding trucks or drivers.</li>
+              <li class="rz-bullet">Led the move from a single Postgres primary to region-sharded clusters with logical replication, giving the company its first survivable failover across a full data-center outage.</li>
+              <li class="rz-bullet">Designed the public partner API and its versioning policy; three national shippers integrated within a quarter and none needed a breaking change in four years.</li>
+              <li class="rz-bullet">Introduced property-based testing for routing invariants, which found a timezone bug that had silently misrouted overnight freight on daylight-saving weekends for years.</li>
+              <li class="rz-bullet">Mentored six engineers into senior roles by pairing weekly on design reviews, and started the internal architecture guild that still meets every other Thursday.</li>
+              <li class="rz-bullet">Delivered the driver mobile sync protocol that tolerated rural dead zones, replacing a polling design that had drained batteries and doubled support tickets during winter storms.</li>
+            </ul>
+          </li>
+          <li class="rz-entry rz-entry--experience" data-rz-entry="helix-cloud-2013">
+            <div class="rz-entry-header">
+              <h3 class="rz-entry-primary">
+                <a class="rz-entry-primary-link" href="https://helix.example">Helix Cloud</a>
+              </h3>
+              <p class="rz-entry-secondary">Senior Software Engineer</p>
+              <p class="rz-dates">
+                <time class="rz-date rz-date--start" datetime="2013-09">September 2013</time>
+                <span class="rz-date-sep" aria-hidden="true">–</span>
+                <time class="rz-date rz-date--end" datetime="2017-01">January 2017</time>
+              </p>
+              <p class="rz-location">Remote</p>
+            </div>
+            <div class="rz-prose">
+              <p>Built the build and deploy pipeline product used by roughly nine hundred customer teams.</p>
+            </div>
+            <ul class="rz-bullets">
+              <li class="rz-bullet">Shipped a content-addressed build cache that cut median customer build times by sixty percent and saved the company eleven thousand dollars a month in compute.</li>
+              <li class="rz-bullet">Designed the deploy rollback path so any release could be reversed in under thirty seconds, then proved it with a monthly game-day exercise run against production.</li>
+              <li class="rz-bullet">Owned the Go client library and its release train, publishing forty-one versions with a written compatibility guarantee that customers cited in their own procurement reviews.</li>
+              <li class="rz-bullet">Replaced a hand-rolled job scheduler with a leased-work queue backed by etcd, eliminating the duplicate-deploy class of incidents that had paged the team weekly.</li>
+              <li class="rz-bullet">Led the security review that removed long-lived credentials from every build agent, moving the fleet to short-lived tokens issued by a hardened identity broker.</li>
+            </ul>
+          </li>
+          <li class="rz-entry rz-entry--experience" data-rz-entry="bramble-interactive-2010">
+            <div class="rz-entry-header">
+              <h3 class="rz-entry-primary">
+                <a class="rz-entry-primary-link" href="https://bramble.example">Bramble Interactive</a>
+              </h3>
+              <p class="rz-entry-secondary">Software Engineer</p>
+              <p class="rz-dates">
+                <time class="rz-date rz-date--start" datetime="2010-06">June 2010</time>
+                <span class="rz-date-sep" aria-hidden="true">–</span>
+                <time class="rz-date rz-date--end" datetime="2013-08">August 2013</time>
+              </p>
+              <p class="rz-location">Madison, WI</p>
+            </div>
+            <ul class="rz-bullets">
+              <li class="rz-bullet">Built the browser-based multiplayer engine in plain JavaScript and WebSockets, which supported two thousand concurrent library patrons on a single modest server.</li>
+              <li class="rz-bullet">Wrote the accessibility layer that let every game be played entirely from the keyboard and with a screen reader, a requirement for the state library contract.</li>
+              <li class="rz-bullet">Cut the asset pipeline from a forty-minute manual process to a three-minute scripted build that artists could run themselves without engineering help.</li>
+              <li class="rz-bullet">Maintained the Linux fleet for forty branch libraries, writing the remote update tooling that pushed releases overnight without a technician visiting any site.</li>
+              <li class="rz-bullet">Presented the engine's networking design at a regional developer meetup, which led to the company's first two enterprise licensing deals.</li>
+            </ul>
+          </li>
+        </ol>
+      </section>
+      <section class="rz-section rz-section--extra rz-section--volunteer" id="rz-volunteer" data-rz-section="volunteer" data-rz-kind="entries">
+        <h2 class="rz-section-title">Volunteer</h2>
+        <ol class="rz-entries">
+          <li class="rz-entry rz-entry--extra rz-is-current" data-rz-entry="chicago-code-collective-2019" data-rz-current="true">
+            <div class="rz-entry-header">
+              <h3 class="rz-entry-primary">
+                <a class="rz-entry-primary-link" href="https://chicagocodecollective.example">Chicago Code Collective</a>
+              </h3>
+              <p class="rz-entry-secondary">Mentor and curriculum lead</p>
+              <p class="rz-dates">
+                <time class="rz-date rz-date--start" datetime="2019-01">January 2019</time>
+                <span class="rz-date-sep" aria-hidden="true">–</span>
+                <span class="rz-date rz-date--end rz-date--present">Present</span>
+              </p>
+            </div>
+            <div class="rz-prose">
+              <p>Twelve-week evening program that prepares career changers for their first engineering role.</p>
+            </div>
+            <ul class="rz-bullets">
+              <li class="rz-bullet">Wrote the systems-design track and coached thirty-eight graduates, twenty-nine of whom were hired within six months of finishing.</li>
+              <li class="rz-bullet">Organised the mock-interview panel with volunteer engineers from nine local companies.</li>
+            </ul>
+          </li>
+          <li class="rz-entry rz-entry--extra" data-rz-entry="open-ledger-foundation-2016">
+            <div class="rz-entry-header">
+              <h3 class="rz-entry-primary">
+                <a class="rz-entry-primary-link" href="https://openledger.example">Open Ledger Foundation</a>
+              </h3>
+              <p class="rz-entry-secondary">Maintainer</p>
+              <p class="rz-dates">
+                <time class="rz-date rz-date--start" datetime="2016-05">May 2016</time>
+                <span class="rz-date-sep" aria-hidden="true">–</span>
+                <time class="rz-date rz-date--end" datetime="2020-12">December 2020</time>
+              </p>
+            </div>
+            <div class="rz-prose">
+              <p>Community-run double-entry accounting library used by small nonprofits.</p>
+            </div>
+            <ul class="rz-bullets">
+              <li class="rz-bullet">Reviewed and merged four hundred pull requests while keeping the public API stable across three major releases.</li>
+              <li class="rz-bullet">Ran the quarterly contributor call and wrote the governance document adopted by the project's steering group.</li>
+            </ul>
+          </li>
+        </ol>
+      </section>
+      <section class="rz-section rz-section--education" id="rz-education" data-rz-section="education">
+        <h2 class="rz-section-title">Education</h2>
+        <ol class="rz-entries">
+          <li class="rz-entry rz-entry--education" data-rz-entry="university-of-illinois-urbana-champaign-2008">
+            <div class="rz-entry-header">
+              <h3 class="rz-entry-primary">
+                <a class="rz-entry-primary-link" href="https://illinois.edu">University of Illinois Urbana-Champaign</a>
+              </h3>
+              <p class="rz-entry-secondary">M.S. in Computer Science</p>
+              <p class="rz-dates">
+                <time class="rz-date rz-date--start" datetime="2008-08">August 2008</time>
+                <span class="rz-date-sep" aria-hidden="true">–</span>
+                <time class="rz-date rz-date--end" datetime="2010-05">May 2010</time>
+              </p>
+              <p class="rz-score">3.9 GPA</p>
+            </div>
+            <ul class="rz-tags">
+              <li class="rz-tag">Distributed Systems</li>
+              <li class="rz-tag">Database Implementation</li>
+              <li class="rz-tag">Compiler Construction</li>
+              <li class="rz-tag">Thesis: Deterministic replay for message-passing services</li>
+            </ul>
+          </li>
+          <li class="rz-entry rz-entry--education" data-rz-entry="uppsala-university-2004">
+            <div class="rz-entry-header">
+              <h3 class="rz-entry-primary">
+                <a class="rz-entry-primary-link" href="https://www.uu.se">Uppsala University</a>
+              </h3>
+              <p class="rz-entry-secondary">B.Sc. in Computer Engineering</p>
+              <p class="rz-dates">
+                <time class="rz-date rz-date--start" datetime="2004-09">September 2004</time>
+                <span class="rz-date-sep" aria-hidden="true">–</span>
+                <time class="rz-date rz-date--end" datetime="2008-06">June 2008</time>
+              </p>
+            </div>
+            <ul class="rz-tags">
+              <li class="rz-tag">Operating Systems</li>
+              <li class="rz-tag">Real-time Systems</li>
+              <li class="rz-tag">Discrete Mathematics</li>
+            </ul>
+          </li>
+        </ol>
+      </section>
+      <section class="rz-section rz-section--extra rz-section--awards" id="rz-awards" data-rz-section="awards" data-rz-kind="entries">
+        <h2 class="rz-section-title">Awards</h2>
+        <ol class="rz-entries">
+          <li class="rz-entry rz-entry--extra" data-rz-entry="engineering-excellence-award-2023">
+            <div class="rz-entry-header">
+              <h3 class="rz-entry-primary">Engineering Excellence Award</h3>
+              <p class="rz-entry-secondary">Northwind Payments</p>
+              <p class="rz-dates">
+                <time class="rz-date" datetime="2023-11">November 2023</time>
+              </p>
+            </div>
+            <div class="rz-prose">
+              <p>For the settlement ledger migration and the reconciliation harness.</p>
+            </div>
+          </li>
+          <li class="rz-entry rz-entry--extra" data-rz-entry="best-paper-midwest-systems-workshop-2010">
+            <div class="rz-entry-header">
+              <h3 class="rz-entry-primary">Best Paper, Midwest Systems Workshop</h3>
+              <p class="rz-entry-secondary">Midwest Systems Workshop</p>
+              <p class="rz-dates">
+                <time class="rz-date" datetime="2010-04">April 2010</time>
+              </p>
+            </div>
+            <div class="rz-prose">
+              <p>Deterministic replay for message-passing services.</p>
+            </div>
+          </li>
+        </ol>
+      </section>
+      <section class="rz-section rz-section--extra rz-section--certificates" id="rz-certificates" data-rz-section="certificates" data-rz-kind="entries">
+        <h2 class="rz-section-title">Certificates</h2>
+        <ol class="rz-entries">
+          <li class="rz-entry rz-entry--extra" data-rz-entry="aws-certified-solutions-architect-professional-2022">
+            <div class="rz-entry-header">
+              <h3 class="rz-entry-primary">
+                <a class="rz-entry-primary-link" href="https://aws.amazon.com/certification/">AWS Certified Solutions Architect – Professional</a>
+              </h3>
+              <p class="rz-entry-secondary">Amazon Web Services</p>
+              <p class="rz-dates">
+                <time class="rz-date" datetime="2022-06">June 2022</time>
+              </p>
+            </div>
+          </li>
+          <li class="rz-entry rz-entry--extra" data-rz-entry="certified-kubernetes-administrator-2019">
+            <div class="rz-entry-header">
+              <h3 class="rz-entry-primary">
+                <a class="rz-entry-primary-link" href="https://www.cncf.io/certification/cka/">Certified Kubernetes Administrator</a>
+              </h3>
+              <p class="rz-entry-secondary">Cloud Native Computing Foundation</p>
+              <p class="rz-dates">
+                <time class="rz-date" datetime="2019-03">March 2019</time>
+              </p>
+            </div>
+          </li>
+        </ol>
+      </section>
+      <section class="rz-section rz-section--extra rz-section--publications" id="rz-publications" data-rz-section="publications" data-rz-kind="entries">
+        <h2 class="rz-section-title">Publications</h2>
+        <ol class="rz-entries">
+          <li class="rz-entry rz-entry--extra" data-rz-entry="replaying-a-year-of-payouts-in-an-afternoon-2023">
+            <div class="rz-entry-header">
+              <h3 class="rz-entry-primary">
+                <a class="rz-entry-primary-link" href="https://northwind.example/blog/replay">Replaying a year of payouts in an afternoon</a>
+              </h3>
+              <p class="rz-entry-secondary">Northwind Engineering Blog</p>
+              <p class="rz-dates">
+                <time class="rz-date" datetime="2023-02">February 2023</time>
+              </p>
+            </div>
+            <div class="rz-prose">
+              <p>How a reconciliation harness turned production history into a regression suite for a financial ledger.</p>
+            </div>
+          </li>
+        </ol>
+      </section>
+      <section class="rz-section rz-section--skills" id="rz-skills" data-rz-section="skills">
+        <h2 class="rz-section-title">Skills</h2>
+        <ul class="rz-skill-groups">
+          <li class="rz-skill-group" data-rz-skill-group="languages">
+            <h3 class="rz-skill-group-name">Languages</h3>
+            <p class="rz-skill-level">Expert</p>
+            <ul class="rz-skill-list">
+              <li class="rz-skill">Rust</li>
+              <li class="rz-skill">Go</li>
+              <li class="rz-skill">TypeScript</li>
+              <li class="rz-skill">SQL</li>
+              <li class="rz-skill">Python</li>
+            </ul>
+          </li>
+          <li class="rz-skill-group" data-rz-skill-group="distributed-systems">
+            <h3 class="rz-skill-group-name">Distributed systems</h3>
+            <p class="rz-skill-level">Expert</p>
+            <ul class="rz-skill-list">
+              <li class="rz-skill">Event sourcing</li>
+              <li class="rz-skill">Consensus</li>
+              <li class="rz-skill">Idempotency</li>
+              <li class="rz-skill">Sharding</li>
+              <li class="rz-skill">Backpressure</li>
+            </ul>
+          </li>
+          <li class="rz-skill-group" data-rz-skill-group="data-stores">
+            <h3 class="rz-skill-group-name">Data stores</h3>
+            <p class="rz-skill-level">Advanced</p>
+            <ul class="rz-skill-list">
+              <li class="rz-skill">PostgreSQL</li>
+              <li class="rz-skill">etcd</li>
+              <li class="rz-skill">Kafka</li>
+              <li class="rz-skill">SQLite</li>
+              <li class="rz-skill">Redis</li>
+            </ul>
+          </li>
+          <li class="rz-skill-group" data-rz-skill-group="infrastructure">
+            <h3 class="rz-skill-group-name">Infrastructure</h3>
+            <p class="rz-skill-level">Advanced</p>
+            <ul class="rz-skill-list">
+              <li class="rz-skill">Kubernetes</li>
+              <li class="rz-skill">Terraform</li>
+              <li class="rz-skill">AWS</li>
+              <li class="rz-skill">Spot fleets</li>
+              <li class="rz-skill">Observability</li>
+            </ul>
+          </li>
+          <li class="rz-skill-group" data-rz-skill-group="practices">
+            <h3 class="rz-skill-group-name">Practices</h3>
+            <p class="rz-skill-level">Advanced</p>
+            <ul class="rz-skill-list">
+              <li class="rz-skill">Design reviews</li>
+              <li class="rz-skill">Property-based testing</li>
+              <li class="rz-skill">Incident review</li>
+              <li class="rz-skill">Game days</li>
+            </ul>
+          </li>
+          <li class="rz-skill-group" data-rz-skill-group="leadership">
+            <h3 class="rz-skill-group-name">Leadership</h3>
+            <ul class="rz-skill-list">
+              <li class="rz-skill">Hiring</li>
+              <li class="rz-skill">Mentoring</li>
+              <li class="rz-skill">Roadmapping</li>
+              <li class="rz-skill">Cross-team negotiation</li>
+            </ul>
+          </li>
+        </ul>
+      </section>
+      <section class="rz-section rz-section--extra rz-section--languages" id="rz-languages" data-rz-section="languages" data-rz-kind="list">
+        <h2 class="rz-section-title">Languages</h2>
+        <ul class="rz-meta-list">
+          <li class="rz-meta">
+            <span class="rz-meta-label">English</span>
+            <span class="rz-meta-detail">Native speaker</span>
+          </li>
+          <li class="rz-meta">
+            <span class="rz-meta-label">Swedish</span>
+            <span class="rz-meta-detail">Native speaker</span>
+          </li>
+          <li class="rz-meta">
+            <span class="rz-meta-label">Igbo</span>
+            <span class="rz-meta-detail">Conversational</span>
+          </li>
+        </ul>
+      </section>
+      <section class="rz-section rz-section--extra rz-section--interests" id="rz-interests" data-rz-section="interests" data-rz-kind="tags">
+        <h2 class="rz-section-title">Interests</h2>
+        <ul class="rz-tags">
+          <li class="rz-tag">Cross-country skiing</li>
+          <li class="rz-tag">Sourdough</li>
+          <li class="rz-tag">Amateur radio</li>
+        </ul>
+      </section>
+      <section class="rz-section rz-section--extra rz-section--references" id="rz-references" data-rz-section="references" data-rz-kind="entries">
+        <h2 class="rz-section-title">References</h2>
+        <ol class="rz-entries">
+          <li class="rz-entry rz-entry--extra" data-rz-entry="dana-whitfield-vp-engineering-northwind-payments">
+            <div class="rz-entry-header">
+              <h3 class="rz-entry-primary">Dana Whitfield, VP Engineering, Northwind Payments</h3>
+            </div>
+            <div class="rz-prose">
+              <p>Marcus is the engineer you want holding the ledger. He makes hard migrations look calm and leaves every team he touches stronger.</p>
+            </div>
+          </li>
+        </ol>
+      </section>
+      <section class="rz-section rz-section--projects" id="rz-projects" data-rz-section="projects">
+        <h2 class="rz-section-title">Projects</h2>
+        <ol class="rz-entries">
+          <li class="rz-entry rz-entry--project rz-is-current" data-rz-entry="ledgerkit-2018" data-rz-current="true">
+            <div class="rz-entry-header">
+              <h3 class="rz-entry-primary">
+                <a class="rz-entry-primary-link" href="https://github.com/mokafor/ledgerkit">ledgerkit</a>
+              </h3>
+              <p class="rz-entry-secondary">A small Rust library for append-only double-entry ledgers with deterministic replay.</p>
+              <p class="rz-dates">
+                <time class="rz-date rz-date--start" datetime="2018-01">January 2018</time>
+                <span class="rz-date-sep" aria-hidden="true">–</span>
+                <span class="rz-date rz-date--end rz-date--present">Present</span>
+              </p>
+            </div>
+            <ul class="rz-meta-list">
+              <li class="rz-meta">
+                <span class="rz-meta-label">Roles</span>
+                <span class="rz-meta-detail">Author, Maintainer</span>
+              </li>
+              <li class="rz-meta">
+                <span class="rz-meta-label">Type</span>
+                <span class="rz-meta-detail">library</span>
+              </li>
+            </ul>
+            <ul class="rz-tags">
+              <li class="rz-tag">Rust</li>
+              <li class="rz-tag">Accounting</li>
+              <li class="rz-tag">Event sourcing</li>
+            </ul>
+            <ul class="rz-bullets">
+              <li class="rz-bullet">Two thousand GitHub stars and adoption by three fintech startups as their accounting core.</li>
+              <li class="rz-bullet">Fuzzed every posting rule with property-based tests so no sequence of entries can leave the books unbalanced.</li>
+              <li class="rz-bullet">Documented with runnable examples for every public function and a migration guide between major versions.</li>
+            </ul>
+          </li>
+          <li class="rz-entry rz-entry--project" data-rz-entry="quietpager-2020">
+            <div class="rz-entry-header">
+              <h3 class="rz-entry-primary">
+                <a class="rz-entry-primary-link" href="https://github.com/mokafor/quietpager">quietpager</a>
+              </h3>
+              <p class="rz-entry-secondary">On-call schedule and alert-routing tool that groups pages by root cause before waking anyone.</p>
+              <p class="rz-dates">
+                <time class="rz-date rz-date--start" datetime="2020-03">March 2020</time>
+                <span class="rz-date-sep" aria-hidden="true">–</span>
+                <time class="rz-date rz-date--end" datetime="2022-09">September 2022</time>
+              </p>
+            </div>
+            <ul class="rz-meta-list">
+              <li class="rz-meta">
+                <span class="rz-meta-label">Roles</span>
+                <span class="rz-meta-detail">Author</span>
+              </li>
+              <li class="rz-meta">
+                <span class="rz-meta-label">Type</span>
+                <span class="rz-meta-detail">application</span>
+              </li>
+            </ul>
+            <ul class="rz-tags">
+              <li class="rz-tag">Go</li>
+              <li class="rz-tag">Operations</li>
+              <li class="rz-tag">SQLite</li>
+            </ul>
+            <ul class="rz-bullets">
+              <li class="rz-bullet">Reduced overnight pages for the pilot team from nineteen a week to four by deduplicating cascades.</li>
+              <li class="rz-bullet">Ships as a single static binary with an embedded SQLite store and no external dependencies.</li>
+              <li class="rz-bullet">Used by four companies and one university research group after a conference talk.</li>
+            </ul>
+          </li>
+          <li class="rz-entry rz-entry--project" data-rz-entry="dispatch-replay-2019">
+            <div class="rz-entry-header">
+              <h3 class="rz-entry-primary">
+                <a class="rz-entry-primary-link" href="https://github.com/mokafor/dispatch-replay">Dispatch Replay</a>
+              </h3>
+              <p class="rz-entry-secondary">Deterministic replay harness for the Fernwood scheduler, later open-sourced as a teaching tool.</p>
+              <p class="rz-dates">
+                <time class="rz-date rz-date--start" datetime="2019-06">June 2019</time>
+                <span class="rz-date-sep" aria-hidden="true">–</span>
+                <time class="rz-date rz-date--end" datetime="2020-11">November 2020</time>
+              </p>
+            </div>
+            <ul class="rz-meta-list">
+              <li class="rz-meta">
+                <span class="rz-meta-label">Roles</span>
+                <span class="rz-meta-detail">Author, Instructor</span>
+              </li>
+              <li class="rz-meta">
+                <span class="rz-meta-label">Type</span>
+                <span class="rz-meta-detail">application</span>
+              </li>
+            </ul>
+            <ul class="rz-tags">
+              <li class="rz-tag">Go</li>
+              <li class="rz-tag">Testing</li>
+              <li class="rz-tag">Scheduling</li>
+            </ul>
+            <ul class="rz-bullets">
+              <li class="rz-bullet">Records every scheduler input and replays a full day of dispatch decisions in under a minute.</li>
+              <li class="rz-bullet">Found the daylight-saving misrouting bug that had gone unnoticed for three winters.</li>
+              <li class="rz-bullet">Used in the Chicago Code Collective systems track as the capstone debugging exercise.</li>
+            </ul>
+          </li>
+        </ol>
+      </section>
+    </article>
+  </body>
+</html>

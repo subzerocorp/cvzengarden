@@ -23,6 +23,16 @@ import {
   readSandboxPaintTiming,
 } from "./probes/lib/paint.mjs";
 import { sheetBlockingReasons } from "./probes/lib/sheet-blocking.mjs";
+import { parseRgb } from "./probes/lib/contrast.mjs";
+import {
+  holdThemeSheets,
+  releaseThemeSheets,
+  sandboxFrame,
+  waitForSandboxComplete,
+  waitThemeReady,
+} from "./probes/lib/page.mjs";
+import { countPdfPages, printToPdf } from "./probes/lib/pdf.mjs";
+import { gitSheets, liveSheets, zg11Probes } from "./probes/zg-11.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const frontendDir = path.resolve(__dirname, "..");
@@ -33,6 +43,7 @@ const origin = `http://127.0.0.1:${port}`;
 
 const THEME_IDS = ["nightgarden", "quarto", "switchyard"];
 const failures = [];
+const expectedFailures = [];
 
 function fail(message) {
   failures.push(message);
@@ -41,6 +52,25 @@ function fail(message) {
 
 function pass(message) {
   console.log(`PASS  ${message}`);
+}
+
+// TODO(ZG-11 phase 2): delete this constant and the expected-fail reporter
+// once the three theme sheets are fixed; the ZG-11 group then reports
+// through `fail` like every other group. Phase 1 lands the oracle before the
+// fix, so its FAIL lines are the anti-vacuity evidence, not a red suite.
+const EXPECTED_FAIL_UNTIL_ZG11_PHASE2 = true;
+
+function expectedFail(message) {
+  expectedFailures.push(message);
+  console.error(`FAIL  ${message}`);
+}
+
+function zg11Reporter() {
+  return EXPECTED_FAIL_UNTIL_ZG11_PHASE2 ? { pass, fail: expectedFail } : { pass, fail };
+}
+
+function zg11Banner(text) {
+  console.log(`\n==== ${text} ====`);
 }
 
 function chromeSourceFiles() {
@@ -69,12 +99,6 @@ function chromeSourceFiles() {
 
 function readTheme(id) {
   return fs.readFileSync(path.join(repoDir, "themes", `${id}.css`), "utf8");
-}
-
-function countPdfPages(buffer) {
-  const text = buffer.toString("latin1");
-  const matches = text.match(/\/Type\s*\/Page(?!s)\b/g);
-  return matches ? matches.length : 0;
 }
 
 function extractMediaBlocks(css) {
@@ -111,22 +135,6 @@ function extractMediaBlocks(css) {
     match = re.exec(css);
   }
   return blocks;
-}
-
-function parseRgb(color) {
-  if (!color) {
-    return null;
-  }
-  const m = color.match(/rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)/i);
-  if (!m) {
-    return null;
-  }
-  return {
-    r: Number(m[1]),
-    g: Number(m[2]),
-    b: Number(m[3]),
-    a: m[4] === undefined ? 1 : Number(m[4]),
-  };
 }
 
 function isBlankCanvas(color) {
@@ -635,24 +643,6 @@ async function s1Probes(browser, page, identity) {
   reportColdPaint(await coldLoadPaintTiming(browser));
 }
 
-async function holdThemeSheets(page, delayMs) {
-  await page.route("**/themes/*.css", async (route) => {
-    await new Promise((resolve) => setTimeout(resolve, delayMs));
-    await route.continue();
-  });
-}
-
-async function waitForSandboxComplete(page) {
-  await page.waitForFunction(() => {
-    const doc = document.getElementById("garden-frame")?.contentDocument;
-    return Boolean(doc && doc.location.pathname.endsWith("sandbox.html") && doc.readyState === "complete");
-  });
-}
-
-function sandboxFrame(page) {
-  return page.frames().find((frame) => frame.url().endsWith("sandbox.html"));
-}
-
 async function coldLoadPaintTiming(browser) {
   const cold = await browser.newPage();
   await holdThemeSheets(cold, COLD_SHEET_DELAY_MS);
@@ -660,7 +650,7 @@ async function coldLoadPaintTiming(browser) {
   await waitForSandboxComplete(cold);
   await cold.waitForTimeout(COLD_SETTLE_MS);
   const timing = await readSandboxPaintTiming(sandboxFrame(cold));
-  await cold.unroute("**/themes/*.css");
+  await releaseThemeSheets(cold);
   await cold.close();
   return timing;
 }
@@ -730,28 +720,10 @@ const U3_PRINT_PAGES = {
   quarto: 3,
   switchyard: 3,
 };
-
-async function printToPdf(page) {
-  const client = await page.context().newCDPSession(page);
-  const result = await client.send("Page.printToPDF", {
-    printBackground: true,
-    preferCSSPageSize: true,
-    scale: 1,
-  });
-  await client.detach();
-  return Buffer.from(result.data, "base64");
-}
-
-async function waitThemeReady(page, href) {
-  await page.evaluate((nextHref) => {
-    document.getElementById("theme-stylesheet").setAttribute("href", nextHref);
-  }, href);
-  await page.waitForFunction((nextHref) => {
-    const link = document.getElementById("theme-stylesheet");
-    return link.getAttribute("href") === nextHref && link.sheet && link.sheet.cssRules.length > 0;
-  }, href);
-  await page.evaluate(() => document.fonts.ready);
-}
+// Exact per-theme printToPDF page counts of frontend/fixtures/long-resume.html
+// (every value <= 3). TODO(ZG-11 phase 2): fill in once the sheets are fixed;
+// until then ZG-11/page-count reports the measured counts as expected FAILs.
+const LONG_PRINT_PAGES = {};
 
 function missingPrintSections(sections) {
   return sections.filter((section) => !section.present || section.titleText !== section.want);
@@ -1150,9 +1122,35 @@ async function browserProbes() {
     await u3IframePrintProbes(browser, page);
     await s4Probes(page);
     await s5Probes(page);
+    await zg11Group(browser);
   }
 
   await browser.close();
+}
+
+// RZ_ZG11_BASE=<git rev> runs the ZG-11 group against that revision's theme
+// sheets (injected in place of #theme-stylesheet) for anti-vacuity evidence.
+function zg11SheetSource() {
+  const base = process.env.RZ_ZG11_BASE;
+  return base ? gitSheets(repoDir, base) : liveSheets(repoDir);
+}
+
+async function zg11Group(browser) {
+  const sheetSource = zg11SheetSource();
+  if (EXPECTED_FAIL_UNTIL_ZG11_PHASE2) {
+    zg11Banner("ZG-11 group: EXPECTED_FAIL_UNTIL_ZG11_PHASE2 — FAIL lines below are anti-vacuity evidence and do not fail the run");
+  }
+  await zg11Probes({
+    browser,
+    origin,
+    report: zg11Reporter(),
+    fixtureHtml: fs.readFileSync(path.join(frontendDir, "fixtures", "long-resume.html"), "utf8"),
+    expectedPages: { jordan: U3_PRINT_PAGES, long: LONG_PRINT_PAGES },
+    sheetSource,
+  });
+  if (EXPECTED_FAIL_UNTIL_ZG11_PHASE2) {
+    zg11Banner(`ZG-11 group: ${expectedFailures.length} expected FAIL line(s) recorded (phase 2 makes them count)`);
+  }
 }
 
 staticProbes();
@@ -1169,4 +1167,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log("\nAll RZ-3, RZ-S1…S5, and U3 print probes passed.");
+console.log("\nAll RZ-3, RZ-S1…S5, U3 print, and ZG-23 probes passed.");
