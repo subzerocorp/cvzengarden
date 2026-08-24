@@ -1,12 +1,12 @@
 use std::collections::HashSet;
 
-use crate::date::format_iso_date;
+use crate::date::{parse_iso_date, IsoDate};
 use crate::html::{flag, kv, Html};
 use crate::resume::{
     Award, Basics, Certificate, Education, Interest, Language, Location, Profile, Project,
     Publication, Reference, Resume, Skill, Volunteer, Work,
 };
-use crate::slug::{entry_slug, iso_year, slugify, uniquify};
+use crate::slug::{entry_slug, slugify, uniquify};
 use crate::CONTRACT_VERSION;
 
 const KNOWN_PROFILE_TYPES: &[&str] = &[
@@ -252,8 +252,8 @@ fn emit_experience(html: &mut Html, items: &[Work], slugs: &mut HashSet<String>)
             primary: nonempty(work.name.as_deref()),
             url: nonempty(work.url.as_deref()),
             secondary: nonempty(work.position.as_deref()).map(str::to_string),
-            start: nonempty(work.start_date.as_deref()),
-            end: nonempty(work.end_date.as_deref()),
+            start: date_token(nonempty(work.start_date.as_deref())),
+            end: date_token(nonempty(work.end_date.as_deref())),
             single_date: None,
             location: nonempty(work.location.as_deref()),
             score: None,
@@ -281,8 +281,8 @@ fn emit_volunteer(html: &mut Html, items: &[Volunteer], slugs: &mut HashSet<Stri
             primary: nonempty(item.organization.as_deref()),
             url: nonempty(item.url.as_deref()),
             secondary: nonempty(item.position.as_deref()).map(str::to_string),
-            start: nonempty(item.start_date.as_deref()),
-            end: nonempty(item.end_date.as_deref()),
+            start: date_token(nonempty(item.start_date.as_deref())),
+            end: date_token(nonempty(item.end_date.as_deref())),
             single_date: None,
             location: None,
             score: None,
@@ -310,8 +310,8 @@ fn emit_education(html: &mut Html, items: &[Education], slugs: &mut HashSet<Stri
             primary: nonempty(item.institution.as_deref()),
             url: nonempty(item.url.as_deref()),
             secondary: education_secondary(item),
-            start: nonempty(item.start_date.as_deref()),
-            end: nonempty(item.end_date.as_deref()),
+            start: date_token(nonempty(item.start_date.as_deref())),
+            end: date_token(nonempty(item.end_date.as_deref())),
             single_date: None,
             location: None,
             score: nonempty(item.score.as_deref()).map(format_score),
@@ -341,7 +341,7 @@ fn emit_awards(html: &mut Html, items: &[Award], slugs: &mut HashSet<String>) {
             secondary: nonempty(item.awarder.as_deref()).map(str::to_string),
             start: None,
             end: None,
-            single_date: nonempty(item.date.as_deref()),
+            single_date: date_token(nonempty(item.date.as_deref())),
             location: None,
             score: None,
             summary: nonempty(item.summary.as_deref()),
@@ -373,7 +373,7 @@ fn emit_certificates(html: &mut Html, items: &[Certificate], slugs: &mut HashSet
             secondary: nonempty(item.issuer.as_deref()).map(str::to_string),
             start: None,
             end: None,
-            single_date: nonempty(item.date.as_deref()),
+            single_date: date_token(nonempty(item.date.as_deref())),
             location: None,
             score: None,
             summary: None,
@@ -405,7 +405,7 @@ fn emit_publications(html: &mut Html, items: &[Publication], slugs: &mut HashSet
             secondary: nonempty(item.publisher.as_deref()).map(str::to_string),
             start: None,
             end: None,
-            single_date: nonempty(item.release_date.as_deref()),
+            single_date: date_token(nonempty(item.release_date.as_deref())),
             location: None,
             score: None,
             summary: nonempty(item.summary.as_deref()),
@@ -591,8 +591,8 @@ fn emit_projects(html: &mut Html, items: &[Project], slugs: &mut HashSet<String>
             primary: nonempty(item.name.as_deref()),
             url: nonempty(item.url.as_deref()),
             secondary: nonempty(item.description.as_deref()).map(str::to_string),
-            start: nonempty(item.start_date.as_deref()),
-            end: nonempty(item.end_date.as_deref()),
+            start: date_token(nonempty(item.start_date.as_deref())),
+            end: date_token(nonempty(item.end_date.as_deref())),
             single_date: None,
             location: None,
             score: None,
@@ -612,9 +612,9 @@ struct EntryBits<'a> {
     primary: Option<&'a str>,
     url: Option<&'a str>,
     secondary: Option<String>,
-    start: Option<&'a str>,
-    end: Option<&'a str>,
-    single_date: Option<&'a str>,
+    start: Option<DateToken<'a>>,
+    end: Option<DateToken<'a>>,
+    single_date: Option<DateToken<'a>>,
     location: Option<&'a str>,
     score: Option<String>,
     summary: Option<&'a str>,
@@ -624,9 +624,15 @@ struct EntryBits<'a> {
 }
 
 fn emit_entry(html: &mut Html, bits: &EntryBits<'_>, slugs: &mut HashSet<String>) {
-    let year = bits.single_date.or(bits.start).and_then(iso_year);
+    let year = bits
+        .single_date
+        .or(bits.start)
+        .and_then(|token| token.parsed)
+        .map(|date| date.year);
     let slug = entry_slug(bits.primary.unwrap_or(""), year, slugs);
-    let is_current = bits.single_date.is_none() && bits.start.is_some() && bits.end.is_none();
+    let is_current = bits.single_date.is_none()
+        && bits.start.is_some_and(|token| token.parsed.is_some())
+        && bits.end.is_none();
     let mut class = format!("rz-entry rz-entry--{}", bits.kind);
     if is_current {
         class.push_str(" rz-is-current");
@@ -663,7 +669,7 @@ fn emit_entry(html: &mut Html, bits: &EntryBits<'_>, slugs: &mut HashSet<String>
         if let Some(secondary) = bits.secondary.as_deref() {
             html.text_el("p", &[kv("class", "rz-entry-secondary")], secondary);
         }
-        emit_dates(html, bits.start, bits.end, bits.single_date);
+        emit_dates(html, bits);
         if let Some(location) = bits.location {
             html.text_el("p", &[kv("class", "rz-location")], location);
         }
@@ -691,73 +697,66 @@ fn emit_entry(html: &mut Html, bits: &EntryBits<'_>, slugs: &mut HashSet<String>
     html.close("li");
 }
 
-fn emit_dates(html: &mut Html, start: Option<&str>, end: Option<&str>, single: Option<&str>) {
-    if let Some(single) = single {
-        let Some((dt, visible)) = format_iso_date(single) else {
-            return;
-        };
-        html.open("p", &[kv("class", "rz-dates")]);
-        html.text_el(
+/// A date field as the Author wrote it, plus what the renderer made of it.
+/// `parsed == None` means the raw text still renders, as a `<span>`.
+#[derive(Clone, Copy)]
+struct DateToken<'a> {
+    raw: &'a str,
+    parsed: Option<IsoDate>,
+}
+
+fn date_token(raw: Option<&str>) -> Option<DateToken<'_>> {
+    raw.map(|raw| DateToken {
+        raw,
+        parsed: parse_iso_date(raw),
+    })
+}
+
+fn emit_dates(html: &mut Html, bits: &EntryBits<'_>) {
+    match (bits.single_date, bits.start, bits.end) {
+        (Some(date), _, _) | (None, None, Some(date)) => {
+            html.open("p", &[kv("class", "rz-dates")]);
+            emit_date(html, "rz-date", date);
+            html.close("p");
+        }
+        (None, Some(start), end) => {
+            html.open("p", &[kv("class", "rz-dates")]);
+            emit_date(html, "rz-date rz-date--start", start);
+            html.text_el(
+                "span",
+                &[kv("class", "rz-date-sep"), kv("aria-hidden", "true")],
+                "–",
+            );
+            emit_range_end(html, end);
+            html.close("p");
+        }
+        (None, None, None) => {}
+    }
+}
+
+/// `<time datetime>` when the value parsed; otherwise the raw text in a
+/// `<span>` with the same class and no `datetime` (contract §5.3).
+fn emit_date(html: &mut Html, class: &str, token: DateToken<'_>) {
+    match token.parsed {
+        Some(date) => html.text_el(
             "time",
-            &[kv("class", "rz-date"), kv("datetime", &dt)],
-            &visible,
-        );
-        html.close("p");
-        return;
+            &[kv("class", class), kv("datetime", &date.datetime())],
+            &date.visible(),
+        ),
+        None => html.text_el("span", &[kv("class", class)], token.raw),
     }
+}
 
-    let start = start.and_then(format_iso_date);
-    let end = end.and_then(format_iso_date);
-    if start.is_none() && end.is_none() {
-        return;
+/// An omitted `endDate` means present; a written one renders as itself.
+fn emit_range_end(html: &mut Html, end: Option<DateToken<'_>>) {
+    match end {
+        Some(end) => emit_date(html, "rz-date rz-date--end", end),
+        None => html.text_el(
+            "span",
+            &[kv("class", "rz-date rz-date--end rz-date--present")],
+            "Present",
+        ),
     }
-
-    html.open("p", &[kv("class", "rz-dates")]);
-    match (start, end) {
-        (Some((dt, visible)), None) => {
-            html.text_el(
-                "time",
-                &[kv("class", "rz-date rz-date--start"), kv("datetime", &dt)],
-                &visible,
-            );
-            html.text_el(
-                "span",
-                &[kv("class", "rz-date-sep"), kv("aria-hidden", "true")],
-                "–",
-            );
-            html.text_el(
-                "span",
-                &[kv("class", "rz-date rz-date--end rz-date--present")],
-                "Present",
-            );
-        }
-        (None, Some((dt, visible))) => {
-            html.text_el(
-                "time",
-                &[kv("class", "rz-date"), kv("datetime", &dt)],
-                &visible,
-            );
-        }
-        (Some((s_dt, s_vis)), Some((e_dt, e_vis))) => {
-            html.text_el(
-                "time",
-                &[kv("class", "rz-date rz-date--start"), kv("datetime", &s_dt)],
-                &s_vis,
-            );
-            html.text_el(
-                "span",
-                &[kv("class", "rz-date-sep"), kv("aria-hidden", "true")],
-                "–",
-            );
-            html.text_el(
-                "time",
-                &[kv("class", "rz-date rz-date--end"), kv("datetime", &e_dt)],
-                &e_vis,
-            );
-        }
-        (None, None) => {}
-    }
-    html.close("p");
 }
 
 fn emit_prose(html: &mut Html, class: &str, text: &str) {

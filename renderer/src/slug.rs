@@ -1,14 +1,12 @@
 use std::collections::HashSet;
 
 /// `slugify(primary + "-" + startYear)` with `-2`, `-3` on collision.
-pub fn entry_slug(primary: &str, start_year: Option<&str>, used: &mut HashSet<String>) -> String {
-    let mut raw = primary.to_string();
-    if let Some(year) = start_year {
-        if !raw.is_empty() {
-            raw.push('-');
-        }
-        raw.push_str(year);
-    }
+pub fn entry_slug(primary: &str, start_year: Option<u16>, used: &mut HashSet<String>) -> String {
+    let raw = match start_year {
+        Some(year) if primary.is_empty() => format!("{year:04}"),
+        Some(year) => format!("{primary}-{year:04}"),
+        None => primary.to_string(),
+    };
     let mut base = slugify(&raw);
     if base.is_empty() {
         base = "entry".to_string();
@@ -49,15 +47,6 @@ pub fn slugify(input: &str) -> String {
     out
 }
 
-pub fn iso_year(date: &str) -> Option<&str> {
-    let date = date.trim();
-    if date.len() >= 4 && date[..4].bytes().all(|b| b.is_ascii_digit()) {
-        Some(&date[..4])
-    } else {
-        None
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -80,8 +69,16 @@ mod tests {
     #[test]
     fn collisions_append_counter() {
         let mut used = HashSet::new();
-        assert_eq!(entry_slug("Acme", Some("2022"), &mut used), "acme-2022");
-        assert_eq!(entry_slug("Acme", Some("2022"), &mut used), "acme-2022-2");
-        assert_eq!(entry_slug("Acme", Some("2022"), &mut used), "acme-2022-3");
+        assert_eq!(entry_slug("Acme", Some(2022), &mut used), "acme-2022");
+        assert_eq!(entry_slug("Acme", Some(2022), &mut used), "acme-2022-2");
+        assert_eq!(entry_slug("Acme", Some(2022), &mut used), "acme-2022-3");
+    }
+
+    #[test]
+    fn year_only_and_empty_fall_back() {
+        let mut used = HashSet::new();
+        assert_eq!(entry_slug("", Some(2022), &mut used), "2022");
+        assert_eq!(entry_slug("", None, &mut used), "entry");
+        assert_eq!(entry_slug("Acme", None, &mut used), "acme");
     }
 }

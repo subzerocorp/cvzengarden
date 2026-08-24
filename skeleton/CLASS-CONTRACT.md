@@ -293,14 +293,14 @@ A `.rz-bullet` highlight may contain `\n`; themes should respect it (`white-spac
 | `.rz-entries` | `<ol>` of entries. Document order = JSON array order. |
 | `.rz-entry` | One job, school, project, or extra entry. |
 | `.rz-entry--experience` · `--education` · `--project` · `--extra` | Kind modifier. |
-| `.rz-is-current` | `startDate` present and `endDate` omitted. Also `data-rz-current="true"`. |
+| `.rz-is-current` | `startDate` parses (see **Dates**) and `endDate` omitted. Also `data-rz-current="true"`. |
 | `data-rz-entry` | Renderer slug (JSON Resume has no ids): `slugify(primary + "-" + startYear)`. Collisions append `-2`, `-3`. |
 | `.rz-entry-header` | Primary / secondary / dates / location cluster. |
 | `.rz-entry-primary` | `h3` |
 | `.rz-entry-primary-link` | Optional link wrapping the primary text. |
 | `.rz-entry-secondary` | Role, degree + area, project description, awarder, issuer, publisher. |
 | `.rz-dates` | Date range or single date. Omitted if no dates. |
-| `.rz-date` | A date token. |
+| `.rz-date` | A date token: `<time datetime>` when the value parses, `<span>` (no `datetime`) when it is unparseable. |
 | `.rz-date--start` / `--end` | Start vs end (ranges). |
 | `.rz-date--present` | End omitted → the word `Present` (`<span>`, not `<time>`). |
 | `.rz-date-sep` | Separator (`–`). Decorative; `aria-hidden`. |
@@ -311,7 +311,11 @@ A `.rz-bullet` highlight may contain `\n`; themes should respect it (`white-spac
 | `.rz-tags` / `.rz-tag` | `keywords[]`, `courses[]`, name-only interests. |
 | `.rz-meta-list` / `.rz-meta` / `.rz-meta-label` / `.rz-meta-detail` | Languages; project `roles` / `entity` / `type`. |
 
-**Dates.** JSON Resume `iso8601`: `YYYY`, `YYYY-MM`, or `YYYY-MM-DD`. `datetime` is the raw value. Visible text is locale-formatted (`March 2022`, `2020`). A single date (awards, certificates, publications) uses one `.rz-date` and no separator.
+**Dates.** JSON Resume `iso8601`: `YYYY`, `YYYY-MM`, or `YYYY-MM-DD` — four-digit year, two-digit month and day, day valid for the month (leap years included). `datetime` is that date. Visible text is locale-formatted (`March 2022`, `2020`, `May 31, 2023`). A single date (awards, certificates, publications) uses one `.rz-date` and no separator.
+
+*Timestamps.* A time component after the date (`2023-05-31T09:00:00Z`, `2023-05-31 09:00`) is truncated at the `T` or space: `<time class="rz-date" datetime="2023-05-31">May 31, 2023</time>`.
+
+*Unparseable dates.* Anything else (`March 2020`, `2020-13`, `2020-02-30`, `２０２０`, `日本語`, or the word `Present` written as an `endDate`) is unparseable. The renderer never rejects the document and never drops the entry: the token is emitted as `<span class="rz-date rz-date--start|--end">raw text</span>` with **no** `datetime` attribute — never `<time datetime="March 2020">`. An unparseable `startDate` does not mark the entry `.rz-is-current`; an unparseable single date is a plain `<span class="rz-date">`. An unparseable `startDate` with `endDate` omitted still emits the `.rz-date--present` `Present` span, but the entry is not `.rz-is-current`, and the `startYear` in `data-rz-entry` is the year of the *parsed* `startDate` (no year segment when it is unparseable).
 
 **Present.** JSON Resume has no `current` boolean. Omit `endDate` to mean present.
 

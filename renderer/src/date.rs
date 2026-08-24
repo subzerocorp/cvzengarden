@@ -1,4 +1,8 @@
 //! JSON Resume `iso8601` dates: `YYYY`, `YYYY-MM`, or `YYYY-MM-DD`.
+//!
+//! Pure calculations over user text. Nothing here indexes bytes: an Author
+//! may write fullwidth digits, kanji, or currency signs in a date field and
+//! the answer is simply `None`.
 
 const MONTHS: [&str; 12] = [
     "January",
@@ -15,65 +19,207 @@ const MONTHS: [&str; 12] = [
     "December",
 ];
 
-/// `(datetime raw value, visible English text)`.
-pub fn format_iso_date(raw: &str) -> Option<(String, String)> {
-    let raw = raw.trim();
-    if raw.is_empty() {
-        return None;
+/// A calendar-valid date with the precision the Author gave.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct IsoDate {
+    pub year: u16,
+    pub month: Option<u8>,
+    pub day: Option<u8>,
+}
+
+impl IsoDate {
+    /// Canonical `datetime` attribute value: `YYYY`, `YYYY-MM`, or `YYYY-MM-DD`.
+    pub fn datetime(self) -> String {
+        match (self.month, self.day) {
+            (Some(month), Some(day)) => format!("{:04}-{month:02}-{day:02}", self.year),
+            (Some(month), None) => format!("{:04}-{month:02}", self.year),
+            _ => format!("{:04}", self.year),
+        }
     }
 
-    let parts: Vec<&str> = raw.split('-').collect();
-    match parts.as_slice() {
-        [year] if is_year(year) => Some((raw.to_string(), (*year).to_string())),
-        [year, month] if is_year(year) => {
-            let visible = format!("{} {}", month_name(month)?, year);
-            Some((raw.to_string(), visible))
+    /// Visible English text: `2020`, `March 2020`, `January 15, 2022`.
+    pub fn visible(self) -> String {
+        let month = self.month.and_then(month_name);
+        match (month, self.day) {
+            (Some(month), Some(day)) => format!("{month} {day}, {}", self.year),
+            (Some(month), None) => format!("{month} {}", self.year),
+            _ => self.year.to_string(),
         }
-        [year, month, day] if is_year(year) => {
-            let day: u32 = day.parse().ok()?;
-            if !(1..=31).contains(&day) {
-                return None;
-            }
-            let visible = format!("{} {}, {}", month_name(month)?, day, year);
-            Some((raw.to_string(), visible))
-        }
-        _ => Some((raw.to_string(), raw.to_string())),
     }
 }
 
-fn is_year(s: &str) -> bool {
-    s.len() == 4 && s.bytes().all(|b| b.is_ascii_digit())
+/// Parse an `iso8601` date, dropping any time component after `T` or a space.
+///
+/// Returns `None` for anything that is not a calendar-valid `YYYY`,
+/// `YYYY-MM`, or `YYYY-MM-DD` in ASCII digits (`March 2020`, `2020-13`,
+/// `2020-02-30`, `２０２０`).
+pub fn parse_iso_date(raw: &str) -> Option<IsoDate> {
+    let parts: Vec<&str> = date_part(raw.trim()).split('-').collect();
+    let date = match parts.as_slice() {
+        [year] => IsoDate {
+            year: digits(year, 4)?,
+            month: None,
+            day: None,
+        },
+        [year, month] => IsoDate {
+            year: digits(year, 4)?,
+            month: Some(digits(month, 2)?),
+            day: None,
+        },
+        [year, month, day] => IsoDate {
+            year: digits(year, 4)?,
+            month: Some(digits(month, 2)?),
+            day: Some(digits(day, 2)?),
+        },
+        _ => return None,
+    };
+    is_calendar_valid(date).then_some(date)
 }
 
-fn month_name(month: &str) -> Option<&'static str> {
-    let n: usize = month.parse().ok()?;
-    MONTHS
-        .get(n.saturating_sub(1))
-        .copied()
-        .filter(|_| (1..=12).contains(&n))
+/// The text before the first `T` or space, or the whole string.
+fn date_part(raw: &str) -> &str {
+    raw.split_once(['T', ' ']).map_or(raw, |(date, _)| date)
+}
+
+/// Exactly `len` ASCII digits, as a number.
+fn digits<N: std::str::FromStr>(text: &str, len: usize) -> Option<N> {
+    let well_formed = text.chars().count() == len && text.chars().all(|c| c.is_ascii_digit());
+    well_formed.then(|| text.parse().ok()).flatten()
+}
+
+fn is_calendar_valid(date: IsoDate) -> bool {
+    match (date.month, date.day) {
+        (None, _) => true,
+        (Some(month), None) => (1..=12).contains(&month),
+        (Some(month), Some(day)) => day >= 1 && day <= days_in_month(date.year, month),
+    }
+}
+
+/// Days in `month` of `year`; `0` for a month outside `1..=12`.
+fn days_in_month(year: u16, month: u8) -> u8 {
+    match month {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 if is_leap_year(year) => 29,
+        2 => 28,
+        _ => 0,
+    }
+}
+
+fn is_leap_year(year: u16) -> bool {
+    year.is_multiple_of(4) && (!year.is_multiple_of(100) || year.is_multiple_of(400))
+}
+
+fn month_name(month: u8) -> Option<&'static str> {
+    MONTHS.get(usize::from(month).checked_sub(1)?).copied()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    fn date(year: u16, month: Option<u8>, day: Option<u8>) -> IsoDate {
+        IsoDate { year, month, day }
+    }
+
+    #[test]
+    fn parses_year_month_and_day_precision() {
+        assert_eq!(parse_iso_date("2020"), Some(date(2020, None, None)));
+        assert_eq!(parse_iso_date("2022-03"), Some(date(2022, Some(3), None)));
+        assert_eq!(
+            parse_iso_date("2020-12-31"),
+            Some(date(2020, Some(12), Some(31)))
+        );
+        assert_eq!(parse_iso_date(" 2020 "), Some(date(2020, None, None)));
+    }
+
+    #[test]
+    fn rejects_unpadded_month_and_month_zero() {
+        assert_eq!(parse_iso_date("2020-1"), None);
+        assert_eq!(parse_iso_date("2020-00"), None);
+        assert_eq!(parse_iso_date("2020-13"), None);
+    }
+
+    #[test]
+    fn validates_day_against_month_and_leap_year() {
+        assert_eq!(parse_iso_date("2021-02-29"), None);
+        assert_eq!(parse_iso_date("2020-02-30"), None);
+        assert_eq!(parse_iso_date("2021-04-31"), None);
+        assert_eq!(parse_iso_date("2020-05-00"), None);
+        assert_eq!(
+            parse_iso_date("2020-02-29"),
+            Some(date(2020, Some(2), Some(29)))
+        );
+        assert_eq!(
+            parse_iso_date("2024-02-29"),
+            Some(date(2024, Some(2), Some(29)))
+        );
+        assert_eq!(parse_iso_date("1900-02-29"), None);
+        assert_eq!(
+            parse_iso_date("2000-02-29"),
+            Some(date(2000, Some(2), Some(29)))
+        );
+    }
+
+    #[test]
+    fn rejects_out_of_range_parts_at_day_precision() {
+        // Arrange: a month outside 1..=12 with a day, a day above every
+        // month's length, and a fourth `-` part.
+        let out_of_range = ["2020-13-01", "2020-00-15", "2020-01-32", "2020-01-01-01"];
+
+        for raw in out_of_range {
+            // Act
+            let parsed = parse_iso_date(raw);
+
+            // Assert
+            assert_eq!(parsed, None, "{raw:?}");
+        }
+    }
+
+    #[test]
+    fn truncates_time_component_at_t_or_space() {
+        assert_eq!(
+            parse_iso_date("2020-05-31T09:00:00Z"),
+            Some(date(2020, Some(5), Some(31)))
+        );
+        assert_eq!(
+            parse_iso_date("2020-05-31 09:00"),
+            Some(date(2020, Some(5), Some(31)))
+        );
+    }
+
+    #[test]
+    fn rejects_non_ascii_and_prose_without_panicking() {
+        for raw in [
+            "２０２０",
+            "日本語",
+            "€€",
+            "20€0",
+            "March 2020",
+            "Present",
+            "",
+            "-",
+        ] {
+            assert_eq!(parse_iso_date(raw), None, "{raw:?}");
+        }
+    }
+
     #[test]
     fn formats_fixture_dates() {
+        let fmt = |raw: &str| {
+            let d = parse_iso_date(raw).unwrap();
+            (d.datetime(), d.visible())
+        };
+        assert_eq!(fmt("2022-03"), ("2022-03".into(), "March 2022".into()));
+        assert_eq!(fmt("2018-06"), ("2018-06".into(), "June 2018".into()));
+        assert_eq!(fmt("2020"), ("2020".into(), "2020".into()));
         assert_eq!(
-            format_iso_date("2022-03").unwrap(),
-            ("2022-03".into(), "March 2022".into())
-        );
-        assert_eq!(
-            format_iso_date("2018-06").unwrap(),
-            ("2018-06".into(), "June 2018".into())
-        );
-        assert_eq!(
-            format_iso_date("2020").unwrap(),
-            ("2020".into(), "2020".into())
-        );
-        assert_eq!(
-            format_iso_date("2022-01-15").unwrap(),
+            fmt("2022-01-15"),
             ("2022-01-15".into(), "January 15, 2022".into())
+        );
+        assert_eq!(
+            fmt("2023-05-31T09:00:00Z"),
+            ("2023-05-31".into(), "May 31, 2023".into())
         );
     }
 }
