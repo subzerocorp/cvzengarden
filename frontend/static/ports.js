@@ -13,6 +13,7 @@ import { contractVersion, render, swapResume, version } from "./render.js";
 
 const FRAME_ID = "garden-frame";
 const THEME_LINK_ID = "theme-stylesheet";
+const STORAGE_KEY = "resumezen.resume";
 
 const app = Elm.Main.init({
   node: document.getElementById("root"),
@@ -327,14 +328,17 @@ window.addEventListener("popstate", () => {
 });
 
 /**
- * Renderer port: JSON in, `{ ok, html, error }` out. The error text is what
- * ZG-5 displays unchanged; nothing here inspects the résumé.
+ * Renderer port: JSON in, `{ ok, html, error }` out. Elm keeps the error
+ * for the console only (`logDebug`) and shows its own sentence; nothing
+ * here inspects the résumé. The call goes through `window.resumezen` so
+ * the probe seam and the Chrome exercise the same function.
  */
 const renderedOk = (html) => ({ ok: true, html, error: "" });
 const renderedErr = (failure) => ({ ok: false, html: "", error: failure.message });
 
 app.ports.renderResume.subscribe((json) => {
-  render(json)
+  window.resumezen
+    .render(json)
     .then(renderedOk, renderedErr)
     .then((message) => app.ports.onRendered.send(message));
 });
@@ -343,6 +347,128 @@ async function swapInFrame(html) {
   const iframe = await waitForFrame();
   swapResume(html, iframe.contentDocument);
 }
+
+app.ports.swapResume.subscribe((html) => {
+  swapInFrame(html).catch((failure) => console.warn("sandbox swap failed", failure));
+});
+
+app.ports.logDebug.subscribe((raw) => {
+  console.debug("renderer error", raw);
+});
+
+/**
+ * File bytes and localStorage. Wiring only: FileReader for the panel's
+ * file input and drop zone; the original `article.rz-resume` is cloned
+ * at sandbox first-load so Forget restores Jordan Hale with no network.
+ */
+let originalResume = null;
+let originalTitle = "";
+
+function captureOriginalResume() {
+  return waitForFrame().then((iframe) => {
+    const article = iframe.contentDocument?.querySelector("article.rz-resume");
+    if (article && !originalResume) {
+      originalResume = article.cloneNode(true);
+      originalTitle = iframe.contentDocument.title;
+    }
+  });
+}
+
+function restoreOriginalResume() {
+  waitForFrame().then((iframe) => {
+    const live = iframe.contentDocument?.querySelector("article.rz-resume");
+    if (live && originalResume) {
+      live.replaceWith(originalResume.cloneNode(true));
+      iframe.contentDocument.title = originalTitle;
+    }
+  });
+}
+
+function readFileAsText(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve({ name: file.name, text: String(reader.result ?? "") });
+    reader.onerror = () => resolve({ name: file.name, text: "" });
+    reader.readAsText(file);
+  });
+}
+
+function sendFile(file) {
+  readFileAsText(file).then((payload) => app.ports.onFileBytes.send(payload));
+}
+
+function dropZoneOf(event) {
+  const target = event.target;
+  return target instanceof Element ? target.closest("[data-drop-zone]") : null;
+}
+
+document.addEventListener("change", (event) => {
+  const input = event.target;
+  if (!(input instanceof HTMLInputElement) || input.type !== "file") {
+    return;
+  }
+  const file = input.files?.[0];
+  if (!file) {
+    return;
+  }
+  sendFile(file);
+  input.value = "";
+});
+
+document.addEventListener("dragover", (event) => {
+  if (!dropZoneOf(event)) {
+    return;
+  }
+  event.preventDefault();
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = "copy";
+  }
+});
+
+document.addEventListener("drop", (event) => {
+  if (!dropZoneOf(event)) {
+    return;
+  }
+  event.preventDefault();
+  const file = event.dataTransfer?.files?.[0];
+  if (file) {
+    sendFile(file);
+  }
+});
+
+app.ports.storeResume.subscribe((json) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, json);
+  } catch {
+    // quota / private mode — the résumé still shows this session
+  }
+});
+
+app.ports.forgetResume.subscribe(() => {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+});
+
+app.ports.restoreSample.subscribe(() => {
+  restoreOriginalResume();
+});
+
+const originalReady = captureOriginalResume();
+
+originalReady.then(() => {
+  let stored = null;
+  try {
+    stored = localStorage.getItem(STORAGE_KEY);
+  } catch {
+    stored = null;
+  }
+  if (stored !== null) {
+    app.ports.onStoredResume.send(stored);
+  }
+});
 
 // Probe seam and ZG-5 hook. Thin wrappers only; the logic is in render.js.
 window.resumezen = { render, contractVersion, version, swap: swapInFrame };

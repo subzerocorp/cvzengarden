@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { rejectionReasons, stackReasons, swapReasons } from "./zg-4.mjs";
+import { articleReasons, rejectionReasons, stackReasons, swapReasons } from "./zg-4.mjs";
 
 test("rejectionReasons accepts a rejection whose message has the required word", () => {
   assert.deepEqual(rejectionReasons({ ok: false, message: "The renderer could not be loaded." }, "renderer"), []);
@@ -31,4 +31,10 @@ test("swapReasons catches a stub that left Jordan in place or touched the Theme 
   assert.equal(swapReasons(before, { ...ada, name: "Jordan Hale", hasJordan: true }).length, 2);
   assert.equal(swapReasons(before, { ...ada, themeHref: "themes/quarto.css" }).length, 1);
   assert.equal(swapReasons(before, { ...ada, src: "blob:x" }).length, 1);
+});
+
+test("articleReasons wants the sandbox article byte-equal to the rendered one", () => {
+  assert.deepEqual(articleReasons("<article class=\"rz-resume\">a</article>", "<article class=\"rz-resume\">a</article>"), []);
+  assert.equal(articleReasons("<article class=\"rz-resume\">a</article>", "<article class=\"rz-resume\">b</article>").length, 1);
+  assert.equal(articleReasons("<article class=\"rz-resume\">a</article>", undefined).length, 1);
 });

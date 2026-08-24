@@ -1,10 +1,12 @@
 port module Main exposing (main)
 
-{-| ResumeZen Garden chrome: live Theme switcher around a sandboxed Skeleton.
+{-| ResumeZen Garden chrome: live Theme switcher and "Use my résumé" paste
+around a sandboxed Skeleton.
 
 The iframe `src` is constant (`sandbox.html`). Switching a Theme changes only
 the Theme stylesheet href inside that document. `.rz-resume` inner HTML is
-never rewritten. Chrome class names never use the `rz-` prefix.
+only replaced by crate output (`swapResume`). Chrome class names never use
+the `rz-` prefix.
 
 Theme id resolution is pure (`ThemeId`). History and the iframe stylesheet
 are isolated actions (ports).
@@ -17,6 +19,7 @@ import Html.Attributes as Attr exposing (attribute, class, classList, id, src, t
 import Html.Events exposing (onClick)
 import Html.Keyed as Keyed
 import Json.Decode as Decode
+import Paste
 import ThemeId
 
 
@@ -46,6 +49,38 @@ port renderResume : String -> Cmd msg
 
 
 port onRendered : (Decode.Value -> msg) -> Sub msg
+
+
+{-| Replace `article.rz-resume` in the sandbox with crate output
+(`window.resumezen.swap`). The Theme link and the iframe src are untouched.
+-}
+port swapResume : String -> Cmd msg
+
+
+{-| The renderer's raw error, for `console.debug` only — never for the panel.
+-}
+port logDebug : String -> Cmd msg
+
+
+{-| Persist the raw accepted JSON Resume under `resumezen.resume`.
+-}
+port storeResume : String -> Cmd msg
+
+
+{-| Drop `resumezen.resume`.
+-}
+port forgetResume : () -> Cmd msg
+
+
+{-| Put the sandbox's original Jordan Hale article back. No network.
+-}
+port restoreSample : () -> Cmd msg
+
+
+port onFileBytes : ({ name : String, text : String } -> msg) -> Sub msg
+
+
+port onStoredResume : (String -> msg) -> Sub msg
 
 
 
@@ -81,7 +116,7 @@ type alias Model =
     , filter : Filter
     , appearance : Appearance
     , prefersDark : Bool
-    , rendered : Maybe (Result String String)
+    , paste : Paste.Model
     }
 
 
@@ -101,7 +136,7 @@ init flags =
             , filter = FilterAll
             , appearance = FollowSystem
             , prefersDark = flags.prefersDark
-            , rendered = Nothing
+            , paste = Paste.init
             }
     in
     ( model
@@ -124,7 +159,7 @@ type Msg
     | SetAppearance Appearance
     | SystemPrefersDark Bool
     | PrintRequested
-    | RenderRequested String
+    | PasteMsg Paste.Msg
     | Rendered (Result String String)
 
 
@@ -154,11 +189,44 @@ update msg model =
         PrintRequested ->
             ( model, printGarden () )
 
-        RenderRequested json ->
-            ( model, renderResume json )
+        PasteMsg pasteMsg ->
+            Paste.update pasteMsg model.paste
+                |> applyPaste model
 
         Rendered result ->
-            ( { model | rendered = Just result }, Cmd.none )
+            Paste.rendered result model.paste
+                |> applyPaste model
+
+
+applyPaste : Model -> ( Paste.Model, List Paste.Effect ) -> ( Model, Cmd Msg )
+applyPaste model ( paste, effects ) =
+    ( { model | paste = paste }
+    , Cmd.batch (List.map pasteCommand effects)
+    )
+
+
+{-| The only place a Paste effect becomes an action.
+-}
+pasteCommand : Paste.Effect -> Cmd Msg
+pasteCommand effect =
+    case effect of
+        Paste.Render json ->
+            renderResume json
+
+        Paste.Swap html ->
+            swapResume html
+
+        Paste.LogDebug raw ->
+            logDebug raw
+
+        Paste.Store json ->
+            storeResume json
+
+        Paste.Forget ->
+            forgetResume ()
+
+        Paste.RestoreSample ->
+            restoreSample ()
 
 
 applyTheme : String -> Bool -> Model -> ( Model, Cmd Msg )
@@ -238,6 +306,7 @@ viewSidebar : Model -> Theme -> Html Msg
 viewSidebar model selected =
     Html.aside [ class "app-sidebar" ]
         [ viewBrand
+        , Html.map PasteMsg (Paste.view model.paste)
         , viewSwitcher model selected
         , viewPreviewControls model.preview
         , viewAppearance model.appearance
@@ -482,6 +551,8 @@ subscriptions _ =
         [ preferDarkChanged SystemPrefersDark
         , onThemeQuery ThemeQueryChanged
         , onRendered (decodeRendered >> Rendered)
+        , onFileBytes (Paste.FileOpened >> PasteMsg)
+        , onStoredResume (Paste.Restored >> PasteMsg)
         ]
 
 

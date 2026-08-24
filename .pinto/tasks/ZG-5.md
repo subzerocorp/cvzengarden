@@ -1,13 +1,15 @@
 +++
 id = "ZG-5"
 title = "Paste or open your own JSON Resume and see it in every Theme"
-status = "in-progress"
+status = "done"
 rank = "m"
 labels = ["avril", "round-1", "chrome", "avril-blessed"]
 depends_on = ["ZG-2", "ZG-3", "ZG-4"]
 start_at = "2026-08-24T20:48:27.173149Z"
+done_at = "2026-08-24T22:54:11.693793Z"
+commits = ["32ef15b", "e33212f"]
 created = "2026-08-23T23:54:23.454780Z"
-updated = "2026-08-24T20:48:27.173149Z"
+updated = "2026-08-24T22:54:15.349109Z"
 +++
 
 ## Why
@@ -30,27 +32,53 @@ A1, A4 — Priya, Elena, Marcus
 - Field-level warnings (unknown keys) — the renderer ignores them by contract §1.8
 - Download HTML/CSS as a headline (BAR-X1 / lock 8)
 ## Acceptance criteria
-- [ ] Probe `ZG-5/paste-sample`: pasting `skeleton/resume.json` into `#paste-input` and pressing the panel's "Show it" button yields sandbox `.rz-name` = `Jordan Hale` with `data-rz-schema="1.0"` and no `[data-paste-error]`
-- [ ] Probe `ZG-5/paste-ada`: pasting `frontend/fixtures/ada.json` yields `.rz-name` = `Ada Lovelace`, no `Jordan Hale` anywhere in the iframe document, iframe `src` unchanged, and `#theme-stylesheet` href unchanged
-- [ ] Probe `ZG-5/paste-then-switch`: after the Ada paste, selecting Quarto changes `#theme-stylesheet` to `themes/quarto.css` and `.rz-name` is still `Ada Lovelace`; Print preview then shows `.rz-name` `Ada Lovelace`
-- [ ] Probe `ZG-5/paste-empty`: pasting `""` and `"   \n"` shows `[data-paste-error="empty"]` and `.rz-name` is unchanged
-- [ ] Probe `ZG-5/paste-trailing-comma`: pasting `frontend/fixtures/trailing-comma.json` shows `[data-paste-error="invalid-json"]` whose text contains `line 1` and the word `comma`
-- [ ] Probe `ZG-5/paste-not-resume`: pasting `{"basics":{"name":"E"},"work":"nope"}` shows `[data-paste-error="not-a-resume"]` whose text contains `work`
-- [ ] Probe `ZG-5/paste-missing-name`: pasting `{"basics":{"label":"Junior Developer"}}` shows `[data-paste-error="missing-name"]` whose text contains `name`
-- [ ] Probe `ZG-5/render-failed`: with `window.resumezen.render` overridden in the page to reject with `new Error("expected value at line 3 column 1")`, pasting `ada.json` shows `[data-paste-error="render-failed"]` whose text contains `could not` and `.rz-name` is unchanged; no `pageerror`
-- [ ] Probe `ZG-5/no-serde-tokens`: after each of the five error probes above, the `[data-paste-error]` text contains none of `expected`, `EOF`, `invalid type`, `serde`, `Err(`, `panicked` (case-sensitive)
-- [ ] Probe `ZG-5/open-pdf`: setting the file input to `frontend/fixtures/not-a-resume.pdf` shows `[data-paste-error="not-json-file"]` whose text contains `not-a-resume.pdf` and `JSON Resume`
-- [ ] Probe `ZG-5/open-json`: setting the file input to `skeleton/resume.json` renders `Jordan Hale` without using the textarea
-- [ ] Probe `ZG-5/file-classes`: setting the file input to `frontend/fixtures/trailing-comma.json` shows `invalid-json` (not `not-json-file`) with `line 1`; a temporary `resume.txt` whose content is `ada.json`'s renders `Ada Lovelace` with no error; a temporary `notes.txt` containing `hello` shows `not-json-file` naming `notes.txt`
-- [ ] Probe `ZG-5/drop-json` and `ZG-5/drop-pdf`: dispatching a `drop` event with a `DataTransfer` holding `skeleton/resume.json` on `[data-drop-zone]` renders `Jordan Hale`; the same with `not-a-resume.pdf` shows `not-json-file`
-- [ ] Probe `ZG-5/restore`: after the Ada paste, a reload of the same origin shows `.rz-name` `Ada Lovelace`; clicking "Forget my résumé" restores `Jordan Hale` and `localStorage.getItem('resumezen.resume')` is `null`
-- [ ] Probe `ZG-5/corrupt-storage`: with `localStorage['resumezen.resume']` set to `{` and, in a second run, to `{"basics":{"label":"x"}}`, a reload shows `Jordan Hale`, no `[data-paste-error]`, no console error or `pageerror`, and `localStorage.getItem('resumezen.resume')` is `null` afterwards
-- [ ] Probe `ZG-5/no-network`: the paste flow issues no HTTP request besides page assets and `themes/*.css`
-- [ ] Probe `ZG-5/copy`: sidebar `textContent` contains `Nothing leaves your browser`; the control's accessible name contains `résumé`; chrome HTML/CSS still has no `rz-` class or id
-- [ ] A stub that renders the paste by string-replacing `Jordan Hale` fails the Ada `no Jordan Hale` and the `work: "nope"` probes
+- [x] Probe `ZG-5/paste-sample`: pasting `skeleton/resume.json` into `#paste-input` and pressing the panel's "Show it" button yields sandbox `.rz-name` = `Jordan Hale` with `data-rz-schema="1.0"` and no `[data-paste-error]`
+- [x] Probe `ZG-5/paste-ada`: pasting `frontend/fixtures/ada.json` yields `.rz-name` = `Ada Lovelace`, no `Jordan Hale` anywhere in the iframe document, iframe `src` unchanged, and `#theme-stylesheet` href unchanged
+- [x] Probe `ZG-5/paste-then-switch`: after the Ada paste, selecting Quarto changes `#theme-stylesheet` to `themes/quarto.css` and `.rz-name` is still `Ada Lovelace`; Print preview then shows `.rz-name` `Ada Lovelace`
+- [x] Probe `ZG-5/paste-empty`: pasting `""` and `"   \n"` shows `[data-paste-error="empty"]` and `.rz-name` is unchanged
+- [x] Probe `ZG-5/paste-trailing-comma`: pasting `frontend/fixtures/trailing-comma.json` shows `[data-paste-error="invalid-json"]` whose text contains `line 1` and the word `comma`
+- [x] Probe `ZG-5/paste-not-resume`: pasting `{"basics":{"name":"E"},"work":"nope"}` shows `[data-paste-error="not-a-resume"]` whose text contains `work`
+- [x] Probe `ZG-5/paste-missing-name`: pasting `{"basics":{"label":"Junior Developer"}}` shows `[data-paste-error="missing-name"]` whose text contains `name`
+- [x] Probe `ZG-5/render-failed`: with `window.resumezen.render` overridden in the page to reject with `new Error("expected value at line 3 column 1")`, pasting `ada.json` shows `[data-paste-error="render-failed"]` whose text contains `could not` and `.rz-name` is unchanged; no `pageerror`
+- [x] Probe `ZG-5/no-serde-tokens`: after each of the five error probes above, the `[data-paste-error]` text contains none of `expected`, `EOF`, `invalid type`, `serde`, `Err(`, `panicked` (case-sensitive)
+- [x] Probe `ZG-5/open-pdf`: setting the file input to `frontend/fixtures/not-a-resume.pdf` shows `[data-paste-error="not-json-file"]` whose text contains `not-a-resume.pdf` and `JSON Resume`
+- [x] Probe `ZG-5/open-json`: setting the file input to `skeleton/resume.json` renders `Jordan Hale` without using the textarea
+- [x] Probe `ZG-5/file-classes`: setting the file input to `frontend/fixtures/trailing-comma.json` shows `invalid-json` (not `not-json-file`) with `line 1`; a temporary `resume.txt` whose content is `ada.json`'s renders `Ada Lovelace` with no error; a temporary `notes.txt` containing `hello` shows `not-json-file` naming `notes.txt`
+- [x] Probe `ZG-5/drop-json` and `ZG-5/drop-pdf`: dispatching a `drop` event with a `DataTransfer` holding `skeleton/resume.json` on `[data-drop-zone]` renders `Jordan Hale`; the same with `not-a-resume.pdf` shows `not-json-file`
+- [x] Probe `ZG-5/restore`: after the Ada paste, a reload of the same origin shows `.rz-name` `Ada Lovelace`; clicking "Forget my résumé" restores `Jordan Hale` and `localStorage.getItem('resumezen.resume')` is `null`
+- [x] Probe `ZG-5/corrupt-storage`: with `localStorage['resumezen.resume']` set to `{` and, in a second run, to `{"basics":{"label":"x"}}`, a reload shows `Jordan Hale`, no `[data-paste-error]`, no console error or `pageerror`, and `localStorage.getItem('resumezen.resume')` is `null` afterwards
+- [x] Probe `ZG-5/no-network`: the paste flow issues no HTTP request besides page assets and `themes/*.css`
+- [x] Probe `ZG-5/copy`: sidebar `textContent` contains `Nothing leaves your browser`; the control's accessible name contains `résumé`; chrome HTML/CSS still has no `rz-` class or id
+- [x] A stub that renders the paste by string-replacing `Jordan Hale` fails the Ada `no Jordan Hale` and the `work: "nope"` probes
 ## Dependencies
 - ZG-2
 - ZG-3
 - ZG-4 (owner of `frontend/fixtures/ada.json` and `window.resumezen.render`)
 ## Notes
-- none
+- ZG-6 sample buttons must be a new `Intent`, not `ShowIt` (`ShowIt` writes `resumezen.resume`). Architect phase-2.
+
+## Execution Evidence (commits 32ef15b, e33212f)
+
+Tester-run `PROBE_PORT=4430 npm test` and `PROBE_PORT=4431 just verify` both exit 0 (`/tmp/zg5-p2-probes-4430.log`, `/tmp/zg5-p2-verify-4431.log`). node:test 147/147.
+
+- [x] paste-sample — `.rz-name` Jordan Hale, `data-rz-schema="1.0"`, no error
+- [x] paste-ada — Ada Lovelace, no Jordan Hale in iframe, src/href unchanged
+- [x] paste-then-switch — Quarto + Print preview still Ada Lovelace
+- [x] paste-empty — `""` and `"   \n"` → empty; name unchanged
+- [x] paste-trailing-comma — invalid-json, line 1, comma
+- [x] paste-not-resume — not-a-resume names `work`
+- [x] paste-missing-name — missing-name, word name
+- [x] render-failed — could not; debug-only serde; no pageerror
+- [x] no-serde-tokens — empty, invalid-json, not-a-resume, missing-name, render-failed, not-json-file, 13 scanner-hints rows
+- [x] open-pdf — not-json-file names `not-a-resume.pdf` and `JSON Resume`
+- [x] open-json — Jordan Hale via file input, textarea unused
+- [x] file-classes — trailing-comma.json invalid-json line 1; resume.txt → Ada; notes.txt → not-json-file
+- [x] drop-json / drop-pdf — Jordan Hale; not-json-file
+- [x] restore — Ada survives reload; Forget → Jordan Hale, key null
+- [x] corrupt-storage — both `{` and missing-name JSON → Jordan, no banner, no pageerror, key null
+- [x] no-network — paste + file-open: only page assets / themes/*.css
+- [x] copy — Use my résumé; Nothing leaves your browser; chrome rz- static probe
+- [x] anti-stub — Ada hasJordan + work:nope; mutation dropping content-first made file-classes FAIL then restored
+- [x] just verify exit 0 (PROBE_PORT=4431)
+
+GAN: phase-1 BLESS ×3; phase-2 Reviewer BLESS | Tester BLESS | Architect BLESS — `docs/plans/zg-5-gan-report.md`

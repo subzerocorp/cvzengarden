@@ -14,6 +14,7 @@ import path from "node:path";
 import { parityReasons } from "./lib/byte-parity.mjs";
 import { foreignRequests, requestsSince } from "./lib/request-log.mjs";
 import { largeResume, mebibytes } from "./lib/resume-size.mjs";
+import { openGarden } from "./lib/page.mjs";
 
 const PUBLICATION_DOC = '{"basics":{"name":"T"},"publications":[{"name":"Talk","releaseDate":"2023-05-31T09:00:00Z"}]}';
 const LARGE_MIN_BYTES = Math.ceil(4.8 * 1024 * 1024);
@@ -36,6 +37,15 @@ export function rejectionReasons(outcome, mustContain) {
 // error says "at line 1" — this check is for the load-failure text only.)
 export function stackReasons(message) {
   return String(message).includes("at ") ? ["message carries a stack frame (\"at \")"] : [];
+}
+
+// Calculation: why the sandbox article is not the one the crate rendered.
+// (A swap that only rewrote `.rz-name` and the title would pass `swapReasons`.)
+export function articleReasons(renderedArticle, sandboxArticle) {
+  if (typeof sandboxArticle !== "string") {
+    return ["sandbox has no article.rz-resume"];
+  }
+  return renderedArticle === sandboxArticle ? [] : ["sandbox article.rz-resume differs from the rendered article"];
 }
 
 // Calculation: why the swapped sandbox is not Ada in an untouched frame.
@@ -84,22 +94,14 @@ function readFrameState() {
     name: doc.querySelector(".rz-name")?.textContent ?? null,
     title: doc.title,
     hasJordan: doc.documentElement.outerHTML.includes("Jordan Hale"),
+    articleHtml: doc.querySelector("article.rz-resume")?.outerHTML,
   };
 }
 
-async function openGarden(browser, origin, { beforeNavigate } = {}) {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
-  const pageErrors = [];
-  const requests = [];
-  page.on("pageerror", (error) => pageErrors.push(error.message));
-  page.on("request", (request) => requests.push(request.url()));
-  if (beforeNavigate) {
-    await beforeNavigate(page);
-  }
-  await page.goto(`${origin}/`, { waitUntil: "networkidle" });
-  await page.frameLocator("#garden-frame").locator(".rz-resume").waitFor();
-  await page.waitForFunction(() => typeof window.resumezen?.render === "function");
-  return { page, pageErrors, requests };
+// Runs in the page: the article of a rendered document, serialised the same
+// way the sandbox serialises its own.
+function renderedArticleHtml(html) {
+  return new DOMParser().parseFromString(html, "text/html").querySelector("article.rz-resume")?.outerHTML ?? "";
 }
 
 async function parityProbe({ browser, origin, report, repoDir, frontendDir }) {
@@ -183,15 +185,17 @@ async function swapProbe({ browser, origin, report, frontendDir }) {
     await page.evaluate((html) => window.resumezen.swap(html), outcome.html);
   }
   const after = await page.evaluate(readFrameState);
+  const renderedArticle = outcome.ok ? await page.evaluate(renderedArticleHtml, outcome.html) : "";
   const reasons = [
     ...(outcome.ok ? swapReasons(before, after) : [`render rejected: ${outcome.message}`]),
+    ...(outcome.ok ? articleReasons(renderedArticle, after.articleHtml) : []),
     ...pageErrors.map((e) => `pageerror: ${e}`),
   ];
   await page.close();
   if (reasons.length) {
     report.fail(`ZG-4/wasm-swap ${reasons.join("; ")}`);
   } else {
-    report.pass(`ZG-4/wasm-swap Ada in the sandbox; iframe src ${after.src}; #theme-stylesheet ${after.themeHref} unchanged; title ${JSON.stringify(after.title)}`);
+    report.pass(`ZG-4/wasm-swap Ada in the sandbox (article byte-equal to the rendered one, ${renderedArticle.length} chars); iframe src ${after.src}; #theme-stylesheet ${after.themeHref} unchanged; title ${JSON.stringify(after.title)}`);
   }
 }
 

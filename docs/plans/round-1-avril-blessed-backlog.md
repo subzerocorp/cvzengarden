@@ -61,7 +61,7 @@ Every round-0 complaint theme A1–F6 maps to a PBI `## Covers` or a reasoned `#
 | Topic | Status |
 |---|---|
 | License (ZG-17) | **Decided 2026-08-24:** code MIT; themes CC BY 4.0; `Copyright (c) 2026 Nathan Sculli`; README credit "sponsored with love by SubZero Corp". |
-| Fonts (ZG-13) | In discussion: same rule for first-party and contributors; fonts by URL, Garden-hosted font library vs third-party CDN. ZG-13 will be amended and re-chained if the shape changes. |
+| Fonts (ZG-13) | **Decided 2026-08-24:** Font Library (anyone may submit original fonts, inbound CC BY 4.0; OFL seeds keep OFL). First-party Themes self-host from origin. Submitted Themes may also `@font-face` any public HTTPS CDN font — **no host allowlist**; CSS only, no JS loader. Record: `docs/plans/fonts-decision.md`. ZG-13 execution stays first-party vendoring + README policy; Font Library *submit product* is a later AVRIL PBI. |
 | Schema validator crate (ZG-6), `sha2`/`rand` (ZG-21), retention wording (ZG-22), review turnaround (ZG-18), backend host / deploy path after ZG-4 | Pending grill; AXEL proceeds under the assumption stated in each PBI's `## Notes` and flags it. |
 
 ## Blessing log
