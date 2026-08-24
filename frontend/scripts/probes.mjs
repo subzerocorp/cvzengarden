@@ -14,6 +14,15 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+import {
+  COLD_SETTLE_MS,
+  COLD_SHEET_DELAY_MS,
+  describePaintOrder,
+  paintOrderReasons,
+  paintPresenceReasons,
+  readSandboxPaintTiming,
+} from "./probes/lib/paint.mjs";
+import { sheetBlockingReasons } from "./probes/lib/sheet-blocking.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const frontendDir = path.resolve(__dirname, "..");
@@ -225,6 +234,12 @@ function staticProbes() {
   }
   if (!sandbox.includes('id="theme-stylesheet"')) {
     fail("Sandbox is missing #theme-stylesheet");
+  }
+  const blocking = sheetBlockingReasons(sandbox);
+  if (blocking.length) {
+    fail(`ZG-23/cold-sheet-blocking ${blocking.join("; ")}`);
+  } else {
+    pass("ZG-23/cold-sheet-blocking #theme-stylesheet is a render-blocking <link> in <head>");
   }
 
   const ports = fs.readFileSync(path.join(frontendDir, "static", "ports.js"), "utf8");
@@ -617,22 +632,53 @@ async function s1Probes(browser, page, identity) {
     pass("S1 identity stayed put: .rz-resume HTML, iframe src, .rz-name text");
   }
 
+  reportColdPaint(await coldLoadPaintTiming(browser));
+}
+
+async function holdThemeSheets(page, delayMs) {
+  await page.route("**/themes/*.css", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+    await route.continue();
+  });
+}
+
+async function waitForSandboxComplete(page) {
+  await page.waitForFunction(() => {
+    const doc = document.getElementById("garden-frame")?.contentDocument;
+    return Boolean(doc && doc.location.pathname.endsWith("sandbox.html") && doc.readyState === "complete");
+  });
+}
+
+function sandboxFrame(page) {
+  return page.frames().find((frame) => frame.url().endsWith("sandbox.html"));
+}
+
+async function coldLoadPaintTiming(browser) {
   const cold = await browser.newPage();
-  const coldSamples = [];
+  await holdThemeSheets(cold, COLD_SHEET_DELAY_MS);
   await cold.goto(origin + "/", { waitUntil: "commit" });
-  for (let i = 0; i < 36; i += 1) {
-    coldSamples.push(await captureFrame(cold));
-    await cold.waitForTimeout(20);
-  }
-  await cold.waitForSelector(".theme-switcher");
-  await cold.locator("#garden-frame").waitFor();
-  const coldFouc = coldSamples.filter(isFoucSample);
-  if (coldFouc.length) {
-    fail(`S1 cold load FOUC: ${coldFouc.length} unstyled committed frame(s)`);
-  } else {
-    pass("S1 cold load never painted UA-default serif on a blank canvas");
-  }
+  await waitForSandboxComplete(cold);
+  await cold.waitForTimeout(COLD_SETTLE_MS);
+  const timing = await readSandboxPaintTiming(sandboxFrame(cold));
+  await cold.unroute("**/themes/*.css");
   await cold.close();
+  return timing;
+}
+
+function reportColdPaint(timing) {
+  const order = paintOrderReasons(timing, COLD_SHEET_DELAY_MS);
+  if (order.length) {
+    fail(`ZG-23/cold-paint-order ${order.join("; ")}`);
+  } else {
+    pass(`ZG-23/cold-paint-order ${describePaintOrder(timing)}`);
+  }
+
+  const presence = paintPresenceReasons(timing, isUaDefaultSerif);
+  if (presence.length) {
+    fail(`ZG-23/cold-paint-present ${presence.join("; ")}`);
+  } else {
+    pass("ZG-23/cold-paint-present first-paint and first-contentful-paint recorded in the styled sandbox");
+  }
 }
 
 async function s2Probes(page) {
