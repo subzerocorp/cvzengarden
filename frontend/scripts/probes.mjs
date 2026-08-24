@@ -33,6 +33,7 @@ import {
 } from "./probes/lib/page.mjs";
 import { countPdfPages, printToPdf } from "./probes/lib/pdf.mjs";
 import { sheetSourceFor } from "./probes/lib/sheet-source.mjs";
+import { zg4Probes } from "./probes/zg-4.mjs";
 import { zg11Probes } from "./probes/zg-11.mjs";
 import { zg12Probes } from "./probes/zg-12.mjs";
 
@@ -1109,6 +1110,7 @@ async function browserProbes() {
     await s5Probes(page);
     await zg11Group(browser);
     await zg12Group(browser);
+    await zg4Probes({ browser, origin, report: { pass, fail }, repoDir, frontendDir });
   }
 
   await browser.close();

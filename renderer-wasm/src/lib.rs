@@ -26,6 +26,14 @@ pub fn contract_version() -> String {
     resumezen_renderer::CONTRACT_VERSION.to_owned()
 }
 
+/// This crate's version, for the deploy-time skew check between the static
+/// site and the API (both link the same pure renderer).
+#[wasm_bindgen]
+#[must_use]
+pub fn version() -> String {
+    env!("CARGO_PKG_VERSION").to_owned()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -46,5 +54,10 @@ mod tests {
     #[test]
     fn contract_version_matches_pure_crate() {
         assert_eq!(contract_version(), resumezen_renderer::CONTRACT_VERSION);
+    }
+
+    #[test]
+    fn version_is_the_package_version() {
+        assert_eq!(version(), env!("CARGO_PKG_VERSION"));
     }
 }

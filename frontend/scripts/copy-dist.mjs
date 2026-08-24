@@ -21,6 +21,7 @@ function copyFile(from, to) {
 
 copyFile(path.join(frontendDir, "static", "index.html"), path.join(distDir, "index.html"));
 copyFile(path.join(frontendDir, "static", "ports.js"), path.join(distDir, "ports.js"));
+copyFile(path.join(frontendDir, "static", "render.js"), path.join(distDir, "render.js"));
 copyFile(path.join(frontendDir, "css", "chrome.css"), path.join(distDir, "chrome.css"));
 copyFile(
   path.join(frontendDir, "generated", "sandbox.html"),
@@ -35,6 +36,17 @@ for (const name of fs.readdirSync(themesDir)) {
     continue;
   }
   copyFile(path.join(themesDir, name), path.join(themeOut, name));
+}
+
+// Wasm glue + binary from `npm run build`'s wasm-pack step (never committed).
+const wasmDir = path.join(frontendDir, "static", "wasm");
+if (!fs.existsSync(wasmDir)) {
+  throw new Error("static/wasm is missing: run `node scripts/build-wasm.mjs` (npm run build does)");
+}
+for (const name of fs.readdirSync(wasmDir)) {
+  if (name.endsWith(".js") || name.endsWith("_bg.wasm")) {
+    copyFile(path.join(wasmDir, name), path.join(distDir, "wasm", name));
+  }
 }
 
 if (fs.existsSync(path.join(distDir, "preview.css"))) {

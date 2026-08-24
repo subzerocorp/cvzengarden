@@ -4,10 +4,10 @@
   "type": "module",
   "scripts": {
     "gen": "node scripts/generate.mjs",
-    "build": "npm run gen && elm make src/Main.elm --output=dist/garden.js && node scripts/copy-dist.mjs",
+    "build": "npm run gen && node scripts/build-wasm.mjs && elm make src/Main.elm --output=dist/garden.js && node scripts/copy-dist.mjs",
     "start": "npm run build && node scripts/serve.mjs",
     "probe": "npm run build && node scripts/probes.mjs",
-    "test:unit": "node --test scripts/probes",
+    "test:unit": "node --test scripts static",
     "test": "npm run test:unit && npm run probe"
   },
   "devDependencies": {
