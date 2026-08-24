@@ -1,0 +1,7 @@
+# AVRIL round 1 — Generator revise (cycle 9)
+
+**Role:** `planning-architect-agent` · **Date:** 2026-08-24 · **Inputs:** `docs/plans/round-1-avril-cto-round7.md` (REJECT), `docs/plans/round-1-avril-qa-round7.md` (non-blocking correction), `pinto show ZG-23 --plain`.
+
+Two deltas applied to ZG-23's body via `pinto edit ZG-23 -b`, nothing else touched (title, labels `avril, round-1, harness`, rank, and every other line of the body are byte-identical). First, the CTO's blocker: the diff-scope AC no longer says "lists exactly `frontend/scripts/probes.mjs`"; it now reads "lists only `frontend/scripts/probes.mjs` and, if the executor extracts the paint-timing helper or the ZG-23 probe into modules, paths under `frontend/scripts/probes/`", with the untouched list (`ports.js`, `generate.mjs`, `skeleton/`, `themes/`, `renderer/`) kept verbatim so the guard against "fixing" the sandbox survives. Second, QA's correction to the behavioural anti-stub AC: because `frontend/dist/` is gitignored, "`git checkout` restores the tree afterwards" was a no-op instruction; it now says "`cd frontend && npm run build` restores `dist/` afterwards (`frontend/dist/` is gitignored, so `git checkout` cannot restore it)". The CTO's optional `Guidance for AXEL` note was not added; the widened guard already leaves layout to the architect and I do not want to pin it the other way.
+
+Changed ids: **ZG-23** (material edit — all cycle-7 blessings are void; re-run PO → QA → CTO). No other item was touched. I do not bless my own work.

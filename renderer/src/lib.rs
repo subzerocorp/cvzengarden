@@ -1,4 +1,4 @@
-//! ResumeZen renderer: JSON Resume → fixed `rz-*` Skeleton HTML.
+//! `ResumeZen` renderer: JSON Resume → fixed `rz-*` Skeleton HTML.
 //!
 //! This crate is a pure function. It does not load Themes, talk to the
 //! network, or emit PDF. Themes never see the Resume; they only target the
@@ -16,6 +16,7 @@ pub use resume::{
 };
 
 /// Crate version. Not the HTML contract version (`data-rz-schema`).
+#[must_use]
 pub fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")
 }
@@ -29,11 +30,17 @@ pub const CONTRACT_VERSION: &str = "1.0";
 /// outside the HTML contract field map (`meta`, `work[].description`,
 /// `basics.location.address`, `postalCode`, unknown `additionalProperties`)
 /// are ignored by the emitter.
+#[must_use]
 pub fn render(resume: &Resume) -> String {
     emit::render(resume)
 }
 
 /// Parse a JSON Resume document and render it.
+///
+/// # Errors
+///
+/// Returns the `serde_json::Error` when `json` is not a valid JSON Resume
+/// document (malformed JSON or a field of the wrong type).
 pub fn render_json(json: &str) -> Result<String, serde_json::Error> {
     Ok(render(&Resume::from_json(json)?))
 }

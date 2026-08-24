@@ -9,7 +9,7 @@ pub fn kv<'a>(key: &'a str, value: &'a str) -> Attr<'a> {
     Attr::Kv(key, value)
 }
 
-pub fn flag<'a>(key: &'a str) -> Attr<'a> {
+pub fn flag(key: &str) -> Attr<'_> {
     Attr::Flag(key)
 }
 

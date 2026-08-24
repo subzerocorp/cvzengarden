@@ -2,7 +2,10 @@ use std::collections::HashSet;
 
 use crate::date::format_iso_date;
 use crate::html::{flag, kv, Html};
-use crate::resume::*;
+use crate::resume::{
+    Award, Basics, Certificate, Education, Interest, Language, Location, Profile, Project,
+    Publication, Reference, Resume, Skill, Volunteer, Work,
+};
 use crate::slug::{entry_slug, iso_year, slugify, uniquify};
 use crate::CONTRACT_VERSION;
 
@@ -35,8 +38,8 @@ pub fn render(resume: &Resume) -> String {
 
 fn document_title(resume: &Resume) -> String {
     let basics = resume.basics.as_ref();
-    let name = basics.and_then(|b| nonempty(&b.name));
-    let label = basics.and_then(|b| nonempty(&b.label));
+    let name = basics.and_then(|b| nonempty(b.name.as_deref()));
+    let label = basics.and_then(|b| nonempty(b.label.as_deref()));
     match (name, label) {
         (Some(n), Some(l)) => format!("{n} — {l}"),
         (Some(n), None) => n.to_string(),
@@ -90,7 +93,7 @@ fn emit_header(html: &mut Html, basics: Option<&Basics>) {
     let Some(basics) = basics else {
         return;
     };
-    let Some(name) = nonempty(&basics.name) else {
+    let Some(name) = nonempty(basics.name.as_deref()) else {
         return;
     };
 
@@ -101,7 +104,7 @@ fn emit_header(html: &mut Html, basics: Option<&Basics>) {
         &[kv("class", "rz-name"), kv("itemprop", "name")],
         name,
     );
-    if let Some(label) = nonempty(&basics.label) {
+    if let Some(label) = nonempty(basics.label.as_deref()) {
         html.text_el(
             "p",
             &[kv("class", "rz-title"), kv("itemprop", "jobTitle")],
@@ -110,7 +113,7 @@ fn emit_header(html: &mut Html, basics: Option<&Basics>) {
     }
     html.close("div");
 
-    if let Some(image) = nonempty(&basics.image) {
+    if let Some(image) = nonempty(basics.image.as_deref()) {
         html.open("figure", &[kv("class", "rz-photo")]);
         let alt = format!("Portrait of {name}");
         html.void(
@@ -130,9 +133,9 @@ fn emit_header(html: &mut Html, basics: Option<&Basics>) {
 }
 
 fn emit_contacts(html: &mut Html, basics: &Basics) {
-    let email = nonempty(&basics.email);
-    let phone = nonempty(&basics.phone);
-    let url = nonempty(&basics.url);
+    let email = nonempty(basics.email.as_deref());
+    let phone = nonempty(basics.phone.as_deref());
+    let url = nonempty(basics.url.as_deref());
     let location = location_text(basics.location.as_ref());
     if email.is_none() && phone.is_none() && url.is_none() && location.is_none() {
         return;
@@ -194,7 +197,7 @@ fn contact_row(
 fn emit_links(html: &mut Html, profiles: &[Profile]) {
     let items: Vec<_> = profiles
         .iter()
-        .filter(|p| nonempty(&p.url).is_some())
+        .filter(|p| nonempty(p.url.as_deref()).is_some())
         .collect();
     if items.is_empty() {
         return;
@@ -206,14 +209,13 @@ fn emit_links(html: &mut Html, profiles: &[Profile]) {
     );
     html.open("ul", &[kv("class", "rz-link-list")]);
     for profile in items {
-        let url = nonempty(&profile.url).expect("filtered");
+        let url = nonempty(profile.url.as_deref()).expect("filtered");
         let href = abs_http_url(url);
-        let network = nonempty(&profile.network).unwrap_or("");
+        let network = nonempty(profile.network.as_deref()).unwrap_or("");
         let kind = profile_type(network);
         let label = if network.is_empty() { kind } else { network };
-        let text = nonempty(&profile.username)
-            .map(str::to_string)
-            .unwrap_or_else(|| hostname(&href));
+        let text =
+            nonempty(profile.username.as_deref()).map_or_else(|| hostname(&href), str::to_string);
         let class = format!("rz-link rz-link--{kind}");
         html.open("li", &[kv("class", &class), kv("data-rz-type", kind)]);
         html.text_el("span", &[kv("class", "rz-link-label")], label);
@@ -229,7 +231,7 @@ fn emit_links(html: &mut Html, profiles: &[Profile]) {
 }
 
 fn emit_summary(html: &mut Html, basics: Option<&Basics>) {
-    let Some(summary) = basics.and_then(|b| nonempty(&b.summary)) else {
+    let Some(summary) = basics.and_then(|b| nonempty(b.summary.as_deref())) else {
         return;
     };
     open_section(html, "summary", "Summary", false, None);
@@ -247,20 +249,20 @@ fn emit_experience(html: &mut Html, items: &[Work], slugs: &mut HashSet<String>)
     for work in items {
         let bits = EntryBits {
             kind: "experience",
-            primary: nonempty(&work.name),
-            url: nonempty(&work.url),
-            secondary: nonempty(&work.position).map(str::to_string),
-            start: nonempty(&work.start_date),
-            end: nonempty(&work.end_date),
+            primary: nonempty(work.name.as_deref()),
+            url: nonempty(work.url.as_deref()),
+            secondary: nonempty(work.position.as_deref()).map(str::to_string),
+            start: nonempty(work.start_date.as_deref()),
+            end: nonempty(work.end_date.as_deref()),
             single_date: None,
-            location: nonempty(&work.location),
+            location: nonempty(work.location.as_deref()),
             score: None,
-            summary: nonempty(&work.summary),
+            summary: nonempty(work.summary.as_deref()),
             highlights: nonempty_list(work.highlights.as_deref()),
             tags: &[],
             meta: vec![],
         };
-        emit_entry(html, bits, slugs);
+        emit_entry(html, &bits, slugs);
     }
     html.close("ol");
     html.close("section");
@@ -276,20 +278,20 @@ fn emit_volunteer(html: &mut Html, items: &[Volunteer], slugs: &mut HashSet<Stri
     for item in items {
         let bits = EntryBits {
             kind: "extra",
-            primary: nonempty(&item.organization),
-            url: nonempty(&item.url),
-            secondary: nonempty(&item.position).map(str::to_string),
-            start: nonempty(&item.start_date),
-            end: nonempty(&item.end_date),
+            primary: nonempty(item.organization.as_deref()),
+            url: nonempty(item.url.as_deref()),
+            secondary: nonempty(item.position.as_deref()).map(str::to_string),
+            start: nonempty(item.start_date.as_deref()),
+            end: nonempty(item.end_date.as_deref()),
             single_date: None,
             location: None,
             score: None,
-            summary: nonempty(&item.summary),
+            summary: nonempty(item.summary.as_deref()),
             highlights: nonempty_list(item.highlights.as_deref()),
             tags: &[],
             meta: vec![],
         };
-        emit_entry(html, bits, slugs);
+        emit_entry(html, &bits, slugs);
     }
     html.close("ol");
     html.close("section");
@@ -305,20 +307,20 @@ fn emit_education(html: &mut Html, items: &[Education], slugs: &mut HashSet<Stri
     for item in items {
         let bits = EntryBits {
             kind: "education",
-            primary: nonempty(&item.institution),
-            url: nonempty(&item.url),
+            primary: nonempty(item.institution.as_deref()),
+            url: nonempty(item.url.as_deref()),
             secondary: education_secondary(item),
-            start: nonempty(&item.start_date),
-            end: nonempty(&item.end_date),
+            start: nonempty(item.start_date.as_deref()),
+            end: nonempty(item.end_date.as_deref()),
             single_date: None,
             location: None,
-            score: nonempty(&item.score).map(format_score),
+            score: nonempty(item.score.as_deref()).map(format_score),
             summary: None,
             highlights: &[],
             tags: nonempty_list(item.courses.as_deref()),
             meta: vec![],
         };
-        emit_entry(html, bits, slugs);
+        emit_entry(html, &bits, slugs);
     }
     html.close("ol");
     html.close("section");
@@ -334,20 +336,20 @@ fn emit_awards(html: &mut Html, items: &[Award], slugs: &mut HashSet<String>) {
     for item in items {
         let bits = EntryBits {
             kind: "extra",
-            primary: nonempty(&item.title),
+            primary: nonempty(item.title.as_deref()),
             url: None,
-            secondary: nonempty(&item.awarder).map(str::to_string),
+            secondary: nonempty(item.awarder.as_deref()).map(str::to_string),
             start: None,
             end: None,
-            single_date: nonempty(&item.date),
+            single_date: nonempty(item.date.as_deref()),
             location: None,
             score: None,
-            summary: nonempty(&item.summary),
+            summary: nonempty(item.summary.as_deref()),
             highlights: &[],
             tags: &[],
             meta: vec![],
         };
-        emit_entry(html, bits, slugs);
+        emit_entry(html, &bits, slugs);
     }
     html.close("ol");
     html.close("section");
@@ -366,12 +368,12 @@ fn emit_certificates(html: &mut Html, items: &[Certificate], slugs: &mut HashSet
     for item in items {
         let bits = EntryBits {
             kind: "extra",
-            primary: nonempty(&item.name),
-            url: nonempty(&item.url),
-            secondary: nonempty(&item.issuer).map(str::to_string),
+            primary: nonempty(item.name.as_deref()),
+            url: nonempty(item.url.as_deref()),
+            secondary: nonempty(item.issuer.as_deref()).map(str::to_string),
             start: None,
             end: None,
-            single_date: nonempty(&item.date),
+            single_date: nonempty(item.date.as_deref()),
             location: None,
             score: None,
             summary: None,
@@ -379,7 +381,7 @@ fn emit_certificates(html: &mut Html, items: &[Certificate], slugs: &mut HashSet
             tags: &[],
             meta: vec![],
         };
-        emit_entry(html, bits, slugs);
+        emit_entry(html, &bits, slugs);
     }
     html.close("ol");
     html.close("section");
@@ -398,20 +400,20 @@ fn emit_publications(html: &mut Html, items: &[Publication], slugs: &mut HashSet
     for item in items {
         let bits = EntryBits {
             kind: "extra",
-            primary: nonempty(&item.name),
-            url: nonempty(&item.url),
-            secondary: nonempty(&item.publisher).map(str::to_string),
+            primary: nonempty(item.name.as_deref()),
+            url: nonempty(item.url.as_deref()),
+            secondary: nonempty(item.publisher.as_deref()).map(str::to_string),
             start: None,
             end: None,
-            single_date: nonempty(&item.release_date),
+            single_date: nonempty(item.release_date.as_deref()),
             location: None,
             score: None,
-            summary: nonempty(&item.summary),
+            summary: nonempty(item.summary.as_deref()),
             highlights: &[],
             tags: &[],
             meta: vec![],
         };
-        emit_entry(html, bits, slugs);
+        emit_entry(html, &bits, slugs);
     }
     html.close("ol");
     html.close("section");
@@ -426,7 +428,7 @@ fn emit_skills(html: &mut Html, items: &[Skill]) {
     html.open("ul", &[kv("class", "rz-skill-groups")]);
     let mut group_slugs = HashSet::new();
     for skill in items {
-        let name = nonempty(&skill.name);
+        let name = nonempty(skill.name.as_deref());
         let slug_src = name.unwrap_or("skill");
         let slug = uniquify(slugify(slug_src), &mut group_slugs);
         html.open(
@@ -439,7 +441,7 @@ fn emit_skills(html: &mut Html, items: &[Skill]) {
         if let Some(name) = name {
             html.text_el("h3", &[kv("class", "rz-skill-group-name")], name);
         }
-        if let Some(level) = nonempty(&skill.level) {
+        if let Some(level) = nonempty(skill.level.as_deref()) {
             html.text_el("p", &[kv("class", "rz-skill-level")], level);
         }
         let keywords: Vec<&str> = nonempty_list(skill.keywords.as_deref())
@@ -463,7 +465,7 @@ fn emit_skills(html: &mut Html, items: &[Skill]) {
 fn emit_languages(html: &mut Html, items: &[Language]) {
     let items: Vec<&Language> = items
         .iter()
-        .filter(|l| nonempty(&l.language).is_some())
+        .filter(|l| nonempty(l.language.as_deref()).is_some())
         .collect();
     if items.is_empty() {
         return;
@@ -475,9 +477,9 @@ fn emit_languages(html: &mut Html, items: &[Language]) {
         html.text_el(
             "span",
             &[kv("class", "rz-meta-label")],
-            nonempty(&item.language).unwrap(),
+            nonempty(item.language.as_deref()).unwrap(),
         );
-        if let Some(fluency) = nonempty(&item.fluency) {
+        if let Some(fluency) = nonempty(item.fluency.as_deref()) {
             html.text_el("span", &[kv("class", "rz-meta-detail")], fluency);
         }
         html.close("li");
@@ -489,7 +491,7 @@ fn emit_languages(html: &mut Html, items: &[Language]) {
 fn emit_interests(html: &mut Html, items: &[Interest], slugs: &mut HashSet<String>) {
     let items: Vec<&Interest> = items
         .iter()
-        .filter(|i| nonempty(&i.name).is_some())
+        .filter(|i| nonempty(i.name.as_deref()).is_some())
         .collect();
     if items.is_empty() {
         return;
@@ -504,7 +506,7 @@ fn emit_interests(html: &mut Html, items: &[Interest], slugs: &mut HashSet<Strin
             let tags = nonempty_list(item.keywords.as_deref());
             let bits = EntryBits {
                 kind: "extra",
-                primary: nonempty(&item.name),
+                primary: nonempty(item.name.as_deref()),
                 url: None,
                 secondary: None,
                 start: None,
@@ -517,7 +519,7 @@ fn emit_interests(html: &mut Html, items: &[Interest], slugs: &mut HashSet<Strin
                 tags,
                 meta: vec![],
             };
-            emit_entry(html, bits, slugs);
+            emit_entry(html, &bits, slugs);
         }
         html.close("ol");
         html.close("section");
@@ -528,7 +530,7 @@ fn emit_interests(html: &mut Html, items: &[Interest], slugs: &mut HashSet<Strin
             html.text_el(
                 "li",
                 &[kv("class", "rz-tag")],
-                nonempty(&item.name).unwrap(),
+                nonempty(item.name.as_deref()).unwrap(),
             );
         }
         html.close("ul");
@@ -546,7 +548,7 @@ fn emit_references(html: &mut Html, items: &[Reference], slugs: &mut HashSet<Str
     for item in items {
         let bits = EntryBits {
             kind: "extra",
-            primary: nonempty(&item.name),
+            primary: nonempty(item.name.as_deref()),
             url: None,
             secondary: None,
             start: None,
@@ -554,12 +556,12 @@ fn emit_references(html: &mut Html, items: &[Reference], slugs: &mut HashSet<Str
             single_date: None,
             location: None,
             score: None,
-            summary: nonempty(&item.reference),
+            summary: nonempty(item.reference.as_deref()),
             highlights: &[],
             tags: &[],
             meta: vec![],
         };
-        emit_entry(html, bits, slugs);
+        emit_entry(html, &bits, slugs);
     }
     html.close("ol");
     html.close("section");
@@ -578,19 +580,19 @@ fn emit_projects(html: &mut Html, items: &[Project], slugs: &mut HashSet<String>
         if !roles.is_empty() {
             meta.push(("Roles".to_string(), roles.join(", ")));
         }
-        if let Some(entity) = nonempty(&item.entity) {
+        if let Some(entity) = nonempty(item.entity.as_deref()) {
             meta.push(("Affiliation".to_string(), entity.to_string()));
         }
-        if let Some(kind) = nonempty(&item.r#type) {
+        if let Some(kind) = nonempty(item.r#type.as_deref()) {
             meta.push(("Type".to_string(), kind.to_string()));
         }
         let bits = EntryBits {
             kind: "project",
-            primary: nonempty(&item.name),
-            url: nonempty(&item.url),
-            secondary: nonempty(&item.description).map(str::to_string),
-            start: nonempty(&item.start_date),
-            end: nonempty(&item.end_date),
+            primary: nonempty(item.name.as_deref()),
+            url: nonempty(item.url.as_deref()),
+            secondary: nonempty(item.description.as_deref()).map(str::to_string),
+            start: nonempty(item.start_date.as_deref()),
+            end: nonempty(item.end_date.as_deref()),
             single_date: None,
             location: None,
             score: None,
@@ -599,7 +601,7 @@ fn emit_projects(html: &mut Html, items: &[Project], slugs: &mut HashSet<String>
             tags: nonempty_list(item.keywords.as_deref()),
             meta,
         };
-        emit_entry(html, bits, slugs);
+        emit_entry(html, &bits, slugs);
     }
     html.close("ol");
     html.close("section");
@@ -621,7 +623,7 @@ struct EntryBits<'a> {
     meta: Vec<(String, String)>,
 }
 
-fn emit_entry(html: &mut Html, bits: EntryBits<'_>, slugs: &mut HashSet<String>) {
+fn emit_entry(html: &mut Html, bits: &EntryBits<'_>, slugs: &mut HashSet<String>) {
     let year = bits.single_date.or(bits.start).and_then(iso_year);
     let slug = entry_slug(bits.primary.unwrap_or(""), year, slugs);
     let is_current = bits.single_date.is_none() && bits.start.is_some() && bits.end.is_none();
@@ -822,18 +824,21 @@ fn open_section(html: &mut Html, id: &str, title: &str, extra: bool, kind: Optio
 
 fn location_text(location: Option<&Location>) -> Option<String> {
     let location = location?;
-    let city = nonempty(&location.city);
-    let region = nonempty(&location.region);
+    let city = nonempty(location.city.as_deref());
+    let region = nonempty(location.region.as_deref());
     match (city, region) {
         (Some(c), Some(r)) => Some(format!("{c}, {r}")),
         (Some(c), None) => Some(c.to_string()),
         (None, Some(r)) => Some(r.to_string()),
-        (None, None) => nonempty(&location.country_code).map(str::to_string),
+        (None, None) => nonempty(location.country_code.as_deref()).map(str::to_string),
     }
 }
 
 fn education_secondary(item: &Education) -> Option<String> {
-    match (nonempty(&item.study_type), nonempty(&item.area)) {
+    match (
+        nonempty(item.study_type.as_deref()),
+        nonempty(item.area.as_deref()),
+    ) {
         (Some(s), Some(a)) => Some(format!("{s} in {a}")),
         (Some(s), None) => Some(s.to_string()),
         (None, Some(a)) => Some(a.to_string()),
@@ -897,8 +902,8 @@ fn profile_type(network: &str) -> &'static str {
         .unwrap_or("other")
 }
 
-fn nonempty(value: &Option<String>) -> Option<&str> {
-    value.as_deref().map(str::trim).filter(|s| !s.is_empty())
+fn nonempty(value: Option<&str>) -> Option<&str> {
+    value.map(str::trim).filter(|s| !s.is_empty())
 }
 
 fn nonempty_list(items: Option<&[String]>) -> &[String] {
@@ -906,81 +911,81 @@ fn nonempty_list(items: Option<&[String]>) -> &[String] {
 }
 
 fn work_has_content(w: &Work) -> bool {
-    nonempty(&w.name).is_some()
-        || nonempty(&w.position).is_some()
-        || nonempty(&w.start_date).is_some()
-        || nonempty(&w.end_date).is_some()
-        || nonempty(&w.location).is_some()
-        || nonempty(&w.summary).is_some()
+    nonempty(w.name.as_deref()).is_some()
+        || nonempty(w.position.as_deref()).is_some()
+        || nonempty(w.start_date.as_deref()).is_some()
+        || nonempty(w.end_date.as_deref()).is_some()
+        || nonempty(w.location.as_deref()).is_some()
+        || nonempty(w.summary.as_deref()).is_some()
         || has_any(w.highlights.as_deref())
 }
 
 fn volunteer_has_content(v: &Volunteer) -> bool {
-    nonempty(&v.organization).is_some()
-        || nonempty(&v.position).is_some()
-        || nonempty(&v.start_date).is_some()
-        || nonempty(&v.end_date).is_some()
-        || nonempty(&v.summary).is_some()
+    nonempty(v.organization.as_deref()).is_some()
+        || nonempty(v.position.as_deref()).is_some()
+        || nonempty(v.start_date.as_deref()).is_some()
+        || nonempty(v.end_date.as_deref()).is_some()
+        || nonempty(v.summary.as_deref()).is_some()
         || has_any(v.highlights.as_deref())
 }
 
 fn education_has_content(e: &Education) -> bool {
-    nonempty(&e.institution).is_some()
-        || nonempty(&e.area).is_some()
-        || nonempty(&e.study_type).is_some()
-        || nonempty(&e.start_date).is_some()
-        || nonempty(&e.end_date).is_some()
-        || nonempty(&e.score).is_some()
+    nonempty(e.institution.as_deref()).is_some()
+        || nonempty(e.area.as_deref()).is_some()
+        || nonempty(e.study_type.as_deref()).is_some()
+        || nonempty(e.start_date.as_deref()).is_some()
+        || nonempty(e.end_date.as_deref()).is_some()
+        || nonempty(e.score.as_deref()).is_some()
         || has_any(e.courses.as_deref())
 }
 
 fn award_has_content(a: &Award) -> bool {
-    nonempty(&a.title).is_some()
-        || nonempty(&a.awarder).is_some()
-        || nonempty(&a.date).is_some()
-        || nonempty(&a.summary).is_some()
+    nonempty(a.title.as_deref()).is_some()
+        || nonempty(a.awarder.as_deref()).is_some()
+        || nonempty(a.date.as_deref()).is_some()
+        || nonempty(a.summary.as_deref()).is_some()
 }
 
 fn certificate_has_content(c: &Certificate) -> bool {
-    nonempty(&c.name).is_some()
-        || nonempty(&c.issuer).is_some()
-        || nonempty(&c.date).is_some()
-        || nonempty(&c.url).is_some()
+    nonempty(c.name.as_deref()).is_some()
+        || nonempty(c.issuer.as_deref()).is_some()
+        || nonempty(c.date.as_deref()).is_some()
+        || nonempty(c.url.as_deref()).is_some()
 }
 
 fn publication_has_content(p: &Publication) -> bool {
-    nonempty(&p.name).is_some()
-        || nonempty(&p.publisher).is_some()
-        || nonempty(&p.release_date).is_some()
-        || nonempty(&p.summary).is_some()
-        || nonempty(&p.url).is_some()
+    nonempty(p.name.as_deref()).is_some()
+        || nonempty(p.publisher.as_deref()).is_some()
+        || nonempty(p.release_date.as_deref()).is_some()
+        || nonempty(p.summary.as_deref()).is_some()
+        || nonempty(p.url.as_deref()).is_some()
 }
 
 fn skill_has_content(s: &Skill) -> bool {
-    nonempty(&s.name).is_some() || nonempty(&s.level).is_some() || has_any(s.keywords.as_deref())
+    nonempty(s.name.as_deref()).is_some()
+        || nonempty(s.level.as_deref()).is_some()
+        || has_any(s.keywords.as_deref())
 }
 
 fn reference_has_content(r: &Reference) -> bool {
-    nonempty(&r.name).is_some() || nonempty(&r.reference).is_some()
+    nonempty(r.name.as_deref()).is_some() || nonempty(r.reference.as_deref()).is_some()
 }
 
 fn project_has_content(p: &Project) -> bool {
-    nonempty(&p.name).is_some()
-        || nonempty(&p.description).is_some()
-        || nonempty(&p.start_date).is_some()
-        || nonempty(&p.end_date).is_some()
-        || nonempty(&p.url).is_some()
-        || nonempty(&p.entity).is_some()
-        || nonempty(&p.r#type).is_some()
+    nonempty(p.name.as_deref()).is_some()
+        || nonempty(p.description.as_deref()).is_some()
+        || nonempty(p.start_date.as_deref()).is_some()
+        || nonempty(p.end_date.as_deref()).is_some()
+        || nonempty(p.url.as_deref()).is_some()
+        || nonempty(p.entity.as_deref()).is_some()
+        || nonempty(p.r#type.as_deref()).is_some()
         || has_any(p.highlights.as_deref())
         || has_any(p.keywords.as_deref())
         || has_any(p.roles.as_deref())
 }
 
 fn has_any(items: Option<&[String]>) -> bool {
-    items
-        .map(|items| items.iter().any(|s| !s.trim().is_empty()))
-        .unwrap_or(false)
+    items.is_some_and(|items| items.iter().any(|s| !s.trim().is_empty()))
 }
 
 #[cfg(test)]

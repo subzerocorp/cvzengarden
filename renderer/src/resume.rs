@@ -38,6 +38,11 @@ pub struct Resume {
 
 impl Resume {
     /// Deserialize a JSON Resume document.
+    ///
+    /// # Errors
+    ///
+    /// Returns the `serde_json::Error` when `json` is malformed or a field
+    /// has a type the JSON Resume schema does not allow.
     pub fn from_json(json: &str) -> Result<Self, serde_json::Error> {
         serde_json::from_str(json)
     }

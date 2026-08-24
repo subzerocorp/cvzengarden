@@ -1,5 +1,6 @@
 //! RZ-2 acceptance: a stub that returns "" or ignores the Resume must fail.
 
+use std::fmt::Write;
 use std::fs;
 use std::path::PathBuf;
 
@@ -259,7 +260,7 @@ enum Kid<'a> {
     Elem(scraper::ElementRef<'a>),
 }
 
-fn significant<'a>(el: scraper::ElementRef<'a>) -> Vec<Kid<'a>> {
+fn significant(el: scraper::ElementRef<'_>) -> Vec<Kid<'_>> {
     let mut kids = Vec::new();
     for child in el.children() {
         match child.value() {
@@ -270,7 +271,7 @@ fn significant<'a>(el: scraper::ElementRef<'a>) -> Vec<Kid<'a>> {
                     kids.push(Kid::Elem(child_el));
                 }
             }
-            Node::Comment(_) => {}
+            // Comments, doctype, and processing instructions carry no tree meaning.
             _ => {}
         }
     }
@@ -314,7 +315,8 @@ fn dump(el: scraper::ElementRef<'_>, depth: usize) -> String {
     let mut out = format!("{pad}<{} {}>\n", el.value().name(), attrs.join(" "));
     for kid in significant(el) {
         match kid {
-            Kid::Text(t) => out.push_str(&format!("{pad}  {t:?}\n")),
+            // fmt::Write into a String is infallible.
+            Kid::Text(t) => writeln!(out, "{pad}  {t:?}").expect("String fmt::Write"),
             Kid::Elem(child) => out.push_str(&dump(child, depth + 1)),
         }
     }

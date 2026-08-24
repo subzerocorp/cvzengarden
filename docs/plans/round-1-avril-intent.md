@@ -137,3 +137,11 @@ When every active round-1 PBI has fresh PO → QA → CTO `BLESS`:
 1. Write `docs/plans/round-1-avril-blessed-backlog.md`.
 2. Label those items `avril-blessed` in Pinto.
 3. Stop. Do not implement. Handoff is AXEL.
+
+---
+
+## Human decisions (recorded 2026-08-24)
+
+| # | Question | Decision |
+|---|---|---|
+| 3 | Repo license / theme-contribution license / copyright holder | Code: **MIT**. Contributed and first-party themes: **CC BY 4.0** (license-enforced attribution; the Garden displays the Designer's name and link). `LICENSE`: `Copyright (c) 2026 Nathan Sculli`. README credits line: "sponsored with love by SubZero Corp". Cargo `MIT OR Apache-2.0` → align to MIT. |
