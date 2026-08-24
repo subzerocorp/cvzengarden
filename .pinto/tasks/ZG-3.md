@@ -1,13 +1,14 @@
 +++
 id = "ZG-3"
 title = "Render wild JSON Resume files: numeric score, url-only entries, CRLF, bad URLs"
-status = "in-progress"
+status = "done"
 rank = "k"
 labels = ["avril", "round-1", "renderer", "avril-blessed"]
 depends_on = ["ZG-1", "ZG-2"]
 start_at = "2026-08-24T20:05:40.619469Z"
+done_at = "2026-08-24T20:24:05.051682Z"
 created = "2026-08-23T23:53:41.429847Z"
-updated = "2026-08-24T20:05:40.619469Z"
+updated = "2026-08-24T20:24:05.051682Z"
 +++
 
 ## Why
@@ -44,3 +45,16 @@ D2, D4, D5 — Marcus, Devon
 - ZG-2 (owner of `renderer/tests/wild.rs`)
 ## Notes
 - `dir="auto"` and `<span class="rz-link-value">` are attribute/element-shape changes inside existing classes; the Generator treats them as non-breaking under contract §9 (no rename, no new class). CTO to confirm or demand a `1.1` bump.
+
+## Execution Evidence (commit 84d2a91)
+- [x] score 3.7 / "3.7" → GPA 3.7; 4 → GPA 4; First Class → First Class (numeric_score_renders_gpa_prefix)
+- [x] url-only cert/pub → hostname links; empty-li sweep over 17 inline + 2 file fixtures matches nothing
+- [x] Keybase profile → <span class="rz-link-value">marcus</span>, no <a>
+- [x] CRLF summary → two <p>
+- [x] https:// profile → no .rz-link/<nav>; javascript profile → span no href; javascript basics.url → no contact; no 'javascript:' anywhere
+- [x] valueless link/contact sweep matches nothing
+- [x] 🔥🔥 → entry-2020, entry-2020-2; 🎨 → skill
+- [x] <article class="rz-resume" data-rz-schema="1.0" dir="auto"…>; example.html regenerated; acceptance green; §3 lists dir; §5.2 'omitted entirely'
+- [x] BAR-R1 Ada green
+- [x] just verify exit 0 (PROBE_PORT=4381/4385)
+GAN report: docs/plans/zg-3-gan-report.md

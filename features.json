@@ -74,6 +74,18 @@
           "current_from_parsed_start",
           "wild_tests"
         ]
+      },
+      {
+        "id": "zg-3",
+        "title": "ZG-3: wild JSON Resume rendering (score, url-only, CRLF, safe_href, slugs, dir=auto)",
+        "status": "completed",
+        "features": [
+          "score_string_or_number",
+          "url_safe_href",
+          "empty_entries_impossible",
+          "slug_fallbacks",
+          "dir_auto"
+        ]
       }
     ]
   }
