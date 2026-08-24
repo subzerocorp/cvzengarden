@@ -286,6 +286,8 @@ Used by `work`, `volunteer`, `education`, `projects`, and extras that are `entri
 
 When the primary has no URL, `.rz-entry-primary` is plain text (no `<a>`).
 
+A `.rz-bullet` highlight may contain `\n`; themes should respect it (`white-space: pre-line`).
+
 | Class / attr | Meaning |
 | --- | --- |
 | `.rz-entries` | `<ol>` of entries. Document order = JSON array order. |

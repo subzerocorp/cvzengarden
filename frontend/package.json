@@ -7,7 +7,8 @@
     "build": "npm run gen && elm make src/Main.elm --output=dist/garden.js && node scripts/copy-dist.mjs",
     "start": "npm run build && node scripts/serve.mjs",
     "probe": "npm run build && node scripts/probes.mjs",
-    "test": "npm run probe"
+    "test:unit": "node --test scripts/probes",
+    "test": "npm run test:unit && npm run probe"
   },
   "devDependencies": {
     "elm": "^0.19.1-6",

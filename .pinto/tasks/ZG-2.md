@@ -1,12 +1,13 @@
 +++
 id = "ZG-2"
 title = "Never panic on a wild date: tolerate timestamps, drop unparseable dates"
-status = "todo"
+status = "in-progress"
 rank = "j"
 labels = ["avril", "round-1", "renderer", "avril-blessed"]
 depends_on = ["ZG-1"]
+start_at = "2026-08-24T19:51:31.351168Z"
 created = "2026-08-23T23:53:41.365926Z"
-updated = "2026-08-24T01:13:24.252464Z"
+updated = "2026-08-24T19:51:31.351168Z"
 +++
 
 ## Why

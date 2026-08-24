@@ -1,0 +1,308 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jsonresume/resume-schema/master/schema.json",
+  "basics": {
+    "name": "Marcus Okafor-Lindqvist",
+    "label": "Principal Software Engineer",
+    "email": "marcus@okafor-lindqvist.example",
+    "phone": "+1 312 555 0188",
+    "url": "https://okafor-lindqvist.example",
+    "summary": "Principal engineer with fourteen years across payments, logistics, and developer platforms. I lead teams that ship boring, durable systems: event-sourced ledgers that reconcile to the cent, schedulers that survive a region outage, and build pipelines that stay green for years. I write the design docs first, argue for the smallest viable architecture, and stay close enough to the code to review every migration.\n\nI care most about the people who inherit what we build. That means readable service boundaries, on-call rotations that let engineers sleep, and interfaces documented well enough that a new hire can ship a change in their first week. Outside of work I mentor early-career engineers through a Chicago nonprofit and maintain two small open-source libraries.",
+    "location": {
+      "city": "Chicago",
+      "region": "IL",
+      "countryCode": "US"
+    },
+    "profiles": [
+      {
+        "network": "GitHub",
+        "username": "mokafor",
+        "url": "https://github.com/mokafor"
+      },
+      {
+        "network": "LinkedIn",
+        "username": "marcus-okafor-lindqvist",
+        "url": "https://www.linkedin.com/in/marcus-okafor-lindqvist"
+      },
+      {
+        "network": "Mastodon",
+        "username": "@mokafor@hachyderm.io",
+        "url": "https://hachyderm.io/@mokafor"
+      }
+    ]
+  },
+  "work": [
+    {
+      "name": "Northwind Payments",
+      "location": "Chicago, IL",
+      "description": "Card acquiring and payouts for marketplaces",
+      "position": "Principal Software Engineer",
+      "url": "https://northwind.example",
+      "startDate": "2021-04",
+      "summary": "Technical lead for the ledger and settlement platform that clears payouts for eleven thousand marketplace sellers in nine currencies.",
+      "highlights": [
+        "Designed and led the migration of the settlement ledger from nightly batch jobs to an event-sourced Rust service, cutting payout latency from eighteen hours to under four minutes.",
+        "Introduced a reconciliation harness that replays every production day against the ledger in CI, catching four rounding defects before they reached a single seller statement.",
+        "Grew the platform group from three engineers to eleven across two time zones, writing the hiring rubric, the onboarding curriculum, and the promotion cases for four staff engineers.",
+        "Negotiated the retirement of two legacy PHP services with finance and compliance, sequencing seventeen schema migrations so no reporting deadline slipped during the eight-month cutover.",
+        "Cut the fleet's cloud spend by thirty-one percent by moving idempotent settlement workers to spot capacity behind a checkpointing queue that tolerates preemption without duplicate payouts.",
+        "Wrote the incident-review template now used company-wide and ran forty-two blameless reviews, turning the top five recurring pages into permanent fixes within two quarters."
+      ]
+    },
+    {
+      "name": "Fernwood Logistics",
+      "location": "Minneapolis, MN",
+      "description": "Freight scheduling and dispatch software",
+      "position": "Staff Software Engineer",
+      "url": "https://fernwood.example",
+      "startDate": "2017-02",
+      "endDate": "2021-03",
+      "summary": "Owned the dispatch scheduler and the driver-facing APIs for a fleet of six thousand trucks across the upper Midwest.",
+      "highlights": [
+        "Rebuilt the dispatch scheduler as a constraint solver with explicit cost functions, raising on-time delivery from eighty-six to ninety-five percent without adding trucks or drivers.",
+        "Led the move from a single Postgres primary to region-sharded clusters with logical replication, giving the company its first survivable failover across a full data-center outage.",
+        "Designed the public partner API and its versioning policy; three national shippers integrated within a quarter and none needed a breaking change in four years.",
+        "Introduced property-based testing for routing invariants, which found a timezone bug that had silently misrouted overnight freight on daylight-saving weekends for years.",
+        "Mentored six engineers into senior roles by pairing weekly on design reviews, and started the internal architecture guild that still meets every other Thursday.",
+        "Delivered the driver mobile sync protocol that tolerated rural dead zones, replacing a polling design that had drained batteries and doubled support tickets during winter storms."
+      ]
+    },
+    {
+      "name": "Helix Cloud",
+      "location": "Remote",
+      "description": "Managed Kubernetes and continuous delivery",
+      "position": "Senior Software Engineer",
+      "url": "https://helix.example",
+      "startDate": "2013-09",
+      "endDate": "2017-01",
+      "summary": "Built the build and deploy pipeline product used by roughly nine hundred customer teams.",
+      "highlights": [
+        "Shipped a content-addressed build cache that cut median customer build times by sixty percent and saved the company eleven thousand dollars a month in compute.",
+        "Designed the deploy rollback path so any release could be reversed in under thirty seconds, then proved it with a monthly game-day exercise run against production.",
+        "Owned the Go client library and its release train, publishing forty-one versions with a written compatibility guarantee that customers cited in their own procurement reviews.",
+        "Replaced a hand-rolled job scheduler with a leased-work queue backed by etcd, eliminating the duplicate-deploy class of incidents that had paged the team weekly.",
+        "Led the security review that removed long-lived credentials from every build agent, moving the fleet to short-lived tokens issued by a hardened identity broker."
+      ]
+    },
+    {
+      "name": "Bramble Interactive",
+      "location": "Madison, WI",
+      "description": "Educational games for public libraries",
+      "position": "Software Engineer",
+      "url": "https://bramble.example",
+      "startDate": "2010-06",
+      "endDate": "2013-08",
+      "highlights": [
+        "Built the browser-based multiplayer engine in plain JavaScript and WebSockets, which supported two thousand concurrent library patrons on a single modest server.",
+        "Wrote the accessibility layer that let every game be played entirely from the keyboard and with a screen reader, a requirement for the state library contract.",
+        "Cut the asset pipeline from a forty-minute manual process to a three-minute scripted build that artists could run themselves without engineering help.",
+        "Maintained the Linux fleet for forty branch libraries, writing the remote update tooling that pushed releases overnight without a technician visiting any site.",
+        "Presented the engine's networking design at a regional developer meetup, which led to the company's first two enterprise licensing deals."
+      ]
+    }
+  ],
+  "volunteer": [
+    {
+      "organization": "Chicago Code Collective",
+      "position": "Mentor and curriculum lead",
+      "url": "https://chicagocodecollective.example",
+      "startDate": "2019-01",
+      "summary": "Twelve-week evening program that prepares career changers for their first engineering role.",
+      "highlights": [
+        "Wrote the systems-design track and coached thirty-eight graduates, twenty-nine of whom were hired within six months of finishing.",
+        "Organised the mock-interview panel with volunteer engineers from nine local companies."
+      ]
+    },
+    {
+      "organization": "Open Ledger Foundation",
+      "position": "Maintainer",
+      "url": "https://openledger.example",
+      "startDate": "2016-05",
+      "endDate": "2020-12",
+      "summary": "Community-run double-entry accounting library used by small nonprofits.",
+      "highlights": [
+        "Reviewed and merged four hundred pull requests while keeping the public API stable across three major releases.",
+        "Ran the quarterly contributor call and wrote the governance document adopted by the project's steering group."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "institution": "University of Illinois Urbana-Champaign",
+      "url": "https://illinois.edu",
+      "area": "Computer Science",
+      "studyType": "M.S.",
+      "startDate": "2008-08",
+      "endDate": "2010-05",
+      "score": "3.9 GPA",
+      "courses": [
+        "Distributed Systems",
+        "Database Implementation",
+        "Compiler Construction",
+        "Thesis: Deterministic replay for message-passing services"
+      ]
+    },
+    {
+      "institution": "Uppsala University",
+      "url": "https://www.uu.se",
+      "area": "Computer Engineering",
+      "studyType": "B.Sc.",
+      "startDate": "2004-09",
+      "endDate": "2008-06",
+      "courses": [
+        "Operating Systems",
+        "Real-time Systems",
+        "Discrete Mathematics"
+      ]
+    }
+  ],
+  "awards": [
+    {
+      "title": "Engineering Excellence Award",
+      "date": "2023-11",
+      "awarder": "Northwind Payments",
+      "summary": "For the settlement ledger migration and the reconciliation harness."
+    },
+    {
+      "title": "Best Paper, Midwest Systems Workshop",
+      "date": "2010-04",
+      "awarder": "Midwest Systems Workshop",
+      "summary": "Deterministic replay for message-passing services."
+    }
+  ],
+  "certificates": [
+    {
+      "name": "AWS Certified Solutions Architect – Professional",
+      "date": "2022-06",
+      "url": "https://aws.amazon.com/certification/",
+      "issuer": "Amazon Web Services"
+    },
+    {
+      "name": "Certified Kubernetes Administrator",
+      "date": "2019-03",
+      "url": "https://www.cncf.io/certification/cka/",
+      "issuer": "Cloud Native Computing Foundation"
+    }
+  ],
+  "publications": [
+    {
+      "name": "Replaying a year of payouts in an afternoon",
+      "publisher": "Northwind Engineering Blog",
+      "releaseDate": "2023-02",
+      "url": "https://northwind.example/blog/replay",
+      "summary": "How a reconciliation harness turned production history into a regression suite for a financial ledger."
+    }
+  ],
+  "skills": [
+    {
+      "name": "Languages",
+      "level": "Expert",
+      "keywords": ["Rust", "Go", "TypeScript", "SQL", "Python"]
+    },
+    {
+      "name": "Distributed systems",
+      "level": "Expert",
+      "keywords": ["Event sourcing", "Consensus", "Idempotency", "Sharding", "Backpressure"]
+    },
+    {
+      "name": "Data stores",
+      "level": "Advanced",
+      "keywords": ["PostgreSQL", "etcd", "Kafka", "SQLite", "Redis"]
+    },
+    {
+      "name": "Infrastructure",
+      "level": "Advanced",
+      "keywords": ["Kubernetes", "Terraform", "AWS", "Spot fleets", "Observability"]
+    },
+    {
+      "name": "Practices",
+      "level": "Advanced",
+      "keywords": ["Design reviews", "Property-based testing", "Incident review", "Game days"]
+    },
+    {
+      "name": "Leadership",
+      "keywords": ["Hiring", "Mentoring", "Roadmapping", "Cross-team negotiation"]
+    }
+  ],
+  "languages": [
+    {
+      "language": "English",
+      "fluency": "Native speaker"
+    },
+    {
+      "language": "Swedish",
+      "fluency": "Native speaker"
+    },
+    {
+      "language": "Igbo",
+      "fluency": "Conversational"
+    }
+  ],
+  "interests": [
+    {
+      "name": "Cross-country skiing"
+    },
+    {
+      "name": "Sourdough"
+    },
+    {
+      "name": "Amateur radio"
+    }
+  ],
+  "references": [
+    {
+      "name": "Dana Whitfield, VP Engineering, Northwind Payments",
+      "reference": "Marcus is the engineer you want holding the ledger. He makes hard migrations look calm and leaves every team he touches stronger."
+    }
+  ],
+  "projects": [
+    {
+      "name": "ledgerkit",
+      "description": "A small Rust library for append-only double-entry ledgers with deterministic replay.",
+      "highlights": [
+        "Two thousand GitHub stars and adoption by three fintech startups as their accounting core.",
+        "Fuzzed every posting rule with property-based tests so no sequence of entries can leave the books unbalanced.",
+        "Documented with runnable examples for every public function and a migration guide between major versions."
+      ],
+      "keywords": ["Rust", "Accounting", "Event sourcing"],
+      "startDate": "2018-01",
+      "url": "https://github.com/mokafor/ledgerkit",
+      "roles": ["Author", "Maintainer"],
+      "type": "library"
+    },
+    {
+      "name": "quietpager",
+      "description": "On-call schedule and alert-routing tool that groups pages by root cause before waking anyone.",
+      "highlights": [
+        "Reduced overnight pages for the pilot team from nineteen a week to four by deduplicating cascades.",
+        "Ships as a single static binary with an embedded SQLite store and no external dependencies.",
+        "Used by four companies and one university research group after a conference talk."
+      ],
+      "keywords": ["Go", "Operations", "SQLite"],
+      "startDate": "2020-03",
+      "endDate": "2022-09",
+      "url": "https://github.com/mokafor/quietpager",
+      "roles": ["Author"],
+      "type": "application"
+    },
+    {
+      "name": "Dispatch Replay",
+      "description": "Deterministic replay harness for the Fernwood scheduler, later open-sourced as a teaching tool.",
+      "highlights": [
+        "Records every scheduler input and replays a full day of dispatch decisions in under a minute.",
+        "Found the daylight-saving misrouting bug that had gone unnoticed for three winters.",
+        "Used in the Chicago Code Collective systems track as the capstone debugging exercise."
+      ],
+      "keywords": ["Go", "Testing", "Scheduling"],
+      "startDate": "2019-06",
+      "endDate": "2020-11",
+      "url": "https://github.com/mokafor/dispatch-replay",
+      "roles": ["Author", "Instructor"],
+      "type": "application"
+    }
+  ],
+  "meta": {
+    "canonical": "https://cvzengarden.com/fixtures/long-resume.json",
+    "version": "v1.0.0",
+    "lastModified": "2026-08-24T00:00:00"
+  }
+}

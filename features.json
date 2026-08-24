@@ -38,6 +38,31 @@
           "probe_cold_sheet_blocking",
           "probes_lib_layout"
         ]
+      },
+      {
+        "id": "zg-11",
+        "title": "ZG-11: print a real r\u00e9sum\u00e9 (fixture+oracle 79cc260; theme CSS phase 2)",
+        "status": "completed",
+        "features": [
+          "long_resume_fixture_lock",
+          "print_geometry_oracle",
+          "probes_unit_tests",
+          "quarto_print_breaks",
+          "switchyard_print_markers",
+          "nightgarden_print_ink",
+          "print_pages_2_2_2"
+        ]
+      },
+      {
+        "id": "zg-12",
+        "title": "ZG-12: Nightgarden long names, painted sections, pre-line bullets",
+        "status": "completed",
+        "features": [
+          "nightgarden_name_fit",
+          "rz_rise_supports_only",
+          "bullets_pre_line",
+          "css_structure_lib"
+        ]
       }
     ]
   }

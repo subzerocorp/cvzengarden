@@ -159,6 +159,7 @@ body {
 }
 
 .rz-identity {
+  container-type: inline-size;
   margin-bottom: 1.5rem;
 }
 
@@ -166,10 +167,14 @@ body {
   margin: 0 0 0.2em;
   color: #9ff3c8;
   font-family: Syne, Outfit, system-ui, sans-serif;
-  font-size: clamp(2.1rem, 4vw, 3.1rem);
+  /* Sized by the rail, not the viewport, so a long name steps down with it;
+     overflow-wrap + hyphens keep a single long surname inside the rail. */
+  font-size: clamp(1.85rem, 11cqi, 3.1rem);
   font-weight: 800;
   line-height: 0.95;
   letter-spacing: -0.03em;
+  overflow-wrap: anywhere;
+  hyphens: auto;
   animation: rz-name-sheen 3.6s ease-in-out infinite alternate;
 }
 
@@ -222,15 +227,7 @@ body {
   grid-column: 2;
   margin: 0 0 2.1rem;
   padding-top: 0.35rem;
-  animation: rz-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-
-.rz-section:nth-of-type(1) { animation-delay: 0.04s; }
-.rz-section:nth-of-type(2) { animation-delay: 0.1s; }
-.rz-section:nth-of-type(3) { animation-delay: 0.16s; }
-.rz-section:nth-of-type(4) { animation-delay: 0.22s; }
-.rz-section:nth-of-type(5) { animation-delay: 0.28s; }
-.rz-section:nth-of-type(6) { animation-delay: 0.34s; }
 
 .rz-section-title {
   margin: 0 0 0.85rem;
@@ -306,6 +303,12 @@ body {
   padding-left: 1rem;
 }
 
+/* Highlights may carry "\n" (contract §5.3); keep those line breaks. */
+.rz-bullet,
+.rz-prose p {
+  white-space: pre-line;
+}
+
 .rz-bullet::before {
   content: "";
   position: absolute;
@@ -361,9 +364,17 @@ body {
   color: var(--rz-mute);
 }
 
+/* The rise is scroll-driven only. Before a section enters the scrollport it
+   sits at its natural, painted style (fill `forwards`, never `both`), so
+   Cmd-A, crawlers and screenshots see every section; browsers without
+   scroll-driven animations get no entrance at all. Longhands: the shorthand
+   would reset animation-timeline. */
 @supports (animation-timeline: view()) {
   .rz-section {
-    animation-delay: 0s;
+    animation-name: rz-rise;
+    animation-duration: 0.7s;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    animation-fill-mode: forwards;
     animation-timeline: view();
     animation-range: entry 0% entry 32%;
   }
@@ -475,7 +486,7 @@ body {
 
   .rz-section {
     grid-column: auto;
-    margin: 5pt 0 0;
+    margin: 4pt 0 0;
     padding-top: 0;
   }
 
@@ -484,6 +495,8 @@ body {
     font-size: 9pt;
     margin-bottom: 3pt;
     letter-spacing: 0.12em;
+    break-after: avoid;
+    page-break-after: avoid;
   }
 
   .rz-resume a {
@@ -491,7 +504,7 @@ body {
   }
 
   .rz-entry {
-    margin: 0 0 4pt;
+    margin: 0 0 3pt;
     padding: 0;
     border: 0;
     border-radius: 0;
@@ -511,8 +524,40 @@ body {
     border-color: transparent;
   }
 
+  .rz-entry-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, max-content);
+    column-gap: 8pt;
+    align-items: baseline;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  .rz-entry-header > * {
+    margin: 0;
+  }
+
+  .rz-entry-primary,
+  .rz-entry-secondary {
+    grid-column: 1;
+  }
+
+  .rz-dates,
+  .rz-location {
+    grid-column: 2;
+    text-align: right;
+  }
+
+  .rz-dates {
+    grid-row: 1;
+  }
+
   .rz-entry-primary {
     font-size: 11pt;
+  }
+
+  .rz-entry-secondary {
+    color: #3d2f6b;
   }
 
   .rz-dates,
@@ -524,21 +569,58 @@ body {
   }
 
   .rz-bullet {
-    margin: 1.5pt 0;
+    margin: 1pt 0;
+  }
+
+  .rz-bullet::before {
+    background: #1a1f28;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 
   .rz-skill,
   .rz-tag {
+    padding: 0.5pt 4pt;
     border-color: #9aa3ad;
     color: #1a1f28;
-    font-size: 9pt;
+    font-size: 8.5pt;
+  }
+
+  .rz-prose {
+    margin: 0 0 2pt;
+  }
+
+  .rz-prose p,
+  .rz-summary p {
+    margin: 0 0 2pt;
+  }
+
+  .rz-meta-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 10pt;
+  }
+
+  .rz-meta {
+    margin: 0;
+  }
+
+  .rz-skill-level {
+    margin: 0 0 1pt;
   }
 
   .rz-skill-groups {
-    display: block;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 4pt 10pt;
   }
 
   .rz-skill-group {
-    margin: 0 0 5pt;
+    margin: 0;
+  }
+
+  .rz-skill-list,
+  .rz-tags {
+    gap: 2pt 3pt;
   }
 }
