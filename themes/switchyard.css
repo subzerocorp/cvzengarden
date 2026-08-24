@@ -126,6 +126,12 @@ body {
   margin: 0;
 }
 
+/* Highlights may carry "\n" (contract §5.3); keep those line breaks. */
+.rz-bullet,
+.rz-prose p {
+  white-space: pre-line;
+}
+
 @media screen {
   html,
   body {

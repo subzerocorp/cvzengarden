@@ -271,6 +271,12 @@ body {
   content: "– ";
 }
 
+/* Highlights may carry "\n" (contract §5.3); keep those line breaks. */
+.rz-bullet,
+.rz-prose p {
+  white-space: pre-line;
+}
+
 .rz-skill-groups {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;

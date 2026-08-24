@@ -8,11 +8,9 @@
  * anti-vacuity evidence the PBI asks for. The runner owns reporting; this
  * module only calls the injected `pass` / `fail`.
  */
-import { execFileSync } from "node:child_process";
-import fs from "node:fs";
-import path from "node:path";
 import { openResumePage, useSheetText } from "./lib/page.mjs";
 import { countPdfPages, printToPdf } from "./lib/pdf.mjs";
+import { sheetSuffix } from "./lib/sheet-source.mjs";
 import {
   paginate,
   printableHeightPx,
@@ -42,22 +40,6 @@ const SCREEN_WIDTH_PX = 1280;
 // whose computed break-before is checked live. The PBI singles Switchyard out.
 const FORCED_BREAK_SCAN = { switchyard: { sheet: "switchyard.css", sectionId: "rz-projects" } };
 const FORCED_BREAK = /(?:break-before\s*:\s*page|page-break-before\s*:\s*always)\b/;
-
-// Sheet sources: the working-tree file (loaded by href) or a git revision
-// (injected in place of #theme-stylesheet).
-export function liveSheets(repoDir) {
-  return {
-    label: null,
-    cssFor: (theme) => fs.readFileSync(path.join(repoDir, "themes", `${theme}.css`), "utf8"),
-  };
-}
-
-export function gitSheets(repoDir, revision) {
-  return {
-    label: revision,
-    cssFor: (theme) => execFileSync("git", ["show", `${revision}:themes/${theme}.css`], { cwd: repoDir, encoding: "utf8" }),
-  };
-}
 
 function stripComments(css) {
   return css.replace(/\/\*[\s\S]*?\*\//g, " ");
@@ -255,7 +237,7 @@ export async function zg11Probes({ browser, origin, report, fixtureHtml, expecte
     sheetSource,
     pass: report.pass,
     fail: report.fail,
-    suffix: sheetSource.label === null ? "" : ` [sheet ${sheetSource.label}]`,
+    suffix: sheetSuffix(sheetSource),
   };
   const opened = await openThemePages(ctx);
   articleWidthProbe(ctx, opened);

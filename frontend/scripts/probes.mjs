@@ -32,7 +32,9 @@ import {
   waitThemeReady,
 } from "./probes/lib/page.mjs";
 import { countPdfPages, printToPdf } from "./probes/lib/pdf.mjs";
-import { gitSheets, liveSheets, zg11Probes } from "./probes/zg-11.mjs";
+import { sheetSourceFor } from "./probes/lib/sheet-source.mjs";
+import { zg11Probes } from "./probes/zg-11.mjs";
+import { zg12Probes } from "./probes/zg-12.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const frontendDir = path.resolve(__dirname, "..");
@@ -1106,18 +1108,15 @@ async function browserProbes() {
     await s4Probes(page);
     await s5Probes(page);
     await zg11Group(browser);
+    await zg12Group(browser);
   }
 
   await browser.close();
 }
 
-// RZ_ZG11_BASE=<git rev> runs the ZG-11 group against that revision's theme
-// sheets (injected in place of #theme-stylesheet) for anti-vacuity evidence.
-function zg11SheetSource() {
-  const base = process.env.RZ_ZG11_BASE;
-  return base ? gitSheets(repoDir, base) : liveSheets(repoDir);
-}
-
+// RZ_ZG11_BASE=<git rev> / RZ_ZG12_BASE=<git rev> run that group against the
+// revision's theme sheets (injected in place of #theme-stylesheet) for
+// anti-vacuity evidence.
 async function zg11Group(browser) {
   await zg11Probes({
     browser,
@@ -1125,8 +1124,12 @@ async function zg11Group(browser) {
     report: { pass, fail },
     fixtureHtml: fs.readFileSync(path.join(frontendDir, "fixtures", "long-resume.html"), "utf8"),
     expectedPages: { jordan: U3_PRINT_PAGES, long: LONG_PRINT_PAGES },
-    sheetSource: zg11SheetSource(),
+    sheetSource: sheetSourceFor(repoDir, process.env.RZ_ZG11_BASE),
   });
+}
+
+async function zg12Group(browser) {
+  await zg12Probes({ browser, origin, report: { pass, fail }, sheetSource: sheetSourceFor(repoDir, process.env.RZ_ZG12_BASE) });
 }
 
 staticProbes();
