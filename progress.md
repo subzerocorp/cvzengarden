@@ -43,3 +43,7 @@ GAN: Generator → Reviewer BLESS → Tester REJECT (no unit tests / runner) →
 ## 2026-08-24 — ZG-11 done (phase 2 of 2)
 
 Theme print fixes: sections break, entries stay intact, Switchyard forced break gone, inked markers with print-color-adjust, Nightgarden print ink ≥ 4.5:1; print grids keep the long fixture at 3 pages on all three themes; Jordan 2/2/2. GAN phase 2: Reviewer BLESS → Tester BLESS → Architect BLESS (PDFs judged acceptable to a hiring manager). Board `done`. Completion: `docs/plans/zg-11-completion.md`. ZG-12 started.
+
+## 2026-08-24 — ZG-12 done
+
+Nightgarden long-name fit (container-query clamp + wrap), rz-rise only inside `@supports view()` with fill forwards (sections painted before entry, and in browsers without scroll-driven animation), `white-space: pre-line` ×3 with a §5.3 contract note. GAN: Reviewer BLESS → Tester BLESS → Architect BLESS. Board `done`. Completion: `docs/plans/zg-12-completion.md`. ZG-2 started.
