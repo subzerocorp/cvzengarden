@@ -6,11 +6,13 @@
 
 mod date;
 mod emit;
+mod error;
 mod html;
 mod resume;
 mod slug;
 mod url;
 
+pub use error::RenderError;
 pub use resume::{
     Award, Basics, Certificate, Education, Interest, Language, Location, Meta, Profile, Project,
     Publication, Reference, Resume, Skill, Volunteer, Work,
@@ -40,9 +42,10 @@ pub fn render(resume: &Resume) -> String {
 ///
 /// # Errors
 ///
-/// Returns the `serde_json::Error` when `json` is not a valid JSON Resume
-/// document (malformed JSON or a field of the wrong type).
-pub fn render_json(json: &str) -> Result<String, serde_json::Error> {
+/// Returns [`RenderError::InvalidDocument`] when `json` is not a valid JSON
+/// Resume document (malformed JSON or a field of the wrong type). The error's
+/// Display names the line and column.
+pub fn render_json(json: &str) -> Result<String, RenderError> {
     Ok(render(&Resume::from_json(json)?))
 }
 
