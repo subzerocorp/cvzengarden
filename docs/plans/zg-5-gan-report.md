@@ -158,3 +158,31 @@ Read: the full phase-1 diff, `AGENTS.md` (stack lock, `rz-` rule, persona loop),
 - Direction for phase 2: keep `Paste` as the one module that owns the Author's résumé state; the file/drop input becomes another way to call `TextChanged`, classification stays byte-content-first exactly as the PBI says, and `not-json-file` is a `Problem` constructor with a filename, nothing more.
 
 **BLESS ZG-5 phase-1 — layered the way the stack lock intends (scanner → classifier → panel → Main → ports), one effect seam, the raw JSON as the only stored shape; phase 2 extends `Effect`, not `Main`.**
+
+---
+
+# Phase 2 (file / drop / storage) — 2026-08-24
+
+Uncommitted tree reviewed, then committed `e33212f`.
+
+Verification (Tester, not Generator): `npm run test:unit` 147/147; `PROBE_PORT=4430 npm test` exit 0; `PROBE_PORT=4431 just verify` exit 0. Content-first mutation (`classifyFile` treating trailing-comma.json as not-json-file) made `ZG-5/file-classes` FAIL; source restored.
+
+## Phase 2 — Reviewer
+
+`BLESS ZG-5 phase-2 — Effect seam extended, Main.update ungrown, content-first file class in Elm, raw JSON stored, probes are reason calcs.`
+
+Follow-ups (not blockers): FileOpened should set `model.text` so a bad file’s line/column matches the box; drop-zone dragover affordance; `waitForName` swallows timeout.
+
+## Phase 2 — Tester
+
+Every phase-2 AC has a PASS line (open-pdf, open-json, file-classes, drop-json, drop-pdf, restore, corrupt-storage, no-network, copy, no-serde-tokens including not-json-file). Phase-1 slugs stayed green. Fixture `not-a-resume.pdf` byte-exact (142 B).
+
+`BLESS ZG-5 phase-2 — independent 4430/4431 green, fixtures byte-exact, content-first mutation made file-classes FAIL, then restored.`
+
+## Phase 2 — Architect
+
+Layers held. `Main.update` did not grow. `List Effect` stores the raw JSON for ZG-22. File/drop is a second Classify intake, not a second classifier.
+
+ZG-6 sample buttons must be a new `Intent`, not `ShowIt` (`ShowIt` Stores). ZG-22 publishes `accepted`, not the textarea buffer. `ports.js` original-article clone is iframe cache, same kind of edge state as `themeSwapGen`.
+
+`BLESS ZG-5 phase-2 — layers held, Main.update did not grow, List Effect stores the raw JSON for ZG-22, and file/drop is a second Classify intake rather than a second classifier.`

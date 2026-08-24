@@ -98,6 +98,19 @@
           "sandbox_swap",
           "wasm_parity_probes"
         ]
+      },
+      {
+        "id": "zg-5",
+        "title": "ZG-5: paste or open your own JSON Resume (panel 32ef15b; file/drop/storage e33212f)",
+        "status": "completed",
+        "features": [
+          "paste_panel",
+          "json_scan_classify",
+          "humane_paste_errors",
+          "file_drop_classify",
+          "resume_local_storage",
+          "forget_restores_sample"
+        ]
       }
     ]
   }

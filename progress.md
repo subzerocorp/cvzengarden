@@ -71,3 +71,7 @@ Paste panel with humane, positioned errors (JsonScan/Classify pure Elm calcs), r
 ## 2026-08-24 — Fonts policy locked
 
 Human decision (`docs/plans/fonts-decision.md`): Font Library (submit original fonts, inbound CC BY 4.0; OFL seeds keep OFL); first-party Themes origin-only; submitted Themes may `@font-face` any public HTTPS CDN font — no host allowlist, CSS only. ZG-13 amended (README AC + notes); Font Library submit product deferred to a later AVRIL PBI. CONTEXT.md + ROADMAP Phase 4 updated. ZG-5 phase 2 continues.
+
+## 2026-08-24 — ZG-5 done (phase 2 of 2)
+
+File/drop (`classifyFile` content-first), `not-json-file` names the file, `localStorage['resumezen.resume']` holds the raw JSON, Forget restores the cloned sample article (no fetch). GAN: Reviewer BLESS → Tester BLESS → Architect BLESS. Tester `PROBE_PORT=4431 just verify` exit 0. Commit `e33212f`. Board `done`. Completion: `docs/plans/zg-5-completion.md`. ZG-6 is next (new `Intent` for sample buttons — do not reuse `ShowIt`).

@@ -21,7 +21,7 @@ Line/column for invalid JSON: Elm's decoder error lacks positions — needs a pu
 
 ## Phases
 1. **Phase 1 of 2** — panel, classification, errors, render/swap, core probes. **Done** (`32ef15b`, GAN BLESS ×3).
-2. **Phase 2 of 2** — file/drop, storage, remaining probes. In progress.
+2. **Phase 2 of 2** — file/drop, storage, remaining probes. **Done** (`e33212f`, GAN BLESS ×3).
 
 ## Phase 2 plan (2026-08-24)
 
