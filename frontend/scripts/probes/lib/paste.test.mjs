@@ -4,10 +4,12 @@ import {
   SERDE_TOKENS,
   debugOnlyReasons,
   errorReasons,
+  forgottenReasons,
   oracleReasons,
   pageErrorReasons,
   serdeTokenReasons,
   shownReasons,
+  silentRestoreReasons,
   switchedReasons,
   unchangedReasons,
 } from "./paste.mjs";
@@ -74,4 +76,20 @@ test("debugOnlyReasons wants the raw error at debug level and nowhere louder", (
 test("pageErrorReasons prefixes each page error", () => {
   assert.deepEqual(pageErrorReasons([]), []);
   assert.deepEqual(pageErrorReasons(["boom"]), ["pageerror: boom"]);
+});
+
+test("forgottenReasons wants a missing key", () => {
+  assert.deepEqual(forgottenReasons(null), []);
+  assert.equal(forgottenReasons("{").length, 1);
+});
+
+test("silentRestoreReasons wants Jordan, no banner, no console error, key gone", () => {
+  const jordanShown = { errorClass: null, errorText: "", name: "Jordan Hale" };
+  assert.deepEqual(silentRestoreReasons(jordanShown, { stored: null, pageErrors: [], consoleMessages: [] }), []);
+  assert.equal(silentRestoreReasons({ ...jordanShown, name: "Ada Lovelace" }, { stored: null, pageErrors: [], consoleMessages: [] }).length, 1);
+  assert.equal(silentRestoreReasons({ ...jordanShown, errorClass: "not-json-file" }, { stored: null, pageErrors: [], consoleMessages: [] }).length, 1);
+  assert.equal(silentRestoreReasons(jordanShown, { stored: "{", pageErrors: [], consoleMessages: [] }).length, 1);
+  assert.equal(silentRestoreReasons(jordanShown, { stored: null, pageErrors: ["boom"], consoleMessages: [] }).length, 1);
+  assert.equal(silentRestoreReasons(jordanShown, { stored: null, pageErrors: [], consoleMessages: [{ type: "error", text: "nope" }] }).length, 1);
+  assert.deepEqual(silentRestoreReasons(jordanShown, { stored: null, pageErrors: [], consoleMessages: [{ type: "debug", text: "ok" }] }), []);
 });

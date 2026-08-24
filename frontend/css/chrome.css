@@ -423,6 +423,40 @@ body {
   color: var(--link-active);
 }
 
+.paste__box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.paste__open,
+.paste__forget {
+  position: relative;
+  width: 100%;
+}
+
+.paste__file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.paste__drop {
+  padding: 0.7rem 0.65rem;
+  border: 1px dashed var(--input);
+  border-radius: var(--radius);
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  text-align: center;
+}
+
 .preview-controls__print {
   width: 100%;
 }

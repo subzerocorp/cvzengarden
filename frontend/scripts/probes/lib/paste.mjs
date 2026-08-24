@@ -68,3 +68,20 @@ export function debugOnlyReasons(consoleMessages, raw) {
 export function pageErrorReasons(pageErrors) {
   return pageErrors.map((message) => `pageerror: ${message}`);
 }
+
+// Why Forget did not drop the stored résumé.
+export function forgottenReasons(stored) {
+  return stored === null ? [] : [`localStorage['resumezen.resume'] is ${JSON.stringify(stored)}, wanted null`];
+}
+
+// Why a corrupt stored value did not restore silently to Jordan Hale.
+export function silentRestoreReasons(observed, { stored, pageErrors, consoleMessages }) {
+  const consoleErrors = consoleMessages.filter((message) => message.type === "error");
+  return [
+    ...(observed.name === "Jordan Hale" ? [] : [`.rz-name is ${JSON.stringify(observed.name)}, wanted "Jordan Hale"`]),
+    ...(observed.errorClass === null ? [] : [`[data-paste-error=${observed.errorClass}] is showing`]),
+    ...forgottenReasons(stored),
+    ...pageErrorReasons(pageErrors),
+    ...consoleErrors.map((message) => `console.error: ${message.text}`),
+  ];
+}

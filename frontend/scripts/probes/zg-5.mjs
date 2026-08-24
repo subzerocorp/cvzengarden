@@ -1,25 +1,29 @@
 /**
- * ZG-5 probes (phase 1): an Author pastes a JSON Resume into the sidebar
- * panel and sees it in the sandbox, or gets a plain-English sentence with
- * the line and column when the text is wrong.
+ * ZG-5 probes: an Author pastes or opens a JSON Resume, sees it in every
+ * Theme, gets a plain-English sentence when the file is wrong, and has
+ * the last accepted résumé restored from localStorage on reload.
  *
  * Every probe opens its own Garden page. The runner owns reporting; this
  * module only calls the injected `pass` / `fail`. `beforeNavigate` in the
  * context is the anti-stub seam (a route that serves a stubbed ports.js).
  */
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { openGarden } from "./lib/page.mjs";
 import {
   debugOnlyReasons,
   errorReasons,
+  forgottenReasons,
   oracleReasons,
   pageErrorReasons,
   serdeTokenReasons,
   shownReasons,
+  silentRestoreReasons,
   switchedReasons,
   unchangedReasons,
 } from "./lib/paste.mjs";
+import { offGardenRequests, requestsSince } from "./lib/request-log.mjs";
 
 const NOT_A_RESUME = '{"basics":{"name":"E"},"work":"nope"}';
 const MISSING_NAME = '{"basics":{"label":"Junior Developer"}}';
@@ -82,7 +86,7 @@ function pasteSettled(previousAttempt) {
 }
 
 async function openPanel(page) {
-  const toggle = page.getByRole("button", { name: /résumé/ });
+  const toggle = page.getByRole("button", { name: "Use my résumé" });
   if ((await toggle.getAttribute("aria-expanded")) !== "true") {
     await toggle.click();
   }
@@ -105,6 +109,46 @@ async function waitForName(page, name) {
     .locator(".rz-name", { hasText: name })
     .waitFor({ timeout: 5000 })
     .catch(() => undefined);
+}
+
+async function waitSettled(page, attempt) {
+  await page.waitForFunction(pasteSettled, attempt);
+  return page.evaluate(readPasteState);
+}
+
+async function openFile(page, filePath) {
+  await openPanel(page);
+  const attempt = await page.locator(".paste").getAttribute("data-paste-attempt");
+  await page.locator("input[type=file]").setInputFiles(filePath);
+  return waitSettled(page, attempt);
+}
+
+async function dropFile(page, filePath) {
+  await openPanel(page);
+  const name = path.basename(filePath);
+  const bytes = Array.from(fs.readFileSync(filePath));
+  const attempt = await page.locator(".paste").getAttribute("data-paste-attempt");
+  await page.evaluate(
+    ({ name, bytes }) => {
+      const zone = document.querySelector("[data-drop-zone]");
+      const file = new File([new Uint8Array(bytes)], name);
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(file);
+      const event = new Event("drop", { bubbles: true, cancelable: true });
+      Object.defineProperty(event, "dataTransfer", { value: dataTransfer });
+      zone.dispatchEvent(event);
+    },
+    { name, bytes },
+  );
+  return waitSettled(page, attempt);
+}
+
+function noteSerde(report, label, errorText) {
+  const tokens = serdeTokenReasons(errorText);
+  if (tokens.length) {
+    report.fail(`ZG-5/no-serde-tokens ${label}: ${tokens.join("; ")}`);
+  }
+  return tokens.length === 0;
 }
 
 function reportReasons(report, label, reasons, passText) {
@@ -266,14 +310,164 @@ async function renderFailedProbe(context) {
 
 async function copyProbe({ browser, origin, report, beforeNavigate }) {
   const { page } = await openGarden(browser, origin, { beforeNavigate });
-  const controls = await page.getByRole("button", { name: /résumé/ }).count();
+  const useMine = await page.getByRole("button", { name: "Use my résumé" }).count();
   const sidebarText = await page.locator(".app-sidebar").textContent();
   await page.close();
   const reasons = [
-    ...(controls === 1 ? [] : [`${controls} sidebar buttons have an accessible name containing "résumé"`]),
+    ...(useMine >= 1 ? [] : ['no control whose accessible name contains "résumé"']),
     ...(sidebarText.includes("Nothing leaves your browser") ? [] : ['sidebar lacks "Nothing leaves your browser"']),
   ];
-  reportReasons(report, "ZG-5/copy", reasons, 'one control whose accessible name contains "résumé"; sidebar says "Nothing leaves your browser"; chrome rz- check is the static probe');
+  reportReasons(report, "ZG-5/copy", reasons, 'the Use my résumé control\'s accessible name contains "résumé"; sidebar says "Nothing leaves your browser"; chrome rz- check is the static probe');
+}
+
+async function openPdfProbe({ browser, origin, report, frontendDir, beforeNavigate }) {
+  const { page, pageErrors } = await openGarden(browser, origin, { beforeNavigate });
+  const after = await openFile(page, path.join(frontendDir, "fixtures/not-a-resume.pdf"));
+  await page.close();
+  const reasons = [
+    ...errorReasons(after, { errorClass: "not-json-file", words: ["not-a-resume.pdf", "JSON Resume"] }),
+    ...pageErrorReasons(pageErrors),
+  ];
+  reportReasons(report, "ZG-5/open-pdf", reasons, `[data-paste-error="not-json-file"] says ${JSON.stringify(after.errorText)}`);
+  return noteSerde(report, "ZG-5/open-pdf", after.errorText);
+}
+
+async function openJsonProbe({ browser, origin, report, repoDir, beforeNavigate }) {
+  const { page, pageErrors } = await openGarden(browser, origin, { beforeNavigate });
+  const before = await page.evaluate(readPasteState);
+  await openFile(page, path.join(repoDir, "skeleton/resume.json"));
+  await waitForName(page, "Jordan Hale");
+  const shown = await page.evaluate(readPasteState);
+  await page.close();
+  const reasons = [
+    ...shownReasons(before, shown, "Jordan Hale"),
+    ...pageErrorReasons(pageErrors),
+  ];
+  reportReasons(report, "ZG-5/open-json", reasons, `skeleton/resume.json via the file input shows .rz-name "Jordan Hale" without using the textarea`);
+}
+
+async function fileClassesProbe({ browser, origin, report, frontendDir, beforeNavigate }) {
+  const { page, pageErrors } = await openGarden(browser, origin, { beforeNavigate });
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "zg-5-"));
+  try {
+    return await fileClassesOn(page, pageErrors, frontendDir, dir, report);
+  } finally {
+    await page.close();
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+async function fileClassesOn(page, pageErrors, frontendDir, dir, report) {
+  const resumeTxt = path.join(dir, "resume.txt");
+  const notesTxt = path.join(dir, "notes.txt");
+  fs.writeFileSync(resumeTxt, readFixture(frontendDir, "fixtures/ada.json"));
+  fs.writeFileSync(notesTxt, "hello");
+  const trailing = await openFile(page, path.join(frontendDir, "fixtures/trailing-comma.json"));
+  const beforeAda = await page.evaluate(readPasteState);
+  await openFile(page, resumeTxt);
+  await waitForName(page, "Ada Lovelace");
+  const ada = await page.evaluate(readPasteState);
+  const notes = await openFile(page, notesTxt);
+  const reasons = [
+    ...errorReasons(trailing, { errorClass: "invalid-json", words: ["line 1"] }).map((reason) => `trailing-comma.json: ${reason}`),
+    ...(trailing.errorClass === "not-json-file" ? ["trailing-comma.json was classified as not-json-file"] : []),
+    ...shownReasons(beforeAda, ada, "Ada Lovelace").map((reason) => `resume.txt: ${reason}`),
+    ...errorReasons(notes, { errorClass: "not-json-file", words: ["notes.txt"] }).map((reason) => `notes.txt: ${reason}`),
+    ...pageErrorReasons(pageErrors),
+  ];
+  reportReasons(
+    report,
+    "ZG-5/file-classes",
+    reasons,
+    `trailing-comma.json → invalid-json ${JSON.stringify(trailing.errorText)}; resume.txt → Ada Lovelace; notes.txt → not-json-file ${JSON.stringify(notes.errorText)}`,
+  );
+  return [trailing, notes].every((observed) => noteSerde(report, "ZG-5/file-classes", observed.errorText));
+}
+
+async function dropJsonProbe({ browser, origin, report, repoDir, beforeNavigate }) {
+  const { page, pageErrors } = await openGarden(browser, origin, { beforeNavigate });
+  const before = await page.evaluate(readPasteState);
+  await dropFile(page, path.join(repoDir, "skeleton/resume.json"));
+  await waitForName(page, "Jordan Hale");
+  const after = await page.evaluate(readPasteState);
+  await page.close();
+  const reasons = [...shownReasons(before, after, "Jordan Hale"), ...pageErrorReasons(pageErrors)];
+  reportReasons(report, "ZG-5/drop-json", reasons, `drop of skeleton/resume.json on [data-drop-zone] shows .rz-name "Jordan Hale"`);
+}
+
+async function dropPdfProbe({ browser, origin, report, frontendDir, beforeNavigate }) {
+  const { page, pageErrors } = await openGarden(browser, origin, { beforeNavigate });
+  const after = await dropFile(page, path.join(frontendDir, "fixtures/not-a-resume.pdf"));
+  await page.close();
+  const reasons = [
+    ...errorReasons(after, { errorClass: "not-json-file", words: ["not-a-resume.pdf", "JSON Resume"] }),
+    ...pageErrorReasons(pageErrors),
+  ];
+  reportReasons(report, "ZG-5/drop-pdf", reasons, `[data-paste-error="not-json-file"] says ${JSON.stringify(after.errorText)}`);
+  return noteSerde(report, "ZG-5/drop-pdf", after.errorText);
+}
+
+async function restoreProbe({ browser, origin, report, frontendDir, beforeNavigate }) {
+  const { page, pageErrors } = await openGarden(browser, origin, { beforeNavigate });
+  await paste(page, readFixture(frontendDir, "fixtures/ada.json"));
+  await waitForName(page, "Ada Lovelace");
+  await page.reload({ waitUntil: "networkidle" });
+  await page.frameLocator("#garden-frame").locator(".rz-resume").waitFor();
+  await waitForName(page, "Ada Lovelace");
+  const restored = await page.evaluate(readPasteState);
+  await page.getByRole("button", { name: "Forget my résumé" }).click();
+  await waitForName(page, "Jordan Hale");
+  const forgotten = await page.evaluate(readPasteState);
+  const stored = await page.evaluate(() => localStorage.getItem("resumezen.resume"));
+  await page.close();
+  const reasons = [
+    ...(restored.name === "Ada Lovelace" ? [] : [`after reload .rz-name is ${JSON.stringify(restored.name)}, wanted "Ada Lovelace"`]),
+    ...(forgotten.name === "Jordan Hale" ? [] : [`after Forget .rz-name is ${JSON.stringify(forgotten.name)}, wanted "Jordan Hale"`]),
+    ...forgottenReasons(stored),
+    ...pageErrorReasons(pageErrors),
+  ];
+  reportReasons(report, "ZG-5/restore", reasons, `reload shows Ada Lovelace; Forget restores Jordan Hale and localStorage['resumezen.resume'] is null`);
+}
+
+async function corruptStorageProbe({ browser, origin, report }) {
+  const values = ["{", '{"basics":{"label":"x"}}'];
+  const runs = [];
+  for (const value of values) {
+    const { page, pageErrors, consoleMessages } = await openGarden(browser, origin, {
+      beforeNavigate: (page) => page.addInitScript((stored) => localStorage.setItem("resumezen.resume", stored), value),
+    });
+    await page.waitForFunction(() => localStorage.getItem("resumezen.resume") === null);
+    const observed = await page.evaluate(readPasteState);
+    const stored = await page.evaluate(() => localStorage.getItem("resumezen.resume"));
+    await page.close();
+    runs.push({ value, observed, stored, pageErrors, consoleMessages });
+  }
+  const reasons = runs.flatMap(({ value, observed, stored, pageErrors, consoleMessages }) =>
+    silentRestoreReasons(observed, { stored, pageErrors, consoleMessages }).map((reason) => `${JSON.stringify(value)}: ${reason}`),
+  );
+  reportReasons(
+    report,
+    "ZG-5/corrupt-storage",
+    reasons,
+    `both ${values.map(JSON.stringify).join(" and ")} restore Jordan Hale with no [data-paste-error], no console error or pageerror, and the key removed`,
+  );
+}
+
+async function noNetworkProbe({ browser, origin, report, frontendDir, repoDir, beforeNavigate }) {
+  const { page, requests, pageErrors } = await openGarden(browser, origin, { beforeNavigate });
+  const mark = requests.length;
+  await paste(page, readFixture(frontendDir, "fixtures/ada.json"));
+  await waitForName(page, "Ada Lovelace");
+  await openFile(page, path.join(repoDir, "skeleton/resume.json"));
+  await waitForName(page, "Jordan Hale");
+  const during = requestsSince(requests, mark);
+  const extra = offGardenRequests(during, origin);
+  await page.close();
+  const reasons = [
+    ...(extra.length ? [`HTTP besides page assets and themes/*.css: ${extra.join(", ")}`] : []),
+    ...pageErrorReasons(pageErrors),
+  ];
+  reportReasons(report, "ZG-5/no-network", reasons, `paste and file-open issued ${during.length} request(s) after load, all page assets or themes/*.css`);
 }
 
 export async function zg5Probes(context) {
@@ -288,9 +482,17 @@ export async function zg5Probes(context) {
     await errorProbe(context, "ZG-5/paste-missing-name", MISSING_NAME, { errorClass: "missing-name", words: ["name"] }),
     await scannerHintsProbe(context),
     await renderFailedProbe(context),
+    await openPdfProbe(context),
+    await fileClassesProbe(context),
+    await dropPdfProbe(context),
   ];
+  await openJsonProbe(context);
+  await dropJsonProbe(context);
+  await restoreProbe(context);
+  await corruptStorageProbe(context);
+  await noNetworkProbe(context);
   if (clean.every(Boolean)) {
-    report.pass(`ZG-5/no-serde-tokens none of expected / EOF / invalid type / serde / Err( / panicked in the five error texts (empty, invalid-json, not-a-resume, missing-name, render-failed) nor in the ${SCANNER_ROWS.length} scanner-hints rows`);
+    report.pass(`ZG-5/no-serde-tokens none of expected / EOF / invalid type / serde / Err( / panicked in the error texts (empty, invalid-json, not-a-resume, missing-name, render-failed, not-json-file) nor in the ${SCANNER_ROWS.length} scanner-hints rows`);
   }
   await copyProbe(context);
 }

@@ -62,6 +62,27 @@ port swapResume : String -> Cmd msg
 port logDebug : String -> Cmd msg
 
 
+{-| Persist the raw accepted JSON Resume under `resumezen.resume`.
+-}
+port storeResume : String -> Cmd msg
+
+
+{-| Drop `resumezen.resume`.
+-}
+port forgetResume : () -> Cmd msg
+
+
+{-| Put the sandbox's original Jordan Hale article back. No network.
+-}
+port restoreSample : () -> Cmd msg
+
+
+port onFileBytes : ({ name : String, text : String } -> msg) -> Sub msg
+
+
+port onStoredResume : (String -> msg) -> Sub msg
+
+
 
 -- MODEL
 
@@ -177,9 +198,11 @@ update msg model =
                 |> applyPaste model
 
 
-applyPaste : Model -> ( Paste.Model, Paste.Effect ) -> ( Model, Cmd Msg )
-applyPaste model ( paste, effect ) =
-    ( { model | paste = paste }, pasteCommand effect )
+applyPaste : Model -> ( Paste.Model, List Paste.Effect ) -> ( Model, Cmd Msg )
+applyPaste model ( paste, effects ) =
+    ( { model | paste = paste }
+    , Cmd.batch (List.map pasteCommand effects)
+    )
 
 
 {-| The only place a Paste effect becomes an action.
@@ -187,9 +210,6 @@ applyPaste model ( paste, effect ) =
 pasteCommand : Paste.Effect -> Cmd Msg
 pasteCommand effect =
     case effect of
-        Paste.NoEffect ->
-            Cmd.none
-
         Paste.Render json ->
             renderResume json
 
@@ -198,6 +218,15 @@ pasteCommand effect =
 
         Paste.LogDebug raw ->
             logDebug raw
+
+        Paste.Store json ->
+            storeResume json
+
+        Paste.Forget ->
+            forgetResume ()
+
+        Paste.RestoreSample ->
+            restoreSample ()
 
 
 applyTheme : String -> Bool -> Model -> ( Model, Cmd Msg )
@@ -522,6 +551,8 @@ subscriptions _ =
         [ preferDarkChanged SystemPrefersDark
         , onThemeQuery ThemeQueryChanged
         , onRendered (decodeRendered >> Rendered)
+        , onFileBytes (Paste.FileOpened >> PasteMsg)
+        , onStoredResume (Paste.Restored >> PasteMsg)
         ]
 
 

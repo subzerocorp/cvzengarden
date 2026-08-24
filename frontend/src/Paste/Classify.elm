@@ -1,11 +1,12 @@
-module Paste.Classify exposing (Classification(..), Problem(..), Shape(..), classify, knownKeys)
+module Paste.Classify exposing (Classification(..), Problem(..), Shape(..), classify, classifyFile, knownKeys)
 
-{-| Pure classification of pasted text before it reaches the renderer.
+{-| Pure classification of pasted text and of opened/dropped files.
 
 The rule is deliberately the AC and no more (Avril, CTO rule 7): empty,
 not JSON (with the position from `Paste.JsonScan`), a known top-level key
-of the wrong shape, no `basics.name`. Everything else is `Accepted` and
-the crate remains the oracle.
+of the wrong shape, no `basics.name`, and for files a content-first
+`not-json-file`. Everything else is `Accepted` and the crate remains the
+oracle.
 -}
 
 import Json.Decode as Decode exposing (Decoder, Value)
@@ -23,6 +24,7 @@ type Problem
     | InvalidJsonSomewhere
     | NotAResume { key : String, shape : Shape }
     | MissingName
+    | NotJsonFile String
 
 
 {-| What a known top-level key must hold.
@@ -151,3 +153,51 @@ hasName document =
     Decode.decodeValue (Decode.at [ "basics", "name" ] Decode.string) document
         |> Result.map (String.trim >> String.isEmpty >> not)
         |> Result.withDefault False
+
+
+
+{-| Content first, then extension: JSON bytes win whatever the filename;
+a `.json` file that fails to parse is `invalid-json`; any other
+unparseable file is `not-json-file` naming the file.
+-}
+classifyFile : String -> String -> Classification
+classifyFile filename text =
+    case classify text of
+        Rejected problem ->
+            if unreadableAsJson problem && not (isJsonName filename) then
+                Rejected (NotJsonFile filename)
+
+            else
+                Rejected problem
+
+        accepted ->
+            accepted
+
+
+unreadableAsJson : Problem -> Bool
+unreadableAsJson problem =
+    case problem of
+        Empty ->
+            True
+
+        InvalidJson _ ->
+            True
+
+        InvalidJsonSomewhere ->
+            True
+
+        NotAResume _ ->
+            False
+
+        MissingName ->
+            False
+
+        NotJsonFile _ ->
+            False
+
+
+isJsonName : String -> Bool
+isJsonName filename =
+    filename
+        |> String.toLower
+        |> String.endsWith ".json"

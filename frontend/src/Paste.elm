@@ -1,12 +1,19 @@
 module Paste exposing (Effect(..), Model, Msg(..), Status(..), init, rendered, update, view)
 
 {-| "Use my résumé": a sidebar control that opens a panel where an Author
-pastes a JSON Resume and presses "Show it".
+pastes or opens a JSON Resume, sees it in every Theme, and has it restored
+on reload.
 
-`update` is a calculation: it returns the next model and an `Effect` for
-`Main` to turn into a port command. Every message the Author can see is a
-plain sentence built here (`problemSentence`, `renderFailedSentence`) — no
-crate text ever reaches the panel; `Main` sends it to the console instead.
+`update` is a calculation: it returns the next model and a list of
+`Effect`s for `Main` to turn into port commands. `text` is the editing
+buffer; `accepted` is the last résumé that classified and rendered (the
+datum stored under `resumezen.resume`). Restore sets both; Forget clears
+both. Every message the Author can see is a plain sentence built here —
+no crate text ever reaches the panel; `Main` sends it to the console
+instead.
+
+Public panel state: `data-paste-status`, `data-paste-attempt`,
+`data-paste-error`, `[data-drop-zone]`.
 -}
 
 import Html exposing (Html, button, div, h2, p, textarea)
@@ -23,6 +30,7 @@ import Paste.JsonScan as JsonScan
 type alias Model =
     { open : Bool
     , text : String
+    , accepted : Maybe String
     , status : Status
     , attempt : Int
     }
@@ -30,9 +38,17 @@ type alias Model =
 
 type Status
     = Idle
-    | Rendering
+    | Rendering Intent String
     | Shown
     | Failed Failure
+
+
+{-| Who asked for this render. Author failures are sentences; Restore
+failures drop the stored key and stay on Jordan Hale.
+-}
+type Intent
+    = Author
+    | Restore
 
 
 type Failure
@@ -41,15 +57,23 @@ type Failure
 
 
 type Effect
-    = NoEffect
-    | Render String
+    = Render String
     | Swap String
     | LogDebug String
+    | Store String
+    | Forget
+    | RestoreSample
+
+
+type alias File =
+    { name : String
+    , text : String
+    }
 
 
 init : Model
 init =
-    { open = False, text = "", status = Idle, attempt = 0 }
+    { open = False, text = "", accepted = Nothing, status = Idle, attempt = 0 }
 
 
 
@@ -60,41 +84,143 @@ type Msg
     = ToggleOpen
     | TextChanged String
     | ShowIt
+    | FileOpened File
+    | Restored String
+    | ForgetClicked
 
 
-update : Msg -> Model -> ( Model, Effect )
+update : Msg -> Model -> ( Model, List Effect )
 update msg model =
     case msg of
         ToggleOpen ->
-            ( { model | open = not model.open }, NoEffect )
+            ( { model | open = not model.open }, [] )
 
         TextChanged text ->
-            ( { model | text = text }, NoEffect )
+            ( { model | text = text }, [] )
 
         ShowIt ->
-            submit { model | attempt = model.attempt + 1 }
+            submit model
+
+        FileOpened file ->
+            openFile file { model | open = True }
+
+        Restored json ->
+            restore json model
+
+        ForgetClicked ->
+            forget model
 
 
-submit : Model -> ( Model, Effect )
+submit : Model -> ( Model, List Effect )
 submit model =
     case Classify.classify model.text of
         Accepted json ->
-            ( { model | status = Rendering }, Render json )
+            beginRender Author json model
 
         Classify.Rejected problem ->
-            ( { model | status = Failed (Rejected problem) }, NoEffect )
+            reject problem model
 
 
-{-| The renderer answered. Its raw error is for the console only.
+openFile : File -> Model -> ( Model, List Effect )
+openFile file model =
+    case Classify.classifyFile file.name file.text of
+        Accepted json ->
+            beginRender Author json model
+
+        Classify.Rejected problem ->
+            reject problem model
+
+
+restore : String -> Model -> ( Model, List Effect )
+restore json model =
+    case Classify.classify json of
+        Accepted accepted ->
+            beginRender Restore accepted { model | text = accepted }
+
+        Classify.Rejected _ ->
+            discardStored model
+
+
+forget : Model -> ( Model, List Effect )
+forget model =
+    ( { model
+        | text = ""
+        , accepted = Nothing
+        , status = Idle
+        , attempt = model.attempt + 1
+      }
+    , [ Forget, RestoreSample ]
+    )
+
+
+beginRender : Intent -> String -> Model -> ( Model, List Effect )
+beginRender intent json model =
+    ( { model
+        | status = Rendering intent json
+        , attempt = model.attempt + 1
+      }
+    , [ Render json ]
+    )
+
+
+reject : Problem -> Model -> ( Model, List Effect )
+reject problem model =
+    ( { model
+        | status = Failed (Rejected problem)
+        , attempt = model.attempt + 1
+      }
+    , []
+    )
+
+
+discardStored : Model -> ( Model, List Effect )
+discardStored model =
+    ( { model | text = "", accepted = Nothing, status = Idle }
+    , [ Forget ]
+    )
+
+
+{-| The renderer answered. Its raw error is for the console only, and
+only when the Author asked — a stored value that will not draw is
+forgotten with no banner.
 -}
-rendered : Result String String -> Model -> ( Model, Effect )
+rendered : Result String String -> Model -> ( Model, List Effect )
 rendered result model =
-    case result of
-        Ok html ->
-            ( { model | status = Shown }, Swap html )
+    case model.status of
+        Rendering intent json ->
+            case result of
+                Ok html ->
+                    keep intent json html model
 
-        Err raw ->
-            ( { model | status = Failed RenderFailed }, LogDebug raw )
+                Err raw ->
+                    failRender intent raw model
+
+        _ ->
+            ( model, [] )
+
+
+keep : Intent -> String -> String -> Model -> ( Model, List Effect )
+keep intent json html model =
+    let
+        shown =
+            { model | status = Shown, accepted = Just json }
+    in
+    case intent of
+        Author ->
+            ( shown, [ Swap html, Store json ] )
+
+        Restore ->
+            ( { shown | text = json }, [ Swap html ] )
+
+
+failRender : Intent -> String -> Model -> ( Model, List Effect )
+failRender intent raw model =
+    case intent of
+        Author ->
+            ( { model | status = Failed RenderFailed }, [ LogDebug raw ] )
+
+        Restore ->
+            discardStored model
 
 
 
@@ -120,6 +246,7 @@ view model =
         , p [ class "paste__hint" ]
             [ Html.text "Nothing leaves your browser until you publish." ]
         , viewPanel model
+        , viewForget model
         ]
 
 
@@ -130,6 +257,22 @@ viewPanel model =
         , class "paste__panel"
         , Attr.hidden (not model.open)
         ]
+        [ viewPasteBox model
+        , viewOpenFile
+        , viewDropZone
+        , button
+            [ type_ "button"
+            , class "btn btn--md btn--primary paste__show"
+            , onClick ShowIt
+            ]
+            [ Html.text "Show it" ]
+        , viewStatus model.status
+        ]
+
+
+viewPasteBox : Model -> Html Msg
+viewPasteBox model =
+    div [ class "paste__box" ]
         [ Html.label [ class "paste__label", Attr.for "paste-input" ]
             [ Html.text "Paste your JSON Resume here" ]
         , textarea
@@ -142,14 +285,49 @@ viewPanel model =
             , onInput TextChanged
             ]
             []
-        , button
-            [ type_ "button"
-            , class "btn btn--md btn--primary paste__show"
-            , onClick ShowIt
-            ]
-            [ Html.text "Show it" ]
-        , viewStatus model.status
         ]
+
+
+viewOpenFile : Html Msg
+viewOpenFile =
+    Html.label
+        [ class "btn btn--md btn--outline paste__open"
+        , Attr.for "paste-file"
+        ]
+        [ Html.text "Open a file"
+        , Html.input
+            [ type_ "file"
+            , id "paste-file"
+            , class "paste__file"
+            , Attr.accept ".json,application/json"
+            , attribute "aria-label" "Open a file"
+            ]
+            []
+        ]
+
+
+viewDropZone : Html Msg
+viewDropZone =
+    div
+        [ class "paste__drop"
+        , attribute "data-drop-zone" ""
+        ]
+        [ Html.text "Or drop a JSON file here" ]
+
+
+viewForget : Model -> Html Msg
+viewForget model =
+    case model.accepted of
+        Nothing ->
+            Html.text ""
+
+        Just _ ->
+            button
+                [ type_ "button"
+                , class "btn btn--md btn--outline paste__forget"
+                , onClick ForgetClicked
+                ]
+                [ Html.text "Forget my résumé" ]
 
 
 viewStatus : Status -> Html Msg
@@ -158,7 +336,10 @@ viewStatus status =
         Idle ->
             Html.text ""
 
-        Rendering ->
+        Rendering Restore _ ->
+            Html.text ""
+
+        Rendering Author _ ->
             p [ class "paste__note" ] [ Html.text "Drawing your résumé…" ]
 
         Shown ->
@@ -225,6 +406,10 @@ problemSentence problem =
         MissingName ->
             "We could not find a name in it. A résumé needs \"basics\": { \"name\": \"Your Name\" } near the top."
 
+        NotJsonFile filename ->
+            filename
+                ++ " is not a JSON Resume. Open a JSON file, or paste the JSON Resume text into the box."
+
 
 faultHint : JsonScan.Kind -> String
 faultHint kind =
@@ -281,7 +466,7 @@ statusName status =
         Idle ->
             "idle"
 
-        Rendering ->
+        Rendering _ _ ->
             "rendering"
 
         Shown ->
@@ -308,6 +493,9 @@ failureName failure =
 
         Rejected MissingName ->
             "missing-name"
+
+        Rejected (NotJsonFile _) ->
+            "not-json-file"
 
         RenderFailed ->
             "render-failed"
