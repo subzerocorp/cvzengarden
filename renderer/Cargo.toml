@@ -1,0 +1,20 @@
+[package]
+name = "resumezen-renderer"
+version = "0.1.0"
+edition = "2021"
+description = "Turns a JSON Resume document into ResumeZen's fixed rz-* Skeleton HTML."
+license = "MIT OR Apache-2.0"
+publish = false
+repository = "https://github.com/subzerocorp/cvzengarden"
+readme = "README.md"
+
+[lib]
+name = "resumezen_renderer"
+path = "src/lib.rs"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+scraper = "0.22"

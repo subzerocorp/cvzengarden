@@ -1,0 +1,468 @@
+/* Product chrome. Tokens follow GPUI Component / DESIGN.md.
+   Never use the rz- prefix. Never @import or link skeleton/preview.css. */
+
+:root,
+.app-shell[data-theme="light"] {
+  color-scheme: light;
+  --background: #ffffff;
+  --foreground: #18181b;
+  --primary: #18181b;
+  --primary-foreground: #fafafa;
+  --primary-hover: #27272a;
+  --primary-active: #09090b;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --secondary-hover: #e4e4e7;
+  --secondary-active: #d4d4d8;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+  --destructive: #dc2626;
+  --destructive-foreground: #fafafa;
+  --success: #16a34a;
+  --success-foreground: #f7fee7;
+  --warning: #d97706;
+  --warning-foreground: #fffbeb;
+  --info: #2563eb;
+  --info-foreground: #eff6ff;
+  --border: #e4e4e7;
+  --input: #d4d4d8;
+  --ring: #18181b;
+  --popover: #ffffff;
+  --popover-foreground: #18181b;
+  --sidebar: #fafafa;
+  --sidebar-foreground: #18181b;
+  --sidebar-border: #e4e4e7;
+  --sidebar-accent: #f4f4f5;
+  --sidebar-primary: #18181b;
+  --link: #2563eb;
+  --link-hover: #1d4ed8;
+  --link-active: #1e40af;
+  --radius: 6px;
+  --radius-lg: 8px;
+  --radius-full: calc(var(--radius) * 100);
+}
+
+.app-shell[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #09090b;
+  --foreground: #fafafa;
+  --primary: #fafafa;
+  --primary-foreground: #18181b;
+  --primary-hover: #e4e4e7;
+  --primary-active: #d4d4d8;
+  --secondary: #27272a;
+  --secondary-foreground: #fafafa;
+  --secondary-hover: #3f3f46;
+  --secondary-active: #52525b;
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
+  --accent: #27272a;
+  --accent-foreground: #fafafa;
+  --destructive: #ef4444;
+  --destructive-foreground: #fafafa;
+  --success: #22c55e;
+  --success-foreground: #052e16;
+  --warning: #f59e0b;
+  --warning-foreground: #1c1917;
+  --info: #3b82f6;
+  --info-foreground: #172554;
+  --border: #27272a;
+  --input: #3f3f46;
+  --ring: #e4e4e7;
+  --popover: #09090b;
+  --popover-foreground: #fafafa;
+  --sidebar: #0c0c0e;
+  --sidebar-foreground: #fafafa;
+  --sidebar-border: #27272a;
+  --sidebar-accent: #27272a;
+  --sidebar-primary: #fafafa;
+  --link: #60a5fa;
+  --link-hover: #93c5fd;
+  --link-active: #3b82f6;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 16px;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 18.5rem minmax(0, 1fr);
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.app-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.25rem 1.1rem 1.5rem;
+  background: var(--sidebar);
+  color: var(--sidebar-foreground);
+  border-right: 1px solid var(--sidebar-border);
+}
+
+.app-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.app-eyebrow {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.app-title {
+  margin: 0;
+  font-size: 1.45rem;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+}
+
+.app-lede {
+  margin: 0.35rem 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.theme-switcher,
+.preview-controls,
+.appearance {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.theme-switcher__title,
+.preview-controls__title,
+.appearance__title {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.theme-switcher__hint,
+.preview-controls__hint {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.theme-switcher__filters,
+.preview-controls__row,
+.appearance__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.theme-switcher__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.theme-switcher__item {
+  margin: 0;
+}
+
+.theme-switcher__option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--sidebar-border);
+  border-radius: var(--radius);
+  background: var(--sidebar);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.theme-switcher__option--selected {
+  background: var(--sidebar-accent);
+  border-color: var(--ring);
+}
+
+.theme-switcher__option:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.theme-switcher__option:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.theme-switcher__name {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  color: var(--muted-foreground);
+  font-size: 0.68rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.badge--web {
+  color: var(--info);
+  border-color: color-mix(in srgb, var(--info) 40%, var(--border));
+}
+
+.badge--print {
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 40%, var(--border));
+}
+
+.badge--both {
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 40%, var(--border));
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  color: inherit;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn--xs {
+  min-height: 1.5rem;
+  padding: 0 0.45rem;
+  font-size: 0.72rem;
+}
+
+.btn--sm {
+  min-height: 1.75rem;
+  padding: 0 0.6rem;
+  font-size: 0.78rem;
+}
+
+.btn--md {
+  min-height: 2.25rem;
+  padding: 0 0.85rem;
+  font-size: 0.9rem;
+}
+
+.btn--lg {
+  min-height: 2.75rem;
+  padding: 0 1.05rem;
+  font-size: 1rem;
+}
+
+.btn--primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.btn--primary:active:not(:disabled) {
+  background: var(--primary-active);
+}
+
+.btn--secondary {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+}
+
+.btn--secondary:hover:not(:disabled) {
+  background: var(--secondary-hover);
+}
+
+.btn--secondary:active:not(:disabled) {
+  background: var(--secondary-active);
+}
+
+.btn--outline {
+  border-color: var(--input);
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.btn--outline:hover:not(:disabled) {
+  background: var(--accent);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--foreground);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  background: var(--accent);
+}
+
+.preview-controls__print {
+  width: 100%;
+}
+
+.garden-stage {
+  position: relative;
+  min-width: 0;
+  background: var(--background);
+}
+
+.garden-stage--print {
+  padding: 1.25rem;
+  background: var(--muted);
+}
+
+.garden-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  border: 0;
+  background: var(--background);
+}
+
+.garden-stage--print .garden-frame {
+  min-height: calc(100vh - 2.5rem);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--popover);
+  box-shadow: 0 0.6rem 2rem color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+
+@media print {
+  @page {
+    size: letter;
+    margin: 0.55in 0.65in 0.6in;
+  }
+
+  html,
+  body,
+  .app-shell,
+  .garden-stage,
+  .garden-stage--print {
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+  }
+
+  .app-sidebar {
+    display: none;
+  }
+
+  .app-shell {
+    display: block;
+  }
+
+  .garden-stage,
+  .garden-stage--print {
+    padding: 0;
+    background: transparent;
+  }
+
+  /* Replaced iframe: a viewport-sized min-height paints one screen
+     and drops page 2 (dead after Volunteer on shell Print).
+     This pair beats the screen preview rule on the same element. */
+  .garden-frame,
+  .garden-stage--print .garden-frame {
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  /* File → Print / Ctrl+P hoist the sandbox résumé into the parent so
+     Theme page breaks apply. Hide the chrome + replaced iframe. */
+  html[data-garden-shell-printing] .app-shell {
+    display: none !important;
+  }
+
+  html[data-garden-shell-printing] #garden-print-host {
+    display: block;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-switcher__label,
+  .btn,
+  .garden-frame {
+    transition: none;
+  }
+}
+
+@media screen and (max-width: 52rem) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .app-sidebar {
+    border-right: 0;
+    border-bottom: 1px solid var(--sidebar-border);
+  }
+
+  .garden-frame {
+    min-height: 80vh;
+  }
+}

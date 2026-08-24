@@ -1,0 +1,27 @@
+# Rust
+/target
+renderer/target
+**/*.rs.bk
+
+# Elm
+elm-stuff
+frontend/elm-stuff
+frontend/dist
+frontend/node_modules
+
+# Netlify
+.netlify
+
+# Node (if a future tooling package appears)
+node_modules
+
+# Local env
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/

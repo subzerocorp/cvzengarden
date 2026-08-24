@@ -1,0 +1,18 @@
+/**
+ * ResumeZen theme
+ * Name:        (working title)
+ * Author:      (your name or handle)
+ * License:     (e.g. CC BY-NC-SA 4.0, MIT)
+ *
+ * rz-target: both
+ *
+ * Pure CSS. Target the rz-* class contract only.
+ * Spec: /skeleton/CLASS-CONTRACT.md (§2 designer themes)
+ * Example: /skeleton/example.html
+ *
+ * Do not depend on skeleton/preview.css.
+ * Do not assume product-chrome markup exists.
+ */
+
+.rz-resume {
+}

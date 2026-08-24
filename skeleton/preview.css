@@ -1,0 +1,72 @@
+/**
+ * skeleton/preview.css
+ *
+ * NOT a ResumeZen theme.
+ * Optional readability aid so example.html is comfortable to open as a file.
+ * Themes must not depend on these rules. Product chrome must not import this file.
+ *
+ * When previewing a real theme, unlink this stylesheet.
+ */
+
+.rz-resume {
+  box-sizing: border-box;
+  max-width: 42rem;
+  margin: 2rem auto 4rem;
+  padding: 0 1.25rem;
+  font-family: system-ui, "Segoe UI", sans-serif;
+  line-height: 1.5;
+}
+
+.rz-resume *,
+.rz-resume *::before,
+.rz-resume *::after {
+  box-sizing: inherit;
+}
+
+.rz-header,
+.rz-section {
+  margin-block: 1.5rem;
+}
+
+.rz-name {
+  margin: 0 0 0.15em;
+  line-height: 1.15;
+}
+
+.rz-title,
+.rz-pronouns {
+  margin: 0.15em 0;
+}
+
+.rz-contact-list,
+.rz-link-list,
+.rz-entries,
+.rz-bullets,
+.rz-skill-groups,
+.rz-skill-list,
+.rz-tags,
+.rz-meta-list {
+  margin: 0.5em 0 0;
+  padding-left: 1.25em;
+}
+
+.rz-entry {
+  margin-block: 1em;
+}
+
+.rz-entry-header > * {
+  margin: 0.15em 0;
+}
+
+.rz-section-title {
+  margin: 0 0 0.5em;
+}
+
+.rz-skill-group {
+  margin-block: 0.75em;
+}
+
+.rz-skill-group-name,
+.rz-skill-level {
+  margin: 0 0 0.25em;
+}

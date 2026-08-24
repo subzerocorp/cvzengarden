@@ -1,0 +1,233 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jsonresume/resume-schema/master/schema.json",
+  "basics": {
+    "name": "Jordan Hale",
+    "label": "Design Engineer",
+    "email": "jordan@hale.example",
+    "phone": "+1 503 555 0142",
+    "url": "https://jordanhale.example",
+    "summary": "Design engineer who treats stylesheets as a public interface. I build design systems, documentation sites, and the quiet HTML underneath them — the kind of markup a parser and a person can both read.\n\nI want tools that stay out of the way: one semantic skeleton, many skins, no framework tax on the page a hiring manager opens.",
+    "location": {
+      "city": "Portland",
+      "region": "OR",
+      "countryCode": "US"
+    },
+    "profiles": [
+      {
+        "network": "GitHub",
+        "username": "jordanhale",
+        "url": "https://github.com/jordanhale"
+      },
+      {
+        "network": "LinkedIn",
+        "username": "jordanhale",
+        "url": "https://www.linkedin.com/in/jordanhale"
+      }
+    ]
+  },
+  "work": [
+    {
+      "name": "Acme Studio",
+      "location": "Remote",
+      "description": "Product design studio",
+      "position": "Staff Design Engineer",
+      "url": "https://acme.example",
+      "startDate": "2022-03",
+      "summary": "Lead the shared component contract used across product teams.",
+      "highlights": [
+        "Lead the shared component contract used by six product teams; cut visual regressions in half by locking class names and token names as an API.",
+        "Shipped the design-system documentation site as static HTML + one CSS file per theme, including a dark theme and a high-contrast theme.",
+        "Mentored designers writing production CSS: cascade layers, logical properties, and what not to hide from assistive tech."
+      ]
+    },
+    {
+      "name": "Lumen Civic",
+      "location": "Portland, OR",
+      "description": "Civic technology",
+      "position": "Product Designer",
+      "url": "https://lumen.example",
+      "startDate": "2018-06",
+      "endDate": "2022-02",
+      "highlights": [
+        "Redesigned the public-records request flow; completion rate rose from 41% to 73% without adding a JavaScript framework to the citizen-facing pages.",
+        "Wrote the first content model for agendas and minutes so the same HTML could print, archive, and screen-read.",
+        "Partnered with engineering on an Elm admin and a boring HTML front door."
+      ]
+    },
+    {
+      "name": "Atlas Press",
+      "location": "Oakland, CA",
+      "position": "Designer & Front-end Developer",
+      "startDate": "2015-01",
+      "endDate": "2018-05",
+      "highlights": [
+        "Designed and implemented catalog and essay templates as semantic articles with print stylesheets.",
+        "Produced type specimens and CSS themes for a seasonal design-showcase series."
+      ]
+    }
+  ],
+  "volunteer": [
+    {
+      "organization": "AIGA Portland",
+      "position": "Workshop mentor",
+      "url": "https://portland.aiga.org",
+      "startDate": "2019-09",
+      "endDate": "2021-06",
+      "summary": "Monthly type and CSS workshops for early-career designers.",
+      "highlights": [
+        "Ran a twelve-week semantic HTML studio for civic-tech volunteers."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "institution": "Reed College",
+      "url": "https://www.reed.edu",
+      "area": "Art and Computer Science",
+      "studyType": "B.A.",
+      "startDate": "2010-08",
+      "endDate": "2014-05",
+      "courses": [
+        "Studio: Letterpress",
+        "CS: Programming Languages",
+        "Thesis: Responsive typography and presentational markup"
+      ]
+    }
+  ],
+  "awards": [
+    {
+      "title": "CSS Design Awards — Site of the Day",
+      "date": "2021-08",
+      "awarder": "CSS Design Awards",
+      "summary": "Type Garden"
+    },
+    {
+      "title": "AIGA Portland Fellow",
+      "date": "2020",
+      "awarder": "AIGA Portland",
+      "summary": "Community education"
+    }
+  ],
+  "certificates": [
+    {
+      "name": "IAAP WAS",
+      "date": "2023-04",
+      "url": "https://www.accessibilityassociation.org",
+      "issuer": "IAAP"
+    }
+  ],
+  "publications": [
+    {
+      "name": "The stylesheet is a public API",
+      "publisher": "A List Apart",
+      "releaseDate": "2022-01",
+      "url": "https://alistapart.example/stylesheet-api",
+      "summary": "On locking class names so themes and tools can share one HTML tree."
+    }
+  ],
+  "skills": [
+    {
+      "name": "Design",
+      "level": "Advanced",
+      "keywords": [
+        "Design systems",
+        "Typographic layout",
+        "Prototyping",
+        "User research",
+        "Accessibility"
+      ]
+    },
+    {
+      "name": "Engineering",
+      "level": "Advanced",
+      "keywords": [
+        "HTML",
+        "CSS",
+        "Elm",
+        "Rust",
+        "Design tokens"
+      ]
+    },
+    {
+      "name": "Tools",
+      "keywords": [
+        "Figma",
+        "Git",
+        "Eleventy",
+        "SQLite"
+      ]
+    }
+  ],
+  "languages": [
+    {
+      "language": "English",
+      "fluency": "Native speaker"
+    },
+    {
+      "language": "Spanish",
+      "fluency": "Conversational"
+    }
+  ],
+  "interests": [
+    {
+      "name": "Letterpress"
+    },
+    {
+      "name": "Trail running"
+    },
+    {
+      "name": "Civic archives"
+    },
+    {
+      "name": "Mechanical keyboards"
+    }
+  ],
+  "references": [
+    {
+      "name": "Sam Okonkwo",
+      "reference": "Jordan treats markup as a contract. Our design system survived six product teams because they refused to let class names drift."
+    }
+  ],
+  "projects": [
+    {
+      "name": "Type Garden",
+      "description": "A fixed article skeleton restyled by invited typographers.",
+      "highlights": [
+        "Thirty submitted stylesheets, one HTML file, no preprocessor in the published artifacts.",
+        "Documented a class contract so late themes could ship without touching markup."
+      ],
+      "keywords": [
+        "CSS",
+        "Type",
+        "Publishing"
+      ],
+      "startDate": "2021-02",
+      "endDate": "2021-11",
+      "url": "https://typegarden.example",
+      "roles": [
+        "Designer",
+        "Engineer"
+      ],
+      "type": "application"
+    },
+    {
+      "name": "Minutes, Plain",
+      "description": "City-council minutes as readable HTML with an ATS-safe export.",
+      "highlights": [
+        "Plain-language templates adopted by two neighboring municipalities."
+      ],
+      "keywords": [
+        "Civic tech",
+        "HTML"
+      ],
+      "startDate": "2019-04",
+      "endDate": "2020-01",
+      "url": "https://minutes.example"
+    }
+  ],
+  "meta": {
+    "canonical": "https://cvzengarden.com/samples/jordan-hale.json",
+    "version": "v1.0.0",
+    "lastModified": "2026-08-22T00:00:00"
+  }
+}
