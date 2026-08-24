@@ -55,3 +55,7 @@ Renderer date hardening (`696ef18`): no panic on any string, timestamps truncate
 ## 2026-08-24 — ZG-3 done
 
 Wild-file rendering (`84d2a91`): numeric score, url-only entries, span-value profiles, CRLF, safe_href URL hygiene, slug fallbacks, dir="auto" (locks regenerated). emit.rs restructured so empty entries are impossible; ZG-1 unwrap sites gone. GAN BLESS ×3. Board `done`. ZG-4 (Wasm renderer) started.
+
+## 2026-08-24 — ZG-4 phase 1 of 2
+
+`renderer-wasm` adapter crate, `RenderError` façade, `examples/render.rs` parity oracle + tests, rust-version pin, justfile coverage. GAN BLESS ×3. Phase 2 (JS/Elm bridge, sandbox swap, probes) in progress.
