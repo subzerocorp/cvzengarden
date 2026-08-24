@@ -1,12 +1,13 @@
 +++
 id = "ZG-4"
 title = "Run the Renderer in the browser via Wasm and prove it matches the crate"
-status = "todo"
+status = "in-progress"
 rank = "l"
 labels = ["avril", "round-1", "renderer", "chrome", "avril-blessed"]
 depends_on = ["ZG-1"]
+start_at = "2026-08-24T20:24:05.057059Z"
 created = "2026-08-23T23:53:41.440185Z"
-updated = "2026-08-24T01:13:24.280432Z"
+updated = "2026-08-24T20:24:05.057059Z"
 +++
 
 ## Why

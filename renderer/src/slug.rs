@@ -1,19 +1,29 @@
 use std::collections::HashSet;
 
-/// `slugify(primary + "-" + startYear)` with `-2`, `-3` on collision.
-pub fn entry_slug(primary: &str, start_year: Option<&str>, used: &mut HashSet<String>) -> String {
-    let mut raw = primary.to_string();
-    if let Some(year) = start_year {
-        if !raw.is_empty() {
-            raw.push('-');
-        }
-        raw.push_str(year);
-    }
-    let mut base = slugify(&raw);
-    if base.is_empty() {
-        base = "entry".to_string();
-    }
+const ENTRY_FALLBACK: &str = "entry";
+const SKILL_FALLBACK: &str = "skill";
+
+/// `slugify(primary) + "-" + startYear` with `-2`, `-3` on collision.
+/// A name that slugifies to nothing (`🔥🔥`, `""`) becomes `entry` first, so
+/// the year is never the whole id (`entry-2020`).
+pub fn entry_slug(primary: &str, start_year: Option<u16>, used: &mut HashSet<String>) -> String {
+    let name = slug_or(primary, ENTRY_FALLBACK);
+    let base = start_year.map_or_else(|| name.clone(), |year| format!("{name}-{year:04}"));
     uniquify(base, used)
+}
+
+/// `slugify(name)` with `-2`, `-3` on collision; `skill` when nothing survives.
+pub fn skill_slug(name: &str, used: &mut HashSet<String>) -> String {
+    uniquify(slug_or(name, SKILL_FALLBACK), used)
+}
+
+fn slug_or(input: &str, fallback: &str) -> String {
+    let slug = slugify(input);
+    if slug.is_empty() {
+        fallback.to_string()
+    } else {
+        slug
+    }
 }
 
 pub fn uniquify(base: String, used: &mut HashSet<String>) -> String {
@@ -49,15 +59,6 @@ pub fn slugify(input: &str) -> String {
     out
 }
 
-pub fn iso_year(date: &str) -> Option<&str> {
-    let date = date.trim();
-    if date.len() >= 4 && date[..4].bytes().all(|b| b.is_ascii_digit()) {
-        Some(&date[..4])
-    } else {
-        None
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -80,8 +81,32 @@ mod tests {
     #[test]
     fn collisions_append_counter() {
         let mut used = HashSet::new();
-        assert_eq!(entry_slug("Acme", Some("2022"), &mut used), "acme-2022");
-        assert_eq!(entry_slug("Acme", Some("2022"), &mut used), "acme-2022-2");
-        assert_eq!(entry_slug("Acme", Some("2022"), &mut used), "acme-2022-3");
+        assert_eq!(entry_slug("Acme", Some(2022), &mut used), "acme-2022");
+        assert_eq!(entry_slug("Acme", Some(2022), &mut used), "acme-2022-2");
+        assert_eq!(entry_slug("Acme", Some(2022), &mut used), "acme-2022-3");
+    }
+
+    #[test]
+    fn empty_name_falls_back_to_entry_before_year() {
+        let mut used = HashSet::new();
+        assert_eq!(entry_slug("", Some(2022), &mut used), "entry-2022");
+        assert_eq!(entry_slug("", None, &mut used), "entry");
+        assert_eq!(entry_slug("Acme", None, &mut used), "acme");
+    }
+
+    #[test]
+    fn emoji_only_name_falls_back_to_entry_and_counts() {
+        let mut used = HashSet::new();
+        assert_eq!(entry_slug("🔥🔥", Some(2020), &mut used), "entry-2020");
+        assert_eq!(entry_slug("🔥🔥", Some(2020), &mut used), "entry-2020-2");
+        assert_eq!(entry_slug("🔥🔥", None, &mut used), "entry");
+    }
+
+    #[test]
+    fn skill_slug_falls_back_and_counts() {
+        let mut used = HashSet::new();
+        assert_eq!(skill_slug("🎨", &mut used), "skill");
+        assert_eq!(skill_slug("", &mut used), "skill-2");
+        assert_eq!(skill_slug("Front-end", &mut used), "front-end");
     }
 }

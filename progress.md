@@ -47,3 +47,11 @@ Theme print fixes: sections break, entries stay intact, Switchyard forced break 
 ## 2026-08-24 — ZG-12 done
 
 Nightgarden long-name fit (container-query clamp + wrap), rz-rise only inside `@supports view()` with fill forwards (sections painted before entry, and in browsers without scroll-driven animation), `white-space: pre-line` ×3 with a §5.3 contract note. GAN: Reviewer BLESS → Tester BLESS → Architect BLESS. Board `done`. Completion: `docs/plans/zg-12-completion.md`. ZG-2 started.
+
+## 2026-08-24 — ZG-2 done
+
+Renderer date hardening (`696ef18`): no panic on any string, timestamps truncate, unparseable → span without datetime, current only from parsed start, calendar validation. GAN: Reviewer BLESS → Tester REJECT (mutant) → fix → BLESS ×3. Board `done`. ZG-3 started.
+
+## 2026-08-24 — ZG-3 done
+
+Wild-file rendering (`84d2a91`): numeric score, url-only entries, span-value profiles, CRLF, safe_href URL hygiene, slug fallbacks, dir="auto" (locks regenerated). emit.rs restructured so empty entries are impossible; ZG-1 unwrap sites gone. GAN BLESS ×3. Board `done`. ZG-4 (Wasm renderer) started.

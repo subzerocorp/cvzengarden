@@ -118,6 +118,7 @@ Animate on screen if you want. In `@media print`, animation and transition must 
   <body>
     <article class="rz-resume"
              data-rz-schema="1.0"
+             dir="auto"
              itemscope
              itemtype="https://schema.org/Person">
       <!-- header, then sections in canonical order -->
@@ -130,6 +131,7 @@ Animate on screen if you want. In `@media print`, animation and transition must 
 | --- | --- | --- |
 | `.rz-resume` | `<article>` | Root of the résumé. The theme's canvas. |
 | `data-rz-schema="1.0"` | `.rz-resume` | **HTML** contract version the renderer emitted. Not a JSON dialect. |
+| `dir="auto"` | `.rz-resume` | Always. The browser picks text direction from the first strong character of the résumé, so a Hebrew or Arabic name lays out right-to-left without a locale field. Themes should not set `direction` on `.rz-resume`. |
 | `lang` | `<html>` | Default `en`. JSON Resume has no locale field. |
 
 Schema.org microdata is optional sugar on identity fields (`itemprop="name"`, `jobTitle`, `email`, `url`, `address`). Themes should ignore it.
@@ -217,10 +219,10 @@ This is the renderer contract. Paths are JSON Resume. Slots are HTML classes.
 | `basics.image` | `.rz-photo` / `.rz-photo-img` (`<img alt="Portrait of {name}">`). Omitted when missing or `""`. |
 | `basics.email` | `.rz-contact.rz-contact--email` · value is `<a href="mailto:{email}">` |
 | `basics.phone` | `.rz-contact.rz-contact--phone` · `<a href="tel:{digits}">` (href strips spaces / punctuation that is not `+`) |
-| `basics.url` | `.rz-contact.rz-contact--url` · `<a href="{url}">` · visible text is the hostname |
+| `basics.url` | `.rz-contact.rz-contact--url` · `<a href="{url}">` · visible text is the hostname. Only a **safe href** (below) is emitted; when `basics.url` has none there is no hostname to show and the contact is omitted entirely |
 | `basics.location` | `.rz-contact.rz-contact--location` · visible text = `[city, region].join(", ")`, falling back to `countryCode` if both city and region are empty |
 | `basics.location.address` · `postalCode` | Stored, not rendered in v1 (header clutter / privacy) |
-| `basics.summary` | `.rz-section--summary` · `.rz-prose.rz-summary` · split on blank lines (`\n\n`) into `<p>` |
+| `basics.summary` | `.rz-section--summary` · `.rz-prose.rz-summary` · `\r\n` is normalised to `\n`, then split on blank lines (`\n\n`) into `<p>` |
 | `basics.profiles[]` | `.rz-link` (see below) |
 
 JSON Resume has **no** pronouns field. Do not emit a pronouns node.
@@ -244,16 +246,18 @@ JSON Resume has **no** pronouns field. Do not emit a pronouns node.
 | `.rz-title` | `<p>` | `basics.label` |
 | `.rz-photo` | `<figure>` | `basics.image` is a non-empty URL |
 | `.rz-photo-img` | `<img>` | with photo |
-| `.rz-contacts` | `<address>` | any of email / phone / url / location |
+| `.rz-contacts` | `<address>` | any of email / phone / url (with a safe href) / location |
 | `.rz-contact-list` | `<ul>` | with contacts |
 | `.rz-contact` | `<li>` | plus `.rz-contact--{type}` |
 | `.rz-contact-label` | `<span>` | `Email` / `Phone` / `Website` / `Location` |
 | `.rz-contact-value` | `<a>` or `<span>` | `<a>` when an href exists |
-| `.rz-links` | `<nav>` | any `basics.profiles` |
+| `.rz-links` | `<nav>` | any `basics.profiles` entry that yields a value (see **Safe hrefs**) |
 | `.rz-link-list` | `<ul>` | with profiles |
 | `.rz-link` | `<li>` | plus `.rz-link--{type}` |
 | `.rz-link-label` | `<span>` | `profiles[].network` |
-| `.rz-link-value` | `<a>` | visible text = `username`, else hostname |
+| `.rz-link-value` | `<a>` or `<span>` | visible text = `username`, else hostname. `<a href>` when the profile has a safe href; otherwise a plain `<span class="rz-link-value">` (a profile with `network` + `username` and no `url`, or with an unsafe `url`) |
+
+**Safe hrefs.** A `url` becomes an `href` only when it is `http://` or `https://` with a non-empty host, `mailto:` or `tel:` with a body, or a bare host (`example.com`, `//example.com`) which is prefixed with `https://`. Anything else — an empty host (`https://`, `//`), any other scheme (`javascript:alert(1)`, `data:`), a `scheme:`-shaped token — is never emitted as an `href`, in `.rz-link`, `.rz-contact`, or `.rz-entry-primary-link`. The value is then plain text: `username` for a profile, the hostname of the safe href for `basics.url`. When that plain text would be empty (a profile with an unsafe `url` and no `username`; a `basics.url` with no safe href) the whole `.rz-link` / `.rz-contact` `<li>` is omitted entirely, and an empty `.rz-links` `<nav>` / `.rz-contacts` `<address>` wrapper is omitted with it (Invariant 5). A `.rz-link` or `.rz-contact` item therefore always has a value node.
 
 **Profile type.** Lowercase `network`, then map aliases: `twitter` and `x` → `x`; unknown → `other`. Known modifiers: `website` · `github` · `gitlab` · `linkedin` · `mastodon` · `bluesky` · `dribbble` · `behance` · `twitter` · `x` · `other`. `data-rz-type` keeps the mapped token.
 
@@ -284,24 +288,25 @@ Used by `work`, `volunteer`, `education`, `projects`, and extras that are `entri
 </li>
 ```
 
-When the primary has no URL, `.rz-entry-primary` is plain text (no `<a>`).
+When the primary has no safe URL (see §5.2 **Safe hrefs**), `.rz-entry-primary` is plain text (no `<a>`). When an entry has a safe `url` but no name (a certificate or publication that is only a link), the primary text is the URL's hostname inside `.rz-entry-primary-link`. An entry with no renderable field at all (only whitespace, only an unsafe `url`) is omitted entirely, so `<li class="rz-entry">` always has at least one child.
 
-A `.rz-bullet` highlight may contain `\n`; themes should respect it (`white-space: pre-line`).
+A `.rz-bullet` highlight may contain `\n`; themes should respect it (`white-space: pre-line`). `\r\n` in any prose or highlight is normalised to `\n` before splitting.
 
 | Class / attr | Meaning |
 | --- | --- |
 | `.rz-entries` | `<ol>` of entries. Document order = JSON array order. |
 | `.rz-entry` | One job, school, project, or extra entry. |
 | `.rz-entry--experience` · `--education` · `--project` · `--extra` | Kind modifier. |
-| `.rz-is-current` | `startDate` present and `endDate` omitted. Also `data-rz-current="true"`. |
-| `data-rz-entry` | Renderer slug (JSON Resume has no ids): `slugify(primary + "-" + startYear)`. Collisions append `-2`, `-3`. |
+| `.rz-is-current` | `startDate` parses (see **Dates**) and `endDate` omitted. Also `data-rz-current="true"`. |
+| `data-rz-entry` | Renderer slug (JSON Resume has no ids): `slugify(primary) + "-" + startYear`, where `startYear` is the year of the *parsed* `startDate` (or single date). When `slugify(primary)` is empty (`🔥🔥`, no name) the name part is `entry`, so the year is never the whole id: `entry-2020`. Collisions append `-2`, `-3`: `entry-2020-2`. |
 | `.rz-entry-header` | Primary / secondary / dates / location cluster. |
 | `.rz-entry-primary` | `h3` |
 | `.rz-entry-primary-link` | Optional link wrapping the primary text. |
 | `.rz-entry-secondary` | Role, degree + area, project description, awarder, issuer, publisher. |
 | `.rz-dates` | Date range or single date. Omitted if no dates. |
-| `.rz-date` | A date token. |
+| `.rz-date` | A date token: `<time datetime>` when the value parses, `<span>` (no `datetime`) when it is unparseable. |
 | `.rz-date--start` / `--end` | Start vs end (ranges). |
+| `endDate` without `startDate` | Rendered as a single date: one plain `.rz-date` (no `--start`/`--end` modifier, no separator, no `Present`, never `.rz-is-current`), exactly like an award's `date`. |
 | `.rz-date--present` | End omitted → the word `Present` (`<span>`, not `<time>`). |
 | `.rz-date-sep` | Separator (`–`). Decorative; `aria-hidden`. |
 | `.rz-location` | `work[].location` (string). |
@@ -311,7 +316,11 @@ A `.rz-bullet` highlight may contain `\n`; themes should respect it (`white-spac
 | `.rz-tags` / `.rz-tag` | `keywords[]`, `courses[]`, name-only interests. |
 | `.rz-meta-list` / `.rz-meta` / `.rz-meta-label` / `.rz-meta-detail` | Languages; project `roles` / `entity` / `type`. |
 
-**Dates.** JSON Resume `iso8601`: `YYYY`, `YYYY-MM`, or `YYYY-MM-DD`. `datetime` is the raw value. Visible text is locale-formatted (`March 2022`, `2020`). A single date (awards, certificates, publications) uses one `.rz-date` and no separator.
+**Dates.** JSON Resume `iso8601`: `YYYY`, `YYYY-MM`, or `YYYY-MM-DD` — four-digit year, two-digit month and day, day valid for the month (leap years included). `datetime` is that date. Visible text is locale-formatted (`March 2022`, `2020`, `May 31, 2023`). A single date (awards, certificates, publications) uses one `.rz-date` and no separator.
+
+*Timestamps.* A time component after the date (`2023-05-31T09:00:00Z`, `2023-05-31 09:00`) is truncated at the `T` or space: `<time class="rz-date" datetime="2023-05-31">May 31, 2023</time>`. Only a time-like tail is dropped — the text after the `T` or space must start with `HH:` (two digits and a colon). Prose after a space (`2020 (approx)`, `2020 ish`) is **not** truncated to `2020`; the whole token is unparseable and renders verbatim as a `<span>`, because silently promoting an Author's hedge to a machine-readable `datetime` would lie to ATS parsers.
+
+*Unparseable dates.* Anything else (`March 2020`, `2020-13`, `2020-02-30`, `２０２０`, `日本語`, or the word `Present` written as an `endDate`) is unparseable. The renderer never rejects the document and never drops the entry: the token is emitted as `<span class="rz-date rz-date--start|--end">raw text</span>` with **no** `datetime` attribute — never `<time datetime="March 2020">`. An unparseable `startDate` does not mark the entry `.rz-is-current`; an unparseable single date is a plain `<span class="rz-date">`. An unparseable `startDate` with `endDate` omitted still emits the `.rz-date--present` `Present` span, but the entry is not `.rz-is-current`, and the `startYear` in `data-rz-entry` is the year of the *parsed* `startDate` (no year segment when it is unparseable).
 
 **Present.** JSON Resume has no `current` boolean. Omit `endDate` to mean present.
 
@@ -328,7 +337,7 @@ A `.rz-bullet` highlight may contain `\n`; themes should respect it (`white-spac
 | `location` | `.rz-location` (string) |
 | `summary` | `.rz-prose` inside the entry |
 | `highlights[]` | `.rz-bullets` |
-| `description` | Not rendered in v1 (company tagline; stored only) |
+| `description` | Not rendered in v1 (company tagline; stored only). Rendering it is a contract 1.1 field-map decision, not a bug fix. |
 
 ### 5.5 `volunteer[]`
 
@@ -353,7 +362,7 @@ A `.rz-bullet` highlight may contain `\n`; themes should respect it (`white-spac
 | `url` | `.rz-entry-primary-link` |
 | `studyType` + `area` | `.rz-entry-secondary` as `{studyType} in {area}` (whichever parts exist) |
 | `startDate` / `endDate` | `.rz-dates` |
-| `score` | `.rz-score` (prefixed `GPA ` only if the value looks numeric; otherwise emit as-is) |
+| `score` | `.rz-score` (prefixed `GPA ` only if the value looks numeric; otherwise emit as-is). The renderer accepts a JSON number as well as a string: `3.7` and `"3.7"` both render `GPA 3.7`; `4` renders `GPA 4`. |
 | `courses[]` | `.rz-tags` / `.rz-tag` (**tags, not bullets** — courses are keywords) |
 
 JSON Resume education has no `location` or `highlights`.

@@ -9,6 +9,7 @@ mod emit;
 mod html;
 mod resume;
 mod slug;
+mod url;
 
 pub use resume::{
     Award, Basics, Certificate, Education, Interest, Language, Location, Meta, Profile, Project,

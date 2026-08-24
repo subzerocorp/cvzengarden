@@ -63,6 +63,29 @@
           "bullets_pre_line",
           "css_structure_lib"
         ]
+      },
+      {
+        "id": "zg-2",
+        "title": "ZG-2: wild dates never panic; unparseable \u2192 span",
+        "status": "completed",
+        "features": [
+          "iso_date_calc",
+          "unparseable_date_span",
+          "current_from_parsed_start",
+          "wild_tests"
+        ]
+      },
+      {
+        "id": "zg-3",
+        "title": "ZG-3: wild JSON Resume rendering (score, url-only, CRLF, safe_href, slugs, dir=auto)",
+        "status": "completed",
+        "features": [
+          "score_string_or_number",
+          "url_safe_href",
+          "empty_entries_impossible",
+          "slug_fallbacks",
+          "dir_auto"
+        ]
       }
     ]
   }
