@@ -1,12 +1,14 @@
+use std::borrow::Cow;
 use std::collections::HashSet;
 
 use crate::date::{parse_iso_date, IsoDate};
-use crate::html::{flag, kv, Html};
+use crate::html::{flag, kv, Attr, Html};
 use crate::resume::{
     Award, Basics, Certificate, Education, Interest, Language, Location, Profile, Project,
     Publication, Reference, Resume, Skill, Volunteer, Work,
 };
-use crate::slug::{entry_slug, slugify, uniquify};
+use crate::slug::{entry_slug, skill_slug};
+use crate::url::{hostname, safe_href};
 use crate::CONTRACT_VERSION;
 
 const KNOWN_PROFILE_TYPES: &[&str] = &[
@@ -54,6 +56,7 @@ fn emit_article(html: &mut Html, resume: &Resume) {
         &[
             kv("class", "rz-resume"),
             kv("data-rz-schema", CONTRACT_VERSION),
+            kv("dir", "auto"),
             flag("itemscope"),
             kv("itemtype", "https://schema.org/Person"),
         ],
@@ -132,291 +135,347 @@ fn emit_header(html: &mut Html, basics: Option<&Basics>) {
     html.close("header");
 }
 
+/// One `.rz-contact` row. `href == None` renders the value as a `<span>`.
+struct Contact<'a> {
+    kind: &'static str,
+    label: &'static str,
+    itemprop: Option<&'static str>,
+    href: Option<String>,
+    text: Cow<'a, str>,
+}
+
+/// Calculation: the contact rows `basics` yields, in contract order. A
+/// `basics.url` without a safe href has no hostname to show and is dropped.
+fn contacts(basics: &Basics) -> Vec<Contact<'_>> {
+    let email = nonempty(basics.email.as_deref()).map(|email| Contact {
+        kind: "email",
+        label: "Email",
+        itemprop: Some("email"),
+        href: Some(format!("mailto:{email}")),
+        text: Cow::Borrowed(email),
+    });
+    let phone = nonempty(basics.phone.as_deref()).map(|phone| Contact {
+        kind: "phone",
+        label: "Phone",
+        itemprop: None,
+        href: Some(tel_href(phone)),
+        text: Cow::Borrowed(phone),
+    });
+    let url = nonempty(basics.url.as_deref())
+        .and_then(safe_href)
+        .map(|href| Contact {
+            kind: "url",
+            label: "Website",
+            itemprop: Some("url"),
+            text: Cow::Owned(hostname(&href).to_string()),
+            href: Some(href),
+        });
+    let location = location_text(basics.location.as_ref()).map(|text| Contact {
+        kind: "location",
+        label: "Location",
+        itemprop: Some("address"),
+        href: None,
+        text: Cow::Owned(text),
+    });
+    [email, phone, url, location]
+        .into_iter()
+        .flatten()
+        .collect()
+}
+
 fn emit_contacts(html: &mut Html, basics: &Basics) {
-    let email = nonempty(basics.email.as_deref());
-    let phone = nonempty(basics.phone.as_deref());
-    let url = nonempty(basics.url.as_deref());
-    let location = location_text(basics.location.as_ref());
-    if email.is_none() && phone.is_none() && url.is_none() && location.is_none() {
+    let rows = contacts(basics);
+    if rows.is_empty() {
         return;
     }
-
     html.open("address", &[kv("class", "rz-contacts")]);
     html.open("ul", &[kv("class", "rz-contact-list")]);
-
-    if let Some(email) = email {
-        let href = format!("mailto:{email}");
-        contact_row(html, "email", "Email", Some((&href, Some("email"))), email);
+    for row in &rows {
+        emit_contact(html, row);
     }
-    if let Some(phone) = phone {
-        let href = tel_href(phone);
-        contact_row(html, "phone", "Phone", Some((&href, None)), phone);
-    }
-    if let Some(url) = url {
-        let href = abs_http_url(url);
-        let host = hostname(&href);
-        contact_row(html, "url", "Website", Some((&href, Some("url"))), &host);
-    }
-    if let Some(loc) = location {
-        contact_row(html, "location", "Location", None, &loc);
-    }
-
     html.close("ul");
     html.close("address");
 }
 
-fn contact_row(
-    html: &mut Html,
-    kind: &str,
-    label: &str,
-    link: Option<(&str, Option<&str>)>,
-    value: &str,
-) {
-    let class = format!("rz-contact rz-contact--{kind}");
-    html.open("li", &[kv("class", &class), kv("data-rz-type", kind)]);
-    html.text_el("span", &[kv("class", "rz-contact-label")], label);
-    match link {
-        Some((href, itemprop)) => {
-            let mut attrs = vec![kv("class", "rz-contact-value"), kv("href", href)];
-            if let Some(prop) = itemprop {
-                attrs.insert(1, kv("itemprop", prop));
-            }
-            html.text_el("a", &attrs, value);
-        }
-        None => {
-            html.text_el(
-                "span",
-                &[kv("class", "rz-contact-value"), kv("itemprop", "address")],
-                value,
-            );
-        }
-    }
+fn emit_contact(html: &mut Html, row: &Contact<'_>) {
+    let class = format!("rz-contact rz-contact--{}", row.kind);
+    html.open("li", &[kv("class", &class), kv("data-rz-type", row.kind)]);
+    html.text_el("span", &[kv("class", "rz-contact-label")], row.label);
+    let mut attrs = vec![kv("class", "rz-contact-value")];
+    attrs.extend(row.itemprop.map(|prop| kv("itemprop", prop)));
+    emit_value(html, attrs, row.href.as_deref(), &row.text);
     html.close("li");
 }
 
+/// `<a href>` when there is a safe href, otherwise a `<span>` with the same
+/// attributes (contract §5.2).
+fn emit_value<'a>(html: &mut Html, mut attrs: Vec<Attr<'a>>, href: Option<&'a str>, text: &str) {
+    match href {
+        Some(href) => {
+            attrs.push(kv("href", href));
+            html.text_el("a", &attrs, text);
+        }
+        None => html.text_el("span", &attrs, text),
+    }
+}
+
+/// One `.rz-link` row. `href == None` renders the username as a `<span>`.
+struct Link<'a> {
+    kind: &'static str,
+    label: &'a str,
+    href: Option<String>,
+    text: Cow<'a, str>,
+}
+
+/// Calculation: the row a profile yields, or `None` when nothing is showable
+/// (no username and no safe URL to take a hostname from).
+fn profile_link(profile: &Profile) -> Option<Link<'_>> {
+    let href = nonempty(profile.url.as_deref()).and_then(safe_href);
+    let text = nonempty(profile.username.as_deref())
+        .map(Cow::Borrowed)
+        .or_else(|| {
+            href.as_deref()
+                .map(|href| Cow::Owned(hostname(href).to_string()))
+        })
+        .filter(|text| !text.is_empty())?;
+    let network = nonempty(profile.network.as_deref()).unwrap_or("");
+    let kind = profile_type(network);
+    let label = if network.is_empty() { kind } else { network };
+    Some(Link {
+        kind,
+        label,
+        href,
+        text,
+    })
+}
+
 fn emit_links(html: &mut Html, profiles: &[Profile]) {
-    let items: Vec<_> = profiles
-        .iter()
-        .filter(|p| nonempty(p.url.as_deref()).is_some())
-        .collect();
-    if items.is_empty() {
+    let rows: Vec<Link<'_>> = profiles.iter().filter_map(profile_link).collect();
+    if rows.is_empty() {
         return;
     }
-
     html.open(
         "nav",
         &[kv("class", "rz-links"), kv("aria-label", "Profiles")],
     );
     html.open("ul", &[kv("class", "rz-link-list")]);
-    for profile in items {
-        let url = nonempty(profile.url.as_deref()).expect("filtered");
-        let href = abs_http_url(url);
-        let network = nonempty(profile.network.as_deref()).unwrap_or("");
-        let kind = profile_type(network);
-        let label = if network.is_empty() { kind } else { network };
-        let text =
-            nonempty(profile.username.as_deref()).map_or_else(|| hostname(&href), str::to_string);
-        let class = format!("rz-link rz-link--{kind}");
-        html.open("li", &[kv("class", &class), kv("data-rz-type", kind)]);
-        html.text_el("span", &[kv("class", "rz-link-label")], label);
-        html.text_el(
-            "a",
-            &[kv("class", "rz-link-value"), kv("href", &href)],
-            &text,
-        );
-        html.close("li");
+    for row in &rows {
+        emit_link(html, row);
     }
     html.close("ul");
     html.close("nav");
+}
+
+fn emit_link(html: &mut Html, row: &Link<'_>) {
+    let class = format!("rz-link rz-link--{}", row.kind);
+    html.open("li", &[kv("class", &class), kv("data-rz-type", row.kind)]);
+    html.text_el("span", &[kv("class", "rz-link-label")], row.label);
+    let attrs = vec![kv("class", "rz-link-value")];
+    emit_value(html, attrs, row.href.as_deref(), &row.text);
+    html.close("li");
 }
 
 fn emit_summary(html: &mut Html, basics: Option<&Basics>) {
     let Some(summary) = basics.and_then(|b| nonempty(b.summary.as_deref())) else {
         return;
     };
-    open_section(html, "summary", "Summary", false, None);
+    open_section(html, &SUMMARY);
     emit_prose(html, "rz-prose rz-summary", summary);
     html.close("section");
 }
 
-fn emit_experience(html: &mut Html, items: &[Work], slugs: &mut HashSet<String>) {
-    let items: Vec<&Work> = items.iter().filter(|w| work_has_content(w)).collect();
-    if items.is_empty() {
+/// A `.rz-section` of `.rz-entries`: id, title, and the `data-rz-kind`
+/// extras carry.
+struct Section {
+    id: &'static str,
+    title: &'static str,
+    extra: bool,
+    kind: Option<&'static str>,
+}
+
+const EXPERIENCE: Section = Section {
+    id: "experience",
+    title: "Experience",
+    extra: false,
+    kind: None,
+};
+const VOLUNTEER: Section = Section {
+    id: "volunteer",
+    title: "Volunteer",
+    extra: true,
+    kind: Some("entries"),
+};
+const EDUCATION: Section = Section {
+    id: "education",
+    title: "Education",
+    extra: false,
+    kind: None,
+};
+const AWARDS: Section = Section {
+    id: "awards",
+    title: "Awards",
+    extra: true,
+    kind: Some("entries"),
+};
+const CERTIFICATES: Section = Section {
+    id: "certificates",
+    title: "Certificates",
+    extra: true,
+    kind: Some("entries"),
+};
+const PUBLICATIONS: Section = Section {
+    id: "publications",
+    title: "Publications",
+    extra: true,
+    kind: Some("entries"),
+};
+const INTERESTS_ENTRIES: Section = Section {
+    id: "interests",
+    title: "Interests",
+    extra: true,
+    kind: Some("entries"),
+};
+const INTERESTS_TAGS: Section = Section {
+    id: "interests",
+    title: "Interests",
+    extra: true,
+    kind: Some("tags"),
+};
+const REFERENCES: Section = Section {
+    id: "references",
+    title: "References",
+    extra: true,
+    kind: Some("entries"),
+};
+const PROJECTS: Section = Section {
+    id: "projects",
+    title: "Projects",
+    extra: false,
+    kind: None,
+};
+
+/// Emit a section of entries, skipping entries with nothing to show and the
+/// whole section when none remain (Invariant 5). Every `<li class="rz-entry">`
+/// therefore has at least one child node.
+fn emit_entry_section(
+    html: &mut Html,
+    section: &Section,
+    entries: Vec<EntryBits<'_>>,
+    slugs: &mut HashSet<String>,
+) {
+    let entries: Vec<EntryBits<'_>> = entries.into_iter().filter(EntryBits::has_content).collect();
+    if entries.is_empty() {
         return;
     }
-    open_section(html, "experience", "Experience", false, None);
+    open_section(html, section);
     html.open("ol", &[kv("class", "rz-entries")]);
-    for work in items {
-        let bits = EntryBits {
-            kind: "experience",
-            primary: nonempty(work.name.as_deref()),
-            url: nonempty(work.url.as_deref()),
-            secondary: nonempty(work.position.as_deref()).map(str::to_string),
-            start: date_token(nonempty(work.start_date.as_deref())),
-            end: date_token(nonempty(work.end_date.as_deref())),
-            single_date: None,
-            location: nonempty(work.location.as_deref()),
-            score: None,
-            summary: nonempty(work.summary.as_deref()),
-            highlights: nonempty_list(work.highlights.as_deref()),
-            tags: &[],
-            meta: vec![],
-        };
-        emit_entry(html, &bits, slugs);
+    for bits in &entries {
+        emit_entry(html, bits, slugs);
     }
     html.close("ol");
     html.close("section");
+}
+
+fn emit_experience(html: &mut Html, items: &[Work], slugs: &mut HashSet<String>) {
+    let entries = items.iter().map(work_bits).collect();
+    emit_entry_section(html, &EXPERIENCE, entries, slugs);
+}
+
+fn work_bits(work: &Work) -> EntryBits<'_> {
+    EntryBits {
+        kind: "experience",
+        primary: primary_link(work.name.as_deref(), work.url.as_deref()),
+        secondary: nonempty(work.position.as_deref()).map(str::to_string),
+        start: date_token(nonempty(work.start_date.as_deref())),
+        end: date_token(nonempty(work.end_date.as_deref())),
+        location: nonempty(work.location.as_deref()),
+        summary: nonempty(work.summary.as_deref()),
+        highlights: nonempty_list(work.highlights.as_deref()),
+        ..EntryBits::default()
+    }
 }
 
 fn emit_volunteer(html: &mut Html, items: &[Volunteer], slugs: &mut HashSet<String>) {
-    let items: Vec<&Volunteer> = items.iter().filter(|v| volunteer_has_content(v)).collect();
-    if items.is_empty() {
-        return;
+    let entries = items.iter().map(volunteer_bits).collect();
+    emit_entry_section(html, &VOLUNTEER, entries, slugs);
+}
+
+fn volunteer_bits(item: &Volunteer) -> EntryBits<'_> {
+    EntryBits {
+        kind: "extra",
+        primary: primary_link(item.organization.as_deref(), item.url.as_deref()),
+        secondary: nonempty(item.position.as_deref()).map(str::to_string),
+        start: date_token(nonempty(item.start_date.as_deref())),
+        end: date_token(nonempty(item.end_date.as_deref())),
+        summary: nonempty(item.summary.as_deref()),
+        highlights: nonempty_list(item.highlights.as_deref()),
+        ..EntryBits::default()
     }
-    open_section(html, "volunteer", "Volunteer", true, Some("entries"));
-    html.open("ol", &[kv("class", "rz-entries")]);
-    for item in items {
-        let bits = EntryBits {
-            kind: "extra",
-            primary: nonempty(item.organization.as_deref()),
-            url: nonempty(item.url.as_deref()),
-            secondary: nonempty(item.position.as_deref()).map(str::to_string),
-            start: date_token(nonempty(item.start_date.as_deref())),
-            end: date_token(nonempty(item.end_date.as_deref())),
-            single_date: None,
-            location: None,
-            score: None,
-            summary: nonempty(item.summary.as_deref()),
-            highlights: nonempty_list(item.highlights.as_deref()),
-            tags: &[],
-            meta: vec![],
-        };
-        emit_entry(html, &bits, slugs);
-    }
-    html.close("ol");
-    html.close("section");
 }
 
 fn emit_education(html: &mut Html, items: &[Education], slugs: &mut HashSet<String>) {
-    let items: Vec<&Education> = items.iter().filter(|e| education_has_content(e)).collect();
-    if items.is_empty() {
-        return;
+    let entries = items.iter().map(education_bits).collect();
+    emit_entry_section(html, &EDUCATION, entries, slugs);
+}
+
+fn education_bits(item: &Education) -> EntryBits<'_> {
+    EntryBits {
+        kind: "education",
+        primary: primary_link(item.institution.as_deref(), item.url.as_deref()),
+        secondary: education_secondary(item),
+        start: date_token(nonempty(item.start_date.as_deref())),
+        end: date_token(nonempty(item.end_date.as_deref())),
+        score: nonempty(item.score.as_deref()).map(format_score),
+        tags: nonempty_list(item.courses.as_deref()),
+        ..EntryBits::default()
     }
-    open_section(html, "education", "Education", false, None);
-    html.open("ol", &[kv("class", "rz-entries")]);
-    for item in items {
-        let bits = EntryBits {
-            kind: "education",
-            primary: nonempty(item.institution.as_deref()),
-            url: nonempty(item.url.as_deref()),
-            secondary: education_secondary(item),
-            start: date_token(nonempty(item.start_date.as_deref())),
-            end: date_token(nonempty(item.end_date.as_deref())),
-            single_date: None,
-            location: None,
-            score: nonempty(item.score.as_deref()).map(format_score),
-            summary: None,
-            highlights: &[],
-            tags: nonempty_list(item.courses.as_deref()),
-            meta: vec![],
-        };
-        emit_entry(html, &bits, slugs);
-    }
-    html.close("ol");
-    html.close("section");
 }
 
 fn emit_awards(html: &mut Html, items: &[Award], slugs: &mut HashSet<String>) {
-    let items: Vec<&Award> = items.iter().filter(|a| award_has_content(a)).collect();
-    if items.is_empty() {
-        return;
+    let entries = items.iter().map(award_bits).collect();
+    emit_entry_section(html, &AWARDS, entries, slugs);
+}
+
+fn award_bits(item: &Award) -> EntryBits<'_> {
+    EntryBits {
+        kind: "extra",
+        primary: primary_link(item.title.as_deref(), None),
+        secondary: nonempty(item.awarder.as_deref()).map(str::to_string),
+        single_date: date_token(nonempty(item.date.as_deref())),
+        summary: nonempty(item.summary.as_deref()),
+        ..EntryBits::default()
     }
-    open_section(html, "awards", "Awards", true, Some("entries"));
-    html.open("ol", &[kv("class", "rz-entries")]);
-    for item in items {
-        let bits = EntryBits {
-            kind: "extra",
-            primary: nonempty(item.title.as_deref()),
-            url: None,
-            secondary: nonempty(item.awarder.as_deref()).map(str::to_string),
-            start: None,
-            end: None,
-            single_date: date_token(nonempty(item.date.as_deref())),
-            location: None,
-            score: None,
-            summary: nonempty(item.summary.as_deref()),
-            highlights: &[],
-            tags: &[],
-            meta: vec![],
-        };
-        emit_entry(html, &bits, slugs);
-    }
-    html.close("ol");
-    html.close("section");
 }
 
 fn emit_certificates(html: &mut Html, items: &[Certificate], slugs: &mut HashSet<String>) {
-    let items: Vec<&Certificate> = items
-        .iter()
-        .filter(|c| certificate_has_content(c))
-        .collect();
-    if items.is_empty() {
-        return;
+    let entries = items.iter().map(certificate_bits).collect();
+    emit_entry_section(html, &CERTIFICATES, entries, slugs);
+}
+
+fn certificate_bits(item: &Certificate) -> EntryBits<'_> {
+    EntryBits {
+        kind: "extra",
+        primary: primary_link(item.name.as_deref(), item.url.as_deref()),
+        secondary: nonempty(item.issuer.as_deref()).map(str::to_string),
+        single_date: date_token(nonempty(item.date.as_deref())),
+        ..EntryBits::default()
     }
-    open_section(html, "certificates", "Certificates", true, Some("entries"));
-    html.open("ol", &[kv("class", "rz-entries")]);
-    for item in items {
-        let bits = EntryBits {
-            kind: "extra",
-            primary: nonempty(item.name.as_deref()),
-            url: nonempty(item.url.as_deref()),
-            secondary: nonempty(item.issuer.as_deref()).map(str::to_string),
-            start: None,
-            end: None,
-            single_date: date_token(nonempty(item.date.as_deref())),
-            location: None,
-            score: None,
-            summary: None,
-            highlights: &[],
-            tags: &[],
-            meta: vec![],
-        };
-        emit_entry(html, &bits, slugs);
-    }
-    html.close("ol");
-    html.close("section");
 }
 
 fn emit_publications(html: &mut Html, items: &[Publication], slugs: &mut HashSet<String>) {
-    let items: Vec<&Publication> = items
-        .iter()
-        .filter(|p| publication_has_content(p))
-        .collect();
-    if items.is_empty() {
-        return;
+    let entries = items.iter().map(publication_bits).collect();
+    emit_entry_section(html, &PUBLICATIONS, entries, slugs);
+}
+
+fn publication_bits(item: &Publication) -> EntryBits<'_> {
+    EntryBits {
+        kind: "extra",
+        primary: primary_link(item.name.as_deref(), item.url.as_deref()),
+        secondary: nonempty(item.publisher.as_deref()).map(str::to_string),
+        single_date: date_token(nonempty(item.release_date.as_deref())),
+        summary: nonempty(item.summary.as_deref()),
+        ..EntryBits::default()
     }
-    open_section(html, "publications", "Publications", true, Some("entries"));
-    html.open("ol", &[kv("class", "rz-entries")]);
-    for item in items {
-        let bits = EntryBits {
-            kind: "extra",
-            primary: nonempty(item.name.as_deref()),
-            url: nonempty(item.url.as_deref()),
-            secondary: nonempty(item.publisher.as_deref()).map(str::to_string),
-            start: None,
-            end: None,
-            single_date: date_token(nonempty(item.release_date.as_deref())),
-            location: None,
-            score: None,
-            summary: nonempty(item.summary.as_deref()),
-            highlights: &[],
-            tags: &[],
-            meta: vec![],
-        };
-        emit_entry(html, &bits, slugs);
-    }
-    html.close("ol");
-    html.close("section");
 }
 
 fn emit_skills(html: &mut Html, items: &[Skill]) {
@@ -424,62 +483,78 @@ fn emit_skills(html: &mut Html, items: &[Skill]) {
     if items.is_empty() {
         return;
     }
-    open_section(html, "skills", "Skills", false, None);
+    open_section(html, &SKILLS);
     html.open("ul", &[kv("class", "rz-skill-groups")]);
     let mut group_slugs = HashSet::new();
     for skill in items {
-        let name = nonempty(skill.name.as_deref());
-        let slug_src = name.unwrap_or("skill");
-        let slug = uniquify(slugify(slug_src), &mut group_slugs);
-        html.open(
-            "li",
-            &[
-                kv("class", "rz-skill-group"),
-                kv("data-rz-skill-group", &slug),
-            ],
-        );
-        if let Some(name) = name {
-            html.text_el("h3", &[kv("class", "rz-skill-group-name")], name);
-        }
-        if let Some(level) = nonempty(skill.level.as_deref()) {
-            html.text_el("p", &[kv("class", "rz-skill-level")], level);
-        }
-        let keywords: Vec<&str> = nonempty_list(skill.keywords.as_deref())
-            .iter()
-            .map(|s| s.trim())
-            .filter(|s| !s.is_empty())
-            .collect();
-        if !keywords.is_empty() {
-            html.open("ul", &[kv("class", "rz-skill-list")]);
-            for keyword in keywords {
-                html.text_el("li", &[kv("class", "rz-skill")], keyword);
-            }
-            html.close("ul");
-        }
-        html.close("li");
+        emit_skill_group(html, skill, &mut group_slugs);
     }
     html.close("ul");
     html.close("section");
 }
 
+const SKILLS: Section = Section {
+    id: "skills",
+    title: "Skills",
+    extra: false,
+    kind: None,
+};
+const LANGUAGES: Section = Section {
+    id: "languages",
+    title: "Languages",
+    extra: true,
+    kind: Some("list"),
+};
+const SUMMARY: Section = Section {
+    id: "summary",
+    title: "Summary",
+    extra: false,
+    kind: None,
+};
+
+fn emit_skill_group(html: &mut Html, skill: &Skill, group_slugs: &mut HashSet<String>) {
+    let name = nonempty(skill.name.as_deref());
+    let slug = skill_slug(name.unwrap_or(""), group_slugs);
+    html.open(
+        "li",
+        &[
+            kv("class", "rz-skill-group"),
+            kv("data-rz-skill-group", &slug),
+        ],
+    );
+    if let Some(name) = name {
+        html.text_el("h3", &[kv("class", "rz-skill-group-name")], name);
+    }
+    if let Some(level) = nonempty(skill.level.as_deref()) {
+        html.text_el("p", &[kv("class", "rz-skill-level")], level);
+    }
+    let keywords = trimmed(nonempty_list(skill.keywords.as_deref()));
+    if !keywords.is_empty() {
+        html.open("ul", &[kv("class", "rz-skill-list")]);
+        for keyword in keywords {
+            html.text_el("li", &[kv("class", "rz-skill")], keyword);
+        }
+        html.close("ul");
+    }
+    html.close("li");
+}
+
 fn emit_languages(html: &mut Html, items: &[Language]) {
-    let items: Vec<&Language> = items
+    let rows: Vec<(&str, Option<&str>)> = items
         .iter()
-        .filter(|l| nonempty(l.language.as_deref()).is_some())
+        .filter_map(|l| {
+            nonempty(l.language.as_deref()).map(|name| (name, nonempty(l.fluency.as_deref())))
+        })
         .collect();
-    if items.is_empty() {
+    if rows.is_empty() {
         return;
     }
-    open_section(html, "languages", "Languages", true, Some("list"));
+    open_section(html, &LANGUAGES);
     html.open("ul", &[kv("class", "rz-meta-list")]);
-    for item in items {
+    for (name, fluency) in rows {
         html.open("li", &[kv("class", "rz-meta")]);
-        html.text_el(
-            "span",
-            &[kv("class", "rz-meta-label")],
-            nonempty(item.language.as_deref()).unwrap(),
-        );
-        if let Some(fluency) = nonempty(item.fluency.as_deref()) {
+        html.text_el("span", &[kv("class", "rz-meta-label")], name);
+        if let Some(fluency) = fluency {
             html.text_el("span", &[kv("class", "rz-meta-detail")], fluency);
         }
         html.close("li");
@@ -489,49 +564,30 @@ fn emit_languages(html: &mut Html, items: &[Language]) {
 }
 
 fn emit_interests(html: &mut Html, items: &[Interest], slugs: &mut HashSet<String>) {
-    let items: Vec<&Interest> = items
+    let items: Vec<(&str, &Interest)> = items
         .iter()
-        .filter(|i| nonempty(i.name.as_deref()).is_some())
+        .filter_map(|i| nonempty(i.name.as_deref()).map(|name| (name, i)))
         .collect();
     if items.is_empty() {
         return;
     }
-    let as_entries = items
-        .iter()
-        .any(|i| !nonempty_list(i.keywords.as_deref()).is_empty());
+    let as_entries = items.iter().any(|(_, i)| has_any(i.keywords.as_deref()));
     if as_entries {
-        open_section(html, "interests", "Interests", true, Some("entries"));
-        html.open("ol", &[kv("class", "rz-entries")]);
-        for item in items {
-            let tags = nonempty_list(item.keywords.as_deref());
-            let bits = EntryBits {
+        let entries = items
+            .iter()
+            .map(|(name, item)| EntryBits {
                 kind: "extra",
-                primary: nonempty(item.name.as_deref()),
-                url: None,
-                secondary: None,
-                start: None,
-                end: None,
-                single_date: None,
-                location: None,
-                score: None,
-                summary: None,
-                highlights: &[],
-                tags,
-                meta: vec![],
-            };
-            emit_entry(html, &bits, slugs);
-        }
-        html.close("ol");
-        html.close("section");
+                primary: primary_link(Some(name), None),
+                tags: nonempty_list(item.keywords.as_deref()),
+                ..EntryBits::default()
+            })
+            .collect();
+        emit_entry_section(html, &INTERESTS_ENTRIES, entries, slugs);
     } else {
-        open_section(html, "interests", "Interests", true, Some("tags"));
+        open_section(html, &INTERESTS_TAGS);
         html.open("ul", &[kv("class", "rz-tags")]);
-        for item in items {
-            html.text_el(
-                "li",
-                &[kv("class", "rz-tag")],
-                nonempty(item.name.as_deref()).unwrap(),
-            );
+        for (name, _) in items {
+            html.text_el("li", &[kv("class", "rz-tag")], name);
         }
         html.close("ul");
         html.close("section");
@@ -539,78 +595,71 @@ fn emit_interests(html: &mut Html, items: &[Interest], slugs: &mut HashSet<Strin
 }
 
 fn emit_references(html: &mut Html, items: &[Reference], slugs: &mut HashSet<String>) {
-    let items: Vec<&Reference> = items.iter().filter(|r| reference_has_content(r)).collect();
-    if items.is_empty() {
-        return;
-    }
-    open_section(html, "references", "References", true, Some("entries"));
-    html.open("ol", &[kv("class", "rz-entries")]);
-    for item in items {
-        let bits = EntryBits {
+    let entries = items
+        .iter()
+        .map(|item| EntryBits {
             kind: "extra",
-            primary: nonempty(item.name.as_deref()),
-            url: None,
-            secondary: None,
-            start: None,
-            end: None,
-            single_date: None,
-            location: None,
-            score: None,
+            primary: primary_link(item.name.as_deref(), None),
             summary: nonempty(item.reference.as_deref()),
-            highlights: &[],
-            tags: &[],
-            meta: vec![],
-        };
-        emit_entry(html, &bits, slugs);
-    }
-    html.close("ol");
-    html.close("section");
+            ..EntryBits::default()
+        })
+        .collect();
+    emit_entry_section(html, &REFERENCES, entries, slugs);
 }
 
 fn emit_projects(html: &mut Html, items: &[Project], slugs: &mut HashSet<String>) {
-    let items: Vec<&Project> = items.iter().filter(|p| project_has_content(p)).collect();
-    if items.is_empty() {
-        return;
-    }
-    open_section(html, "projects", "Projects", false, None);
-    html.open("ol", &[kv("class", "rz-entries")]);
-    for item in items {
-        let mut meta = Vec::new();
-        let roles = nonempty_list(item.roles.as_deref());
-        if !roles.is_empty() {
-            meta.push(("Roles".to_string(), roles.join(", ")));
-        }
-        if let Some(entity) = nonempty(item.entity.as_deref()) {
-            meta.push(("Affiliation".to_string(), entity.to_string()));
-        }
-        if let Some(kind) = nonempty(item.r#type.as_deref()) {
-            meta.push(("Type".to_string(), kind.to_string()));
-        }
-        let bits = EntryBits {
-            kind: "project",
-            primary: nonempty(item.name.as_deref()),
-            url: nonempty(item.url.as_deref()),
-            secondary: nonempty(item.description.as_deref()).map(str::to_string),
-            start: date_token(nonempty(item.start_date.as_deref())),
-            end: date_token(nonempty(item.end_date.as_deref())),
-            single_date: None,
-            location: None,
-            score: None,
-            summary: None,
-            highlights: nonempty_list(item.highlights.as_deref()),
-            tags: nonempty_list(item.keywords.as_deref()),
-            meta,
-        };
-        emit_entry(html, &bits, slugs);
-    }
-    html.close("ol");
-    html.close("section");
+    let entries = items.iter().map(project_bits).collect();
+    emit_entry_section(html, &PROJECTS, entries, slugs);
 }
 
+fn project_bits(item: &Project) -> EntryBits<'_> {
+    EntryBits {
+        kind: "project",
+        primary: primary_link(item.name.as_deref(), item.url.as_deref()),
+        secondary: nonempty(item.description.as_deref()).map(str::to_string),
+        start: date_token(nonempty(item.start_date.as_deref())),
+        end: date_token(nonempty(item.end_date.as_deref())),
+        highlights: nonempty_list(item.highlights.as_deref()),
+        tags: nonempty_list(item.keywords.as_deref()),
+        meta: project_meta(item),
+        ..EntryBits::default()
+    }
+}
+
+fn project_meta(item: &Project) -> Vec<(String, String)> {
+    let roles = trimmed(nonempty_list(item.roles.as_deref()));
+    let roles = (!roles.is_empty()).then(|| ("Roles".to_string(), roles.join(", ")));
+    let entity =
+        nonempty(item.entity.as_deref()).map(|e| ("Affiliation".to_string(), e.to_string()));
+    let kind = nonempty(item.r#type.as_deref()).map(|k| ("Type".to_string(), k.to_string()));
+    [roles, entity, kind].into_iter().flatten().collect()
+}
+
+/// The entry's headline: the name, or the hostname when only a safe URL was
+/// given, so a link always has text and an entry always has a headline when
+/// it has a URL.
+struct Primary<'a> {
+    text: Cow<'a, str>,
+    href: Option<String>,
+}
+
+/// Calculation: `name` (with a safe `url` as href) or the hostname of a safe
+/// `url`; `None` when neither yields text.
+fn primary_link<'a>(name: Option<&'a str>, url: Option<&str>) -> Option<Primary<'a>> {
+    let href = nonempty(url).and_then(safe_href);
+    let text = nonempty(name).map(Cow::Borrowed).or_else(|| {
+        href.as_deref()
+            .map(|href| Cow::Owned(hostname(href).to_string()))
+    })?;
+    Some(Primary { text, href })
+}
+
+/// View model for one `.rz-entry`. Everything optional; `has_content` says
+/// whether emitting it would produce any child node.
+#[derive(Default)]
 struct EntryBits<'a> {
     kind: &'a str,
-    primary: Option<&'a str>,
-    url: Option<&'a str>,
+    primary: Option<Primary<'a>>,
     secondary: Option<String>,
     start: Option<DateToken<'a>>,
     end: Option<DateToken<'a>>,
@@ -623,16 +672,43 @@ struct EntryBits<'a> {
     meta: Vec<(String, String)>,
 }
 
+impl EntryBits<'_> {
+    fn has_header(&self) -> bool {
+        self.primary.is_some()
+            || self.secondary.is_some()
+            || self.start.is_some()
+            || self.end.is_some()
+            || self.single_date.is_some()
+            || self.location.is_some()
+            || self.score.is_some()
+    }
+
+    fn has_content(&self) -> bool {
+        self.has_header()
+            || self.summary.is_some()
+            || !self.meta.is_empty()
+            || any_nonblank(self.tags)
+            || any_nonblank(self.highlights)
+    }
+
+    fn slug_year(&self) -> Option<u16> {
+        self.single_date
+            .or(self.start)
+            .and_then(|token| token.parsed)
+            .map(|date| date.year)
+    }
+
+    fn is_current(&self) -> bool {
+        self.single_date.is_none()
+            && self.start.is_some_and(|token| token.parsed.is_some())
+            && self.end.is_none()
+    }
+}
+
 fn emit_entry(html: &mut Html, bits: &EntryBits<'_>, slugs: &mut HashSet<String>) {
-    let year = bits
-        .single_date
-        .or(bits.start)
-        .and_then(|token| token.parsed)
-        .map(|date| date.year);
-    let slug = entry_slug(bits.primary.unwrap_or(""), year, slugs);
-    let is_current = bits.single_date.is_none()
-        && bits.start.is_some_and(|token| token.parsed.is_some())
-        && bits.end.is_none();
+    let primary_text = bits.primary.as_ref().map_or("", |p| p.text.as_ref());
+    let slug = entry_slug(primary_text, bits.slug_year(), slugs);
+    let is_current = bits.is_current();
     let mut class = format!("rz-entry rz-entry--{}", bits.kind);
     if is_current {
         class.push_str(" rz-is-current");
@@ -643,58 +719,63 @@ fn emit_entry(html: &mut Html, bits: &EntryBits<'_>, slugs: &mut HashSet<String>
     }
     html.open("li", &attrs);
 
-    let has_header = bits.primary.is_some()
-        || bits.secondary.is_some()
-        || bits.start.is_some()
-        || bits.end.is_some()
-        || bits.single_date.is_some()
-        || bits.location.is_some()
-        || bits.score.is_some();
-    if has_header {
-        html.open("div", &[kv("class", "rz-entry-header")]);
-        if let Some(primary) = bits.primary {
-            if let Some(url) = bits.url {
-                let href = abs_http_url(url);
-                html.open("h3", &[kv("class", "rz-entry-primary")]);
-                html.text_el(
-                    "a",
-                    &[kv("class", "rz-entry-primary-link"), kv("href", &href)],
-                    primary,
-                );
-                html.close("h3");
-            } else {
-                html.text_el("h3", &[kv("class", "rz-entry-primary")], primary);
-            }
-        }
-        if let Some(secondary) = bits.secondary.as_deref() {
-            html.text_el("p", &[kv("class", "rz-entry-secondary")], secondary);
-        }
-        emit_dates(html, bits);
-        if let Some(location) = bits.location {
-            html.text_el("p", &[kv("class", "rz-location")], location);
-        }
-        if let Some(score) = bits.score.as_deref() {
-            html.text_el("p", &[kv("class", "rz-score")], score);
-        }
-        html.close("div");
+    if bits.has_header() {
+        emit_entry_header(html, bits);
     }
-
     if let Some(summary) = bits.summary {
         emit_prose(html, "rz-prose", summary);
     }
-    if !bits.meta.is_empty() {
-        html.open("ul", &[kv("class", "rz-meta-list")]);
-        for (label, detail) in &bits.meta {
-            html.open("li", &[kv("class", "rz-meta")]);
-            html.text_el("span", &[kv("class", "rz-meta-label")], label);
-            html.text_el("span", &[kv("class", "rz-meta-detail")], detail);
-            html.close("li");
-        }
-        html.close("ul");
-    }
+    emit_meta(html, &bits.meta);
     emit_tags(html, bits.tags);
     emit_bullets(html, bits.highlights);
     html.close("li");
+}
+
+fn emit_entry_header(html: &mut Html, bits: &EntryBits<'_>) {
+    html.open("div", &[kv("class", "rz-entry-header")]);
+    if let Some(primary) = &bits.primary {
+        emit_primary(html, primary);
+    }
+    if let Some(secondary) = bits.secondary.as_deref() {
+        html.text_el("p", &[kv("class", "rz-entry-secondary")], secondary);
+    }
+    emit_dates(html, bits);
+    if let Some(location) = bits.location {
+        html.text_el("p", &[kv("class", "rz-location")], location);
+    }
+    if let Some(score) = bits.score.as_deref() {
+        html.text_el("p", &[kv("class", "rz-score")], score);
+    }
+    html.close("div");
+}
+
+fn emit_primary(html: &mut Html, primary: &Primary<'_>) {
+    match primary.href.as_deref() {
+        Some(href) => {
+            html.open("h3", &[kv("class", "rz-entry-primary")]);
+            html.text_el(
+                "a",
+                &[kv("class", "rz-entry-primary-link"), kv("href", href)],
+                &primary.text,
+            );
+            html.close("h3");
+        }
+        None => html.text_el("h3", &[kv("class", "rz-entry-primary")], &primary.text),
+    }
+}
+
+fn emit_meta(html: &mut Html, meta: &[(String, String)]) {
+    if meta.is_empty() {
+        return;
+    }
+    html.open("ul", &[kv("class", "rz-meta-list")]);
+    for (label, detail) in meta {
+        html.open("li", &[kv("class", "rz-meta")]);
+        html.text_el("span", &[kv("class", "rz-meta-label")], label);
+        html.text_el("span", &[kv("class", "rz-meta-detail")], detail);
+        html.close("li");
+    }
+    html.close("ul");
 }
 
 /// A date field as the Author wrote it, plus what the renderer made of it.
@@ -759,39 +840,39 @@ fn emit_range_end(html: &mut Html, end: Option<DateToken<'_>>) {
     }
 }
 
+/// Windows line endings become `\n` so paragraph and bullet splitting sees
+/// one newline convention.
+fn normalize_newlines(text: &str) -> Cow<'_, str> {
+    if text.contains("\r\n") {
+        Cow::Owned(text.replace("\r\n", "\n"))
+    } else {
+        Cow::Borrowed(text)
+    }
+}
+
 fn emit_prose(html: &mut Html, class: &str, text: &str) {
+    let text = normalize_newlines(text);
     html.open("div", &[kv("class", class)]);
-    for para in text.split("\n\n") {
-        let para = para.trim();
-        if !para.is_empty() {
-            html.text_el("p", &[], para);
-        }
+    for para in text.split("\n\n").map(str::trim).filter(|p| !p.is_empty()) {
+        html.text_el("p", &[], para);
     }
     html.close("div");
 }
 
 fn emit_bullets(html: &mut Html, items: &[String]) {
-    let items: Vec<&str> = items
-        .iter()
-        .map(|s| s.trim())
-        .filter(|s| !s.is_empty())
-        .collect();
+    let items = trimmed(items);
     if items.is_empty() {
         return;
     }
     html.open("ul", &[kv("class", "rz-bullets")]);
     for item in items {
-        html.text_el("li", &[kv("class", "rz-bullet")], item);
+        html.text_el("li", &[kv("class", "rz-bullet")], &normalize_newlines(item));
     }
     html.close("ul");
 }
 
 fn emit_tags(html: &mut Html, items: &[String]) {
-    let items: Vec<&str> = items
-        .iter()
-        .map(|s| s.trim())
-        .filter(|s| !s.is_empty())
-        .collect();
+    let items = trimmed(items);
     if items.is_empty() {
         return;
     }
@@ -802,8 +883,18 @@ fn emit_tags(html: &mut Html, items: &[String]) {
     html.close("ul");
 }
 
-fn open_section(html: &mut Html, id: &str, title: &str, extra: bool, kind: Option<&str>) {
-    let class = if extra {
+/// Trimmed, non-blank items in order.
+fn trimmed(items: &[String]) -> Vec<&str> {
+    items
+        .iter()
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .collect()
+}
+
+fn open_section(html: &mut Html, section: &Section) {
+    let id = section.id;
+    let class = if section.extra {
         format!("rz-section rz-section--extra rz-section--{id}")
     } else {
         format!("rz-section rz-section--{id}")
@@ -814,11 +905,9 @@ fn open_section(html: &mut Html, id: &str, title: &str, extra: bool, kind: Optio
         kv("id", &frag),
         kv("data-rz-section", id),
     ];
-    if let Some(kind) = kind {
-        attrs.push(kv("data-rz-kind", kind));
-    }
+    attrs.extend(section.kind.map(|kind| kv("data-rz-kind", kind)));
     html.open("section", &attrs);
-    html.text_el("h2", &[kv("class", "rz-section-title")], title);
+    html.text_el("h2", &[kv("class", "rz-section-title")], section.title);
 }
 
 fn location_text(location: Option<&Location>) -> Option<String> {
@@ -861,33 +950,6 @@ fn tel_href(phone: &str) -> String {
     format!("tel:{kept}")
 }
 
-fn abs_http_url(url: &str) -> String {
-    let url = url.trim();
-    if url.starts_with("https://")
-        || url.starts_with("http://")
-        || url.starts_with("mailto:")
-        || url.starts_with("tel:")
-    {
-        url.to_string()
-    } else if let Some(rest) = url.strip_prefix("//") {
-        format!("https://{rest}")
-    } else {
-        format!("https://{url}")
-    }
-}
-
-fn hostname(url: &str) -> String {
-    let rest = url
-        .trim()
-        .strip_prefix("https://")
-        .or_else(|| url.trim().strip_prefix("http://"))
-        .unwrap_or(url.trim());
-    rest.split(['/', '?', '#'])
-        .next()
-        .unwrap_or(rest)
-        .to_string()
-}
-
 fn profile_type(network: &str) -> &'static str {
     let n = network.trim().to_ascii_lowercase();
     let mapped = match n.as_str() {
@@ -909,82 +971,18 @@ fn nonempty_list(items: Option<&[String]>) -> &[String] {
     items.unwrap_or(&[])
 }
 
-fn work_has_content(w: &Work) -> bool {
-    nonempty(w.name.as_deref()).is_some()
-        || nonempty(w.position.as_deref()).is_some()
-        || nonempty(w.start_date.as_deref()).is_some()
-        || nonempty(w.end_date.as_deref()).is_some()
-        || nonempty(w.location.as_deref()).is_some()
-        || nonempty(w.summary.as_deref()).is_some()
-        || has_any(w.highlights.as_deref())
-}
-
-fn volunteer_has_content(v: &Volunteer) -> bool {
-    nonempty(v.organization.as_deref()).is_some()
-        || nonempty(v.position.as_deref()).is_some()
-        || nonempty(v.start_date.as_deref()).is_some()
-        || nonempty(v.end_date.as_deref()).is_some()
-        || nonempty(v.summary.as_deref()).is_some()
-        || has_any(v.highlights.as_deref())
-}
-
-fn education_has_content(e: &Education) -> bool {
-    nonempty(e.institution.as_deref()).is_some()
-        || nonempty(e.area.as_deref()).is_some()
-        || nonempty(e.study_type.as_deref()).is_some()
-        || nonempty(e.start_date.as_deref()).is_some()
-        || nonempty(e.end_date.as_deref()).is_some()
-        || nonempty(e.score.as_deref()).is_some()
-        || has_any(e.courses.as_deref())
-}
-
-fn award_has_content(a: &Award) -> bool {
-    nonempty(a.title.as_deref()).is_some()
-        || nonempty(a.awarder.as_deref()).is_some()
-        || nonempty(a.date.as_deref()).is_some()
-        || nonempty(a.summary.as_deref()).is_some()
-}
-
-fn certificate_has_content(c: &Certificate) -> bool {
-    nonempty(c.name.as_deref()).is_some()
-        || nonempty(c.issuer.as_deref()).is_some()
-        || nonempty(c.date.as_deref()).is_some()
-        || nonempty(c.url.as_deref()).is_some()
-}
-
-fn publication_has_content(p: &Publication) -> bool {
-    nonempty(p.name.as_deref()).is_some()
-        || nonempty(p.publisher.as_deref()).is_some()
-        || nonempty(p.release_date.as_deref()).is_some()
-        || nonempty(p.summary.as_deref()).is_some()
-        || nonempty(p.url.as_deref()).is_some()
-}
-
 fn skill_has_content(s: &Skill) -> bool {
     nonempty(s.name.as_deref()).is_some()
         || nonempty(s.level.as_deref()).is_some()
         || has_any(s.keywords.as_deref())
 }
 
-fn reference_has_content(r: &Reference) -> bool {
-    nonempty(r.name.as_deref()).is_some() || nonempty(r.reference.as_deref()).is_some()
-}
-
-fn project_has_content(p: &Project) -> bool {
-    nonempty(p.name.as_deref()).is_some()
-        || nonempty(p.description.as_deref()).is_some()
-        || nonempty(p.start_date.as_deref()).is_some()
-        || nonempty(p.end_date.as_deref()).is_some()
-        || nonempty(p.url.as_deref()).is_some()
-        || nonempty(p.entity.as_deref()).is_some()
-        || nonempty(p.r#type.as_deref()).is_some()
-        || has_any(p.highlights.as_deref())
-        || has_any(p.keywords.as_deref())
-        || has_any(p.roles.as_deref())
-}
-
 fn has_any(items: Option<&[String]>) -> bool {
-    items.is_some_and(|items| items.iter().any(|s| !s.trim().is_empty()))
+    items.is_some_and(any_nonblank)
+}
+
+fn any_nonblank(items: &[String]) -> bool {
+    items.iter().any(|s| !s.trim().is_empty())
 }
 
 #[cfg(test)]
@@ -995,15 +993,6 @@ mod tests {
     fn tel_strips_punctuation_except_plus() {
         assert_eq!(tel_href("+1 503 555 0142"), "tel:+15035550142");
         assert_eq!(tel_href("(503) 555-0142"), "tel:5035550142");
-    }
-
-    #[test]
-    fn hostname_from_basics_url() {
-        assert_eq!(hostname("https://jordanhale.example"), "jordanhale.example");
-        assert_eq!(
-            hostname("https://www.linkedin.com/in/jordanhale"),
-            "www.linkedin.com"
-        );
     }
 
     #[test]

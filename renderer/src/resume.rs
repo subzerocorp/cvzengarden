@@ -42,7 +42,7 @@ impl Resume {
     /// # Errors
     ///
     /// Returns the `serde_json::Error` when `json` is malformed or a field
-    /// has a type the JSON Resume schema does not allow.
+    /// has a type these structs do not accept (unknown fields are ignored).
     pub fn from_json(json: &str) -> Result<Self, serde_json::Error> {
         serde_json::from_str(json)
     }
@@ -155,7 +155,8 @@ pub struct Education {
     pub start_date: Option<String>,
     #[serde(default)]
     pub end_date: Option<String>,
-    #[serde(default)]
+    /// `"3.7"`, `3.7`, or `4` in the wild; always text here (`"3.7"`, `"4"`).
+    #[serde(default, deserialize_with = "string_or_number")]
     pub score: Option<String>,
     #[serde(default)]
     pub courses: Option<Vec<String>>,
@@ -265,6 +266,32 @@ pub struct Project {
     pub r#type: Option<String>,
 }
 
+/// A JSON string or number, as an untagged shape for `string_or_number`.
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum StringOrNumber {
+    String(String),
+    Number(serde_json::Number),
+}
+
+impl From<StringOrNumber> for String {
+    fn from(value: StringOrNumber) -> Self {
+        match value {
+            StringOrNumber::String(text) => text,
+            StringOrNumber::Number(number) => number.to_string(),
+        }
+    }
+}
+
+/// Accept a JSON string or number where the schema says string. Integers
+/// print without a decimal point (`4`); floats print as written (`3.7`).
+fn string_or_number<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Option::<StringOrNumber>::deserialize(deserializer).map(|value| value.map(String::from))
+}
+
 /// JSON Resume `meta`. Never rendered. Extra keys (`x-schema-resume`, …) stay here.
 #[derive(Debug, Clone, Default, PartialEq, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -277,4 +304,37 @@ pub struct Meta {
     pub last_modified: Option<String>,
     #[serde(flatten)]
     pub extra: serde_json::Map<String, serde_json::Value>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn score_of(json: &str) -> Option<String> {
+        let education: Education = serde_json::from_str(json).expect("valid education");
+        education.score
+    }
+
+    #[test]
+    fn score_accepts_string_float_and_integer() {
+        assert_eq!(score_of(r#"{"score":"3.7"}"#).as_deref(), Some("3.7"));
+        assert_eq!(score_of(r#"{"score":3.7}"#).as_deref(), Some("3.7"));
+        assert_eq!(score_of(r#"{"score":4}"#).as_deref(), Some("4"));
+        assert_eq!(
+            score_of(r#"{"score":"First Class"}"#).as_deref(),
+            Some("First Class")
+        );
+    }
+
+    #[test]
+    fn score_missing_or_null_is_none() {
+        assert_eq!(score_of("{}"), None);
+        assert_eq!(score_of(r#"{"score":null}"#), None);
+    }
+
+    #[test]
+    fn score_rejects_other_shapes() {
+        assert!(serde_json::from_str::<Education>(r#"{"score":[3.7]}"#).is_err());
+        assert!(serde_json::from_str::<Education>(r#"{"score":true}"#).is_err());
+    }
 }

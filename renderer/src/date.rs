@@ -48,11 +48,12 @@ impl IsoDate {
     }
 }
 
-/// Parse an `iso8601` date, dropping any time component after `T` or a space.
+/// Parse an `iso8601` date, dropping a time component after `T` or a space.
 ///
 /// Returns `None` for anything that is not a calendar-valid `YYYY`,
 /// `YYYY-MM`, or `YYYY-MM-DD` in ASCII digits (`March 2020`, `2020-13`,
-/// `2020-02-30`, `２０２０`).
+/// `2020-02-30`, `２０２０`), including a date followed by prose
+/// (`2020 (approx)`): only a time-like tail (`09:00…`) is dropped.
 pub fn parse_iso_date(raw: &str) -> Option<IsoDate> {
     let parts: Vec<&str> = date_part(raw.trim()).split('-').collect();
     let date = match parts.as_slice() {
@@ -76,9 +77,20 @@ pub fn parse_iso_date(raw: &str) -> Option<IsoDate> {
     is_calendar_valid(date).then_some(date)
 }
 
-/// The text before the first `T` or space, or the whole string.
+/// The text before a `T` or space that introduces a time (`HH:`); otherwise
+/// the whole string, so `2020 (approx)` stays unparseable rather than
+/// silently becoming `2020`.
 fn date_part(raw: &str) -> &str {
-    raw.split_once(['T', ' ']).map_or(raw, |(date, _)| date)
+    raw.split_once(['T', ' '])
+        .filter(|(_, tail)| starts_with_time(tail))
+        .map_or(raw, |(date, _)| date)
+}
+
+/// `HH:` — two ASCII digits then a colon.
+fn starts_with_time(tail: &str) -> bool {
+    let mut chars = tail.chars();
+    let hour = [chars.next(), chars.next()];
+    hour.iter().all(|c| c.is_some_and(|c| c.is_ascii_digit())) && chars.next() == Some(':')
 }
 
 /// Exactly `len` ASCII digits, as a number.
@@ -186,6 +198,20 @@ mod tests {
             parse_iso_date("2020-05-31 09:00"),
             Some(date(2020, Some(5), Some(31)))
         );
+    }
+
+    #[test]
+    fn keeps_prose_after_a_space_unparseable() {
+        // Arrange: a space followed by something that is not `HH:`.
+        let prose = ["2020 (approx)", "2020 ish", "2020-05 9:00", "2020T"];
+
+        for raw in prose {
+            // Act
+            let parsed = parse_iso_date(raw);
+
+            // Assert
+            assert_eq!(parsed, None, "{raw:?}");
+        }
     }
 
     #[test]
