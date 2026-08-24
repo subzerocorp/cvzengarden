@@ -86,6 +86,18 @@
           "slug_fallbacks",
           "dir_auto"
         ]
+      },
+      {
+        "id": "zg-4",
+        "title": "ZG-4: renderer in the browser via Wasm with crate parity",
+        "status": "completed",
+        "features": [
+          "renderer_wasm_crate",
+          "render_error_facade",
+          "render_js_bridge",
+          "sandbox_swap",
+          "wasm_parity_probes"
+        ]
       }
     ]
   }
