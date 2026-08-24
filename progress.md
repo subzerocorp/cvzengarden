@@ -63,3 +63,7 @@ Wild-file rendering (`84d2a91`): numeric score, url-only entries, span-value pro
 ## 2026-08-24 — ZG-4 done (phase 2 of 2)
 
 Renderer runs in the browser (`08b8a17`): render.js bridge, sandbox swap, byte parity with the crate on three inputs, 4.8 MiB in 82 ms, zero network. GAN BLESS ×3. Board `done`. ZG-5 (paste) started.
+
+## 2026-08-24 — ZG-5 phase 1 of 2
+
+Paste panel with humane, positioned errors (JsonScan/Classify pure Elm calcs), render through the Wasm bridge, article-only swap. GAN: Reviewer BLESS → Tester REJECT → fix → BLESS ×3. Phase 2 (file/drop, storage, copy) in progress.
