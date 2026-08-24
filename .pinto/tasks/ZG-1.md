@@ -1,11 +1,12 @@
 +++
 id = "ZG-1"
 title = "Make the renderer pass clippy pedantic so just verify is green"
-status = "todo"
+status = "in-progress"
 rank = "i"
 labels = ["avril", "round-1", "harness", "avril-blessed"]
+start_at = "2026-08-24T01:14:02.663584Z"
 created = "2026-08-23T23:52:45.617948Z"
-updated = "2026-08-24T01:13:24.236201Z"
+updated = "2026-08-24T01:14:02.663584Z"
 +++
 
 ## Why
