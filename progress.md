@@ -19,3 +19,9 @@ Harness scaffolded: `AGENTS.md`, `justfile`, `features.json`, this file, `.pinto
 
 - Tooling: renderer clippy pedantic red (tracked as harness debt for the first AXEL PBI)
 - Reviews: none yet on this branch
+
+## 2026-08-23 — AVRIL round 1 (in progress) and ZG-1 phase 1 of 1
+
+AVRIL round 1 on `docs/plans/round-1-avril-intent.md`: 22 PBIs ZG-1…ZG-22 proposed; as of this entry 17 are triple-blessed (`avril-blessed`), ZG-11/12/19/20/21 are in their final PO→QA→CTO pass, and ZG-23 (deterministic cold-load FOUC probe) is being proposed. Planning docs: `docs/plans/round-1-avril-*.md`.
+
+ZG-1 (renderer clippy pedantic): Generator → Reviewer BLESS → Tester BLESS → Architect BLESS. Commit `59f52ca`. Board `review`, not `done`: the AC "`just verify` exits 0" is blocked by the pre-existing flaky probe `S1 cold load FOUC` (computed-style race; frontend untouched; passes 2 of 3 identical runs). Follow-ups logged in `docs/plans/zg-1-gan-report.md` (Err-path tests for `render_json`, `nonempty` trim test, filter-then-unwrap sites, `RenderError` façade for ZG-4).
