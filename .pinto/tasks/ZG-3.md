@@ -3,10 +3,10 @@ id = "ZG-3"
 title = "Render wild JSON Resume files: numeric score, url-only entries, CRLF, bad URLs"
 status = "todo"
 rank = "k"
-labels = ["avril", "round-1", "renderer"]
+labels = ["avril", "round-1", "avril-blessed"]
 depends_on = ["ZG-1", "ZG-2"]
 created = "2026-08-23T23:53:41.429847Z"
-updated = "2026-08-24T00:29:13.897581Z"
+updated = "2026-08-24T01:13:07.404692Z"
 +++
 
 ## Why

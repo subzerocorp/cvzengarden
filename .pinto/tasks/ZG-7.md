@@ -3,9 +3,9 @@ id = "ZG-7"
 title = "Rewrite the chrome in plain language with an About panel and a free-during-preview line"
 status = "todo"
 rank = "o"
-labels = ["avril", "round-1", "chrome"]
+labels = ["avril", "round-1", "avril-blessed"]
 created = "2026-08-23T23:55:14.235484Z"
-updated = "2026-08-24T00:29:13.799063Z"
+updated = "2026-08-24T01:13:07.427282Z"
 +++
 
 ## Why

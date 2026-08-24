@@ -3,10 +3,10 @@ id = "ZG-5"
 title = "Paste or open your own JSON Resume and see it in every Theme"
 status = "todo"
 rank = "m"
-labels = ["avril", "round-1", "chrome"]
+labels = ["avril", "round-1", "avril-blessed"]
 depends_on = ["ZG-2", "ZG-3", "ZG-4"]
 created = "2026-08-23T23:54:23.454780Z"
-updated = "2026-08-24T00:29:13.786377Z"
+updated = "2026-08-24T01:13:07.416162Z"
 +++
 
 ## Why

@@ -3,10 +3,10 @@ id = "ZG-2"
 title = "Never panic on a wild date: tolerate timestamps, drop unparseable dates"
 status = "todo"
 rank = "j"
-labels = ["avril", "round-1", "renderer"]
+labels = ["avril", "round-1", "avril-blessed"]
 depends_on = ["ZG-1"]
 created = "2026-08-23T23:53:41.365926Z"
-updated = "2026-08-23T23:59:42.143083Z"
+updated = "2026-08-24T01:13:07.398128Z"
 +++
 
 ## Why

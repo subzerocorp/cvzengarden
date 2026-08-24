@@ -3,10 +3,10 @@ id = "ZG-6"
 title = "Explain the résumé format in plain words and start from a sample"
 status = "todo"
 rank = "n"
-labels = ["avril", "round-1", "chrome"]
+labels = ["avril", "round-1", "avril-blessed"]
 depends_on = ["ZG-5"]
 created = "2026-08-23T23:54:23.466605Z"
-updated = "2026-08-24T00:40:37.793923Z"
+updated = "2026-08-24T01:13:07.421812Z"
 +++
 
 ## Why

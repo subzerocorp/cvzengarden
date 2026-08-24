@@ -3,9 +3,9 @@ id = "ZG-9"
 title = "On a phone show the résumé first and fold the controls into a Theme button"
 status = "todo"
 rank = "q"
-labels = ["avril", "round-1", "chrome"]
+labels = ["avril", "round-1", "avril-blessed"]
 created = "2026-08-23T23:55:14.306093Z"
-updated = "2026-08-23T23:55:14.306093Z"
+updated = "2026-08-24T01:13:07.439802Z"
 +++
 
 ## Why
