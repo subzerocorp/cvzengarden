@@ -343,17 +343,33 @@ body {
     color: #111111;
   }
 
+  /* The yard's two-column grid survives on paper: the long sections run
+     the full width, the short ones pair up. */
   .rz-resume {
-    display: block;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-auto-flow: dense;
+    column-gap: 14pt;
+    row-gap: 0;
     max-width: none;
     margin: 0;
     padding: 0;
     background: #ffffff;
     color: #111111;
-    font-size: 10.2pt;
-    line-height: 1.28;
+    font-size: 10pt;
+    line-height: 1.25;
     print-color-adjust: economy;
     -webkit-print-color-adjust: economy;
+  }
+
+  .rz-header,
+  .rz-section--summary,
+  .rz-section--experience,
+  .rz-section--volunteer,
+  .rz-section--education,
+  .rz-section--skills,
+  .rz-section--projects {
+    grid-column: 1 / -1;
   }
 
   .rz-header {
@@ -393,16 +409,7 @@ body {
 
   .rz-section {
     display: block;
-    margin: 8pt 0 0;
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
-
-  .rz-section--projects {
-    break-before: page;
-    page-break-before: always;
-    break-inside: auto;
-    page-break-inside: auto;
+    margin: 7pt 0 0;
   }
 
   .rz-section-title {
@@ -412,15 +419,43 @@ body {
     letter-spacing: 0.12em;
     text-transform: uppercase;
     border-bottom: 0.6pt solid #111111;
+    break-after: avoid;
+    page-break-after: avoid;
   }
 
   .rz-entry {
     display: block;
-    margin: 5pt 0 7pt;
+    margin: 3pt 0 4pt;
     padding: 0;
     border: 0;
     break-inside: avoid;
     page-break-inside: avoid;
+  }
+
+  .rz-entry-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, max-content);
+    column-gap: 8pt;
+    align-items: baseline;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  .rz-entry-primary,
+  .rz-entry-secondary {
+    grid-column: 1;
+    min-width: 0;
+  }
+
+  .rz-dates,
+  .rz-location {
+    grid-column: 2;
+    min-width: 0;
+    text-align: right;
+  }
+
+  .rz-dates {
+    grid-row: 1;
   }
 
   .rz-entry-primary {
@@ -434,10 +469,56 @@ body {
     font-size: 9pt;
   }
 
+  .rz-meta-list,
+  .rz-tags {
+    display: inline;
+  }
+
+  .rz-meta-list::after {
+    content: " ";
+  }
+
+  .rz-meta {
+    display: inline;
+    margin: 0 10pt 0 0;
+  }
+
   .rz-bullet {
-    margin: 1.5pt 0 1.5pt 12pt;
+    position: relative;
+    margin: 1.5pt 0;
+    padding-left: 12pt;
     orphans: 2;
     widows: 2;
+  }
+
+  .rz-bullet::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.55em;
+    width: 6pt;
+    height: 1.5pt;
+    background: #111111;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .rz-skill-groups {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 4pt 10pt;
+  }
+
+  .rz-skill-group {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border: 0;
+  }
+
+  .rz-skill-list {
+    display: block;
+    margin-top: 1pt;
   }
 
   .rz-skill,

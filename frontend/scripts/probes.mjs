@@ -43,7 +43,6 @@ const origin = `http://127.0.0.1:${port}`;
 
 const THEME_IDS = ["nightgarden", "quarto", "switchyard"];
 const failures = [];
-const expectedFailures = [];
 
 function fail(message) {
   failures.push(message);
@@ -52,25 +51,6 @@ function fail(message) {
 
 function pass(message) {
   console.log(`PASS  ${message}`);
-}
-
-// TODO(ZG-11 phase 2): delete this constant and the expected-fail reporter
-// once the three theme sheets are fixed; the ZG-11 group then reports
-// through `fail` like every other group. Phase 1 lands the oracle before the
-// fix, so its FAIL lines are the anti-vacuity evidence, not a red suite.
-const EXPECTED_FAIL_UNTIL_ZG11_PHASE2 = true;
-
-function expectedFail(message) {
-  expectedFailures.push(message);
-  console.error(`FAIL  ${message}`);
-}
-
-function zg11Reporter() {
-  return EXPECTED_FAIL_UNTIL_ZG11_PHASE2 ? { pass, fail: expectedFail } : { pass, fail };
-}
-
-function zg11Banner(text) {
-  console.log(`\n==== ${text} ====`);
 }
 
 function chromeSourceFiles() {
@@ -717,13 +697,16 @@ const REQUIRED_PRINT_SECTIONS = [
 ];
 const U3_PRINT_PAGES = {
   nightgarden: 2,
+  quarto: 2,
+  switchyard: 2,
+};
+// Exact per-theme printToPDF page counts of frontend/fixtures/long-resume.html
+// (every value <= 3), measured with the ZG-11 theme sheets.
+const LONG_PRINT_PAGES = {
+  nightgarden: 3,
   quarto: 3,
   switchyard: 3,
 };
-// Exact per-theme printToPDF page counts of frontend/fixtures/long-resume.html
-// (every value <= 3). TODO(ZG-11 phase 2): fill in once the sheets are fixed;
-// until then ZG-11/page-count reports the measured counts as expected FAILs.
-const LONG_PRINT_PAGES = {};
 
 function missingPrintSections(sections) {
   return sections.filter((section) => !section.present || section.titleText !== section.want);
@@ -1136,21 +1119,14 @@ function zg11SheetSource() {
 }
 
 async function zg11Group(browser) {
-  const sheetSource = zg11SheetSource();
-  if (EXPECTED_FAIL_UNTIL_ZG11_PHASE2) {
-    zg11Banner("ZG-11 group: EXPECTED_FAIL_UNTIL_ZG11_PHASE2 — FAIL lines below are anti-vacuity evidence and do not fail the run");
-  }
   await zg11Probes({
     browser,
     origin,
-    report: zg11Reporter(),
+    report: { pass, fail },
     fixtureHtml: fs.readFileSync(path.join(frontendDir, "fixtures", "long-resume.html"), "utf8"),
     expectedPages: { jordan: U3_PRINT_PAGES, long: LONG_PRINT_PAGES },
-    sheetSource,
+    sheetSource: zg11SheetSource(),
   });
-  if (EXPECTED_FAIL_UNTIL_ZG11_PHASE2) {
-    zg11Banner(`ZG-11 group: ${expectedFailures.length} expected FAIL line(s) recorded (phase 2 makes them count)`);
-  }
 }
 
 staticProbes();

@@ -173,8 +173,6 @@ body {
 
 .rz-section {
   margin: 0 0 0.85rem;
-  break-inside: avoid-page;
-  page-break-inside: avoid;
 }
 
 .rz-section-title {
@@ -185,6 +183,8 @@ body {
   font-variant: small-caps;
   letter-spacing: 0.16em;
   border-bottom: 0.6pt solid var(--rz-rule);
+  break-after: avoid;
+  page-break-after: avoid;
 }
 
 .rz-summary .rz-prose p:first-child::first-letter {
@@ -214,6 +214,8 @@ body {
   grid-template-columns: minmax(0, 1fr) minmax(0, max-content);
   column-gap: 0.75rem;
   align-items: baseline;
+  break-after: avoid;
+  page-break-after: avoid;
 }
 
 .rz-entry-primary {
@@ -337,7 +339,14 @@ body {
     background: #f3ead8;
   }
 
+  /* One measure for the front matter and the long sections; the short
+     back-matter sections sit three abreast, like the skill groups, so a
+     senior résumé stays inside three leaves. */
   .rz-resume {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-flow: dense;
+    column-gap: 1.1rem;
     width: auto;
     max-width: none;
     min-height: 0;
@@ -345,9 +354,67 @@ body {
     padding: 0;
     box-shadow: none;
     background: #f3ead8;
-    font-size: 11pt;
+    font-size: 10pt;
+    line-height: 1.27;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
+  }
+
+  .rz-header,
+  .rz-section--summary,
+  .rz-section--experience,
+  .rz-section--volunteer,
+  .rz-section--education,
+  .rz-section--skills,
+  .rz-section--projects {
+    grid-column: 1 / -1;
+  }
+
+  .rz-header {
+    margin-bottom: 0.8rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .rz-section {
+    margin-bottom: 0.35rem;
+  }
+
+  .rz-entry {
+    margin-bottom: 0.25rem;
+  }
+
+  .rz-location {
+    grid-column: 2;
+    grid-row: 2;
+    color: var(--rz-rule);
+    text-align: right;
+  }
+
+  .rz-bullet {
+    font-size: 9.5pt;
+  }
+
+  .rz-skill-group-name,
+  .rz-skill-level {
+    display: inline;
+  }
+
+  .rz-skill-level::before {
+    content: " · ";
+  }
+
+  .rz-meta-list,
+  .rz-tags {
+    display: inline;
+  }
+
+  .rz-meta-list::after {
+    content: " ";
+  }
+
+  .rz-meta {
+    display: inline;
+    margin: 0 0.9rem 0 0;
   }
 
   .rz-name,

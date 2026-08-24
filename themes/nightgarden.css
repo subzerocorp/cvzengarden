@@ -475,7 +475,7 @@ body {
 
   .rz-section {
     grid-column: auto;
-    margin: 5pt 0 0;
+    margin: 4pt 0 0;
     padding-top: 0;
   }
 
@@ -484,6 +484,8 @@ body {
     font-size: 9pt;
     margin-bottom: 3pt;
     letter-spacing: 0.12em;
+    break-after: avoid;
+    page-break-after: avoid;
   }
 
   .rz-resume a {
@@ -491,7 +493,7 @@ body {
   }
 
   .rz-entry {
-    margin: 0 0 4pt;
+    margin: 0 0 3pt;
     padding: 0;
     border: 0;
     border-radius: 0;
@@ -511,8 +513,40 @@ body {
     border-color: transparent;
   }
 
+  .rz-entry-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, max-content);
+    column-gap: 8pt;
+    align-items: baseline;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  .rz-entry-header > * {
+    margin: 0;
+  }
+
+  .rz-entry-primary,
+  .rz-entry-secondary {
+    grid-column: 1;
+  }
+
+  .rz-dates,
+  .rz-location {
+    grid-column: 2;
+    text-align: right;
+  }
+
+  .rz-dates {
+    grid-row: 1;
+  }
+
   .rz-entry-primary {
     font-size: 11pt;
+  }
+
+  .rz-entry-secondary {
+    color: #3d2f6b;
   }
 
   .rz-dates,
@@ -524,21 +558,58 @@ body {
   }
 
   .rz-bullet {
-    margin: 1.5pt 0;
+    margin: 1pt 0;
+  }
+
+  .rz-bullet::before {
+    background: #1a1f28;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 
   .rz-skill,
   .rz-tag {
+    padding: 0.5pt 4pt;
     border-color: #9aa3ad;
     color: #1a1f28;
-    font-size: 9pt;
+    font-size: 8.5pt;
+  }
+
+  .rz-prose {
+    margin: 0 0 2pt;
+  }
+
+  .rz-prose p,
+  .rz-summary p {
+    margin: 0 0 2pt;
+  }
+
+  .rz-meta-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 10pt;
+  }
+
+  .rz-meta {
+    margin: 0;
+  }
+
+  .rz-skill-level {
+    margin: 0 0 1pt;
   }
 
   .rz-skill-groups {
-    display: block;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 4pt 10pt;
   }
 
   .rz-skill-group {
-    margin: 0 0 5pt;
+    margin: 0;
+  }
+
+  .rz-skill-list,
+  .rz-tags {
+    gap: 2pt 3pt;
   }
 }
