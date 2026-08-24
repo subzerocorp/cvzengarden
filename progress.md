@@ -39,3 +39,7 @@ ZG-1: `just verify` green on the same tree (PROBE_PORT=4331). Board `done`. Comp
 Long-resume fixture (Marcus Okafor-Lindqvist) byte-locked to crate output (`renderer/tests/fixtures.rs`, table-driven); probe helpers `openResumePage`, `printableWidthPx/HeightPx`, `paginate`, `contrastRatio`, marker/ink readers in `frontend/scripts/probes/lib/`; ZG-11 probes wired; 79 `node:test` unit tests run before the Playwright probes. Anti-vacuity on current sheets recorded (page-1 fill 0.36 / 0.30; Switchyard no print marker; Nightgarden marker 1.30:1, secondary 1.84:1).
 
 GAN: Generator → Reviewer BLESS → Tester REJECT (no unit tests / runner) → fix → Reviewer BLESS → Tester BLESS → Architect BLESS. Commit `79cc260`. Phase 2 (theme CSS + page-count re-baseline) in progress.
+
+## 2026-08-24 — ZG-11 done (phase 2 of 2)
+
+Theme print fixes: sections break, entries stay intact, Switchyard forced break gone, inked markers with print-color-adjust, Nightgarden print ink ≥ 4.5:1; print grids keep the long fixture at 3 pages on all three themes; Jordan 2/2/2. GAN phase 2: Reviewer BLESS → Tester BLESS → Architect BLESS (PDFs judged acceptable to a hiring manager). Board `done`. Completion: `docs/plans/zg-11-completion.md`. ZG-12 started.
