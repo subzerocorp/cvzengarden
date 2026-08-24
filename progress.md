@@ -33,3 +33,9 @@ AVRIL round 1 planning stop: `docs/plans/round-1-avril-blessed-backlog.md`. Huma
 ZG-23 (deterministic cold-load FOUC probe): Generator → Reviewer BLESS → Tester BLESS → Architect BLESS. Commit `748892a`. Paint-order oracle inside the sandbox frame; new `frontend/scripts/probes/lib/{paint,sheet-blocking}.mjs`. 10/10 deterministic. Board `done`.
 
 ZG-1: `just verify` green on the same tree (PROBE_PORT=4331). Board `done`. Completion records: `docs/plans/zg-1-completion.md`, `docs/plans/zg-23-completion.md`.
+
+## 2026-08-24 — ZG-11 phase 1 of 2
+
+Long-resume fixture (Marcus Okafor-Lindqvist) byte-locked to crate output (`renderer/tests/fixtures.rs`, table-driven); probe helpers `openResumePage`, `printableWidthPx/HeightPx`, `paginate`, `contrastRatio`, marker/ink readers in `frontend/scripts/probes/lib/`; ZG-11 probes wired; 79 `node:test` unit tests run before the Playwright probes. Anti-vacuity on current sheets recorded (page-1 fill 0.36 / 0.30; Switchyard no print marker; Nightgarden marker 1.30:1, secondary 1.84:1).
+
+GAN: Generator → Reviewer BLESS → Tester REJECT (no unit tests / runner) → fix → Reviewer BLESS → Tester BLESS → Architect BLESS. Commit `79cc260`. Phase 2 (theme CSS + page-count re-baseline) in progress.
