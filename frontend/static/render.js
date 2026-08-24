@@ -73,6 +73,10 @@ export async function version() {
 
 export function swapResume(html, doc) {
   const parts = renderedParts(new DOMParser().parseFromString(html, "text/html"));
-  doc.querySelector(ARTICLE).replaceWith(doc.adoptNode(parts.article));
+  const current = doc.querySelector(ARTICLE);
+  if (!current) {
+    throw new Error("sandbox document has no article.rz-resume to replace");
+  }
+  current.replaceWith(doc.adoptNode(parts.article));
   doc.title = parts.title;
 }

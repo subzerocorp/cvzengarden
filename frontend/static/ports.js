@@ -327,14 +327,17 @@ window.addEventListener("popstate", () => {
 });
 
 /**
- * Renderer port: JSON in, `{ ok, html, error }` out. The error text is what
- * ZG-5 displays unchanged; nothing here inspects the résumé.
+ * Renderer port: JSON in, `{ ok, html, error }` out. Elm keeps the error
+ * for the console only (`logDebug`) and shows its own sentence; nothing
+ * here inspects the résumé. The call goes through `window.resumezen` so
+ * the probe seam and the Chrome exercise the same function.
  */
 const renderedOk = (html) => ({ ok: true, html, error: "" });
 const renderedErr = (failure) => ({ ok: false, html: "", error: failure.message });
 
 app.ports.renderResume.subscribe((json) => {
-  render(json)
+  window.resumezen
+    .render(json)
     .then(renderedOk, renderedErr)
     .then((message) => app.ports.onRendered.send(message));
 });
@@ -343,6 +346,14 @@ async function swapInFrame(html) {
   const iframe = await waitForFrame();
   swapResume(html, iframe.contentDocument);
 }
+
+app.ports.swapResume.subscribe((html) => {
+  swapInFrame(html).catch((failure) => console.warn("sandbox swap failed", failure));
+});
+
+app.ports.logDebug.subscribe((raw) => {
+  console.debug("renderer error", raw);
+});
 
 // Probe seam and ZG-5 hook. Thin wrappers only; the logic is in render.js.
 window.resumezen = { render, contractVersion, version, swap: swapInFrame };

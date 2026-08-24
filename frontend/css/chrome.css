@@ -146,6 +146,7 @@ body {
   line-height: 1.4;
 }
 
+.paste,
 .theme-switcher,
 .preview-controls,
 .appearance {
@@ -154,6 +155,7 @@ body {
   gap: 0.65rem;
 }
 
+.paste__title,
 .theme-switcher__title,
 .preview-controls__title,
 .appearance__title {
@@ -165,6 +167,7 @@ body {
   color: var(--muted-foreground);
 }
 
+.paste__hint,
 .theme-switcher__hint,
 .preview-controls__hint {
   margin: 0;
@@ -348,6 +351,76 @@ body {
 
 .btn--ghost:hover:not(:disabled) {
   background: var(--accent);
+}
+
+/* "Use my résumé" panel. Input border and focus ring come from tokens;
+   the error is the destructive tone as text, not a filled banner. */
+.paste__toggle {
+  width: 100%;
+}
+
+.paste__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.paste__panel[hidden] {
+  display: none;
+}
+
+.paste__label {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.paste__input {
+  width: 100%;
+  min-height: 9rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--input);
+  border-radius: var(--radius);
+  background: var(--background);
+  color: var(--foreground);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.paste__input:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+
+.paste__note {
+  margin: 0;
+  color: var(--success);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.paste__error {
+  margin: 0;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--destructive) 45%, var(--border));
+  border-radius: var(--radius);
+  color: var(--destructive);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.paste__report {
+  color: var(--link);
+}
+
+.paste__report:hover {
+  color: var(--link-hover);
+}
+
+.paste__report:active {
+  color: var(--link-active);
 }
 
 .preview-controls__print {
