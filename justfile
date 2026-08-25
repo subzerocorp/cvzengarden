@@ -57,3 +57,10 @@ serve port="4310":
 harness-validate:
     jq -e 'type == "object"' features.json > /dev/null && echo "features.json: OK"
     pinto list --json > /dev/null && echo "pinto board: OK"
+
+# Orchestration status dashboard (in-harness UI)
+status:
+    @./scripts/status-dashboard
+
+status-html:
+    @./scripts/status-dashboard --html
