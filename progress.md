@@ -91,3 +91,7 @@ Architecture holds: third `Paste.Intent` (`Sample`) Swap-only; ShowIt/Author sti
 ## 2026-08-27 — ZG-7 in progress
 
 Plain-language chrome (Appearance, For screen / For paper, Screen / Paper / Screen + paper, Print / Save as PDF), About dialog with “Free during the preview”, GitHub href string-checked offline. View toggle still **Print preview**. `U3_PRINT_PAGES` and HTTPS / issue #9 untouched. Board `in-progress`, not `done`. Evidence: `docs/plans/zg-7-execution.md`. Draft PR #23 for Product & QA on a Netlify draft host, not production. All `ZG-7/*` probes PASS; U3 2/2/2 PASS. Same-run leftover `ZG-11/page-count quarto` 4-vs-3 is the pre-existing main failure recorded on ZG-6.
+
+## 2026-08-27 — ZG-7 Reviewer BLESS (PR #23)
+
+Walked the full diff vs `main` (`8842b9c…797a7a0`). Every ZG-7 AC holds: closed-chrome `textContent` has the prescribed words and none of the banned jargon; one `Print / Save as PDF` on `.preview-controls__print` still calls iframe `print()`; `Print preview` unique; badges Screen / Paper / Screen + paper; About is `[role=dialog].about-panel` with Free during the preview and the exact GitHub href; designers slot empty; no invented price; chrome has no `rz-` class/id; `MARKET-QUALITY-BAR.md` unchanged; `U3_PRINT_PAGES` and theme print CSS untouched. Pinto left `in-progress`. No merge. Verdict: `docs/plans/zg-7-reviewer.md`.
