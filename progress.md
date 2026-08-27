@@ -79,3 +79,7 @@ File/drop (`classifyFile` content-first), `not-json-file` names the file, `local
 ## 2026-08-27 — ZG-6 in progress
 
 Format named (JSON Resume + schema link), closed-sidebar sentence, copyable Alex Rivera example, Jordan + junior sample buttons as a new `Sample` Intent (no Store). Vendored schema at `b25e3f4bbafd349c2c5bbaa62602c03c228762db`. Junior sample `Sam Okoro` locked in `acceptance.rs`. Board `in-progress`. Evidence: `docs/plans/zg-6-execution.md`. All `ZG-6/*` probes PASS. Draft PR: not production; U3 and HTTPS untouched.
+
+## 2026-08-27 — ZG-6 Tester BLESS (PR #22)
+
+Tester re-ran the suite on `8db67f3`. `npm run test:unit` 147/147 (18 `*.test.mjs` via `find`). Isolated ZG-6 probes all PASS. `junior_sample_html_is_crate_output` PASS on rustc 1.87. U3 Jordan print 2/2/2. Static greps empty as required. Full probes fail only pre-existing `ZG-11/page-count quarto` 4-vs-3 (not a ZG-6 reject). Board left `in-progress`. Verdict: `docs/plans/zg-6-tester.md`.
