@@ -128,7 +128,7 @@
       {
         "id": "zg-7",
         "title": "ZG-7: plain-language chrome, About panel, free during preview",
-        "status": "in_progress",
+        "status": "completed",
         "features": [
           "plain_language_chrome",
           "about_panel_dialog",
