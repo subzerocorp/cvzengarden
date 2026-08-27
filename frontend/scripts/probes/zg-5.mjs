@@ -54,7 +54,7 @@ function readFixture(dir, name) {
 }
 
 // Runs in the page: what the Author and the sandbox show right now.
-function readPasteState() {
+export function readPasteState() {
   const iframe = document.getElementById("garden-frame");
   const doc = iframe.contentDocument;
   const error = document.querySelector("[data-paste-error]");
@@ -79,13 +79,13 @@ function renderOutcome(json) {
 }
 
 // Runs in the page: the panel settled on a new attempt.
-function pasteSettled(previousAttempt) {
+export function pasteSettled(previousAttempt) {
   const panel = document.querySelector(".paste");
   const status = panel?.getAttribute("data-paste-status");
   return panel?.getAttribute("data-paste-attempt") !== previousAttempt && (status === "shown" || status === "failed");
 }
 
-async function openPanel(page) {
+export async function openPanel(page) {
   const toggle = page.getByRole("button", { name: "Use my résumé" });
   if ((await toggle.getAttribute("aria-expanded")) !== "true") {
     await toggle.click();
@@ -94,7 +94,7 @@ async function openPanel(page) {
 }
 
 // Pastes `text`, presses "Show it", and waits for the panel to settle.
-async function paste(page, text) {
+export async function paste(page, text) {
   await openPanel(page);
   await page.fill("#paste-input", text);
   const attempt = await page.locator(".paste").getAttribute("data-paste-attempt");
@@ -103,7 +103,7 @@ async function paste(page, text) {
   return page.evaluate(readPasteState);
 }
 
-async function waitForName(page, name) {
+export async function waitForName(page, name) {
   await page
     .frameLocator("#garden-frame")
     .locator(".rz-name", { hasText: name })

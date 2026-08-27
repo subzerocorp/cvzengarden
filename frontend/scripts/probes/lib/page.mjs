@@ -97,8 +97,16 @@ export async function openResumePage(browser, { origin, theme, width, height = 8
  * messages so a probe can assert on them. `beforeNavigate` may add routes
  * before the first request.
  */
-export async function openGarden(browser, origin, { beforeNavigate, width = 1280, height = 800 } = {}) {
-  const page = await browser.newPage({ viewport: { width, height } });
+export async function openGarden(browser, origin, { beforeNavigate, width = 1280, height = 800, permissions } = {}) {
+  const context = permissions
+    ? await browser.newContext({ viewport: { width, height } })
+    : null;
+  if (context && permissions.length) {
+    await context.grantPermissions(permissions);
+  }
+  const page = context
+    ? await context.newPage()
+    : await browser.newPage({ viewport: { width, height } });
   const pageErrors = [];
   const requests = [];
   const consoleMessages = [];

@@ -3,6 +3,8 @@
  *
  * Reads themes/*.css (never _blank.css, never skeleton/preview.css)
  * and writes src/Generated/Themes.elm plus generated/sandbox.html.
+ * Embeds skeleton/resume.json and skeleton/samples/junior.json as
+ * Generated.Samples string constants so a sample click issues no HTTP.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -43,6 +45,11 @@ function parseTheme(fileName, source) {
 
 function elmEscape(value) {
   return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
+/** Exact file bytes as a single Elm string literal (preserves `\\n` in JSON). */
+function elmStringLiteral(value) {
+  return `"${elmEscape(value).replace(/\r/g, "\\r").replace(/\n/g, "\\n")}"`;
 }
 
 function writeThemesElm(themes) {
@@ -145,9 +152,37 @@ const themes = files.map((fileName) => {
 
 const defaultTheme = themes.find((theme) => theme.id === "nightgarden") ?? themes[0];
 
+function writeSamplesElm() {
+  const jordanPath = path.join(repoDir, "skeleton", "resume.json");
+  const juniorPath = path.join(repoDir, "skeleton", "samples", "junior.json");
+  const jordan = fs.readFileSync(jordanPath, "utf8");
+  const junior = fs.readFileSync(juniorPath, "utf8");
+  const contents = `module Generated.Samples exposing (jordan, junior)
+
+
+{-| Generated from skeleton sample files. Do not edit by hand — run \`npm run gen\`.
+-}
+
+
+jordan : String
+jordan =
+    ${elmStringLiteral(jordan)}
+
+
+junior : String
+junior =
+    ${elmStringLiteral(junior)}
+`;
+
+  const outDir = path.join(frontendDir, "src", "Generated");
+  fs.mkdirSync(outDir, { recursive: true });
+  fs.writeFileSync(path.join(outDir, "Samples.elm"), contents);
+}
+
 writeThemesElm(themes);
+writeSamplesElm();
 writeSandbox(defaultTheme.href);
 
 console.log(
-  `Generated ${themes.length} theme(s): ${themes.map((theme) => theme.id).join(", ")}`,
+  `Generated ${themes.length} theme(s): ${themes.map((theme) => theme.id).join(", ")}; embedded jordan + junior samples`,
 );

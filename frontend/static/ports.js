@@ -9,6 +9,7 @@
  * article.rz-resume is replaced only by crate output (`swapResume`).
  * iframe.src stays sandbox.html.
  */
+import { writeClipboard } from "./clipboard.js";
 import { contractVersion, render, swapResume, version } from "./render.js";
 
 const FRAME_ID = "garden-frame";
@@ -454,6 +455,13 @@ app.ports.forgetResume.subscribe(() => {
 
 app.ports.restoreSample.subscribe(() => {
   restoreOriginalResume();
+});
+
+app.ports.copyText.subscribe((text) => {
+  writeClipboard(text).then(
+    () => app.ports.onCopied.send(true),
+    () => app.ports.onCopied.send(false),
+  );
 });
 
 const originalReady = captureOriginalResume();

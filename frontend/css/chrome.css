@@ -167,6 +167,7 @@ body {
   color: var(--muted-foreground);
 }
 
+.paste__lede,
 .paste__hint,
 .theme-switcher__hint,
 .preview-controls__hint {
@@ -429,6 +430,53 @@ body {
   gap: 0.35rem;
 }
 
+.paste__help {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.paste__format {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.paste__schema {
+  color: var(--link);
+}
+
+.paste__schema:hover {
+  color: var(--link-hover);
+}
+
+.paste__example {
+  margin: 0;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--input);
+  border-radius: var(--radius);
+  background: var(--muted);
+  color: var(--foreground);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.paste__copy[data-copy-state="copied"] {
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 45%, var(--border));
+}
+
+.paste__copy[data-copy-state="failed"] {
+  color: var(--destructive);
+  border-color: color-mix(in srgb, var(--destructive) 45%, var(--border));
+}
+
+.paste__copy,
+.paste__sample,
 .paste__open,
 .paste__forget {
   position: relative;

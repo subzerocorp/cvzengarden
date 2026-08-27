@@ -298,6 +298,54 @@ fn norm_attrs(el: scraper::ElementRef<'_>) -> Vec<(String, String)> {
     attrs
 }
 
+fn junior_json() -> String {
+    fs::read_to_string(skeleton_path("samples/junior.json")).expect("skeleton/samples/junior.json")
+}
+
+fn junior_html() -> String {
+    fs::read_to_string(skeleton_path("samples/junior.html")).expect("skeleton/samples/junior.html")
+}
+
+fn update_requested() -> bool {
+    std::env::var_os("RZ_UPDATE_FIXTURES").is_some_and(|value| !value.is_empty())
+}
+
+/// Byte-lock `skeleton/samples/junior.html` to `render_json(junior.json)`.
+/// `RZ_UPDATE_FIXTURES=1 cargo test --test acceptance` rewrites the HTML.
+#[test]
+fn junior_sample_html_is_crate_output() {
+    let json = junior_json();
+    let rendered = render_json(&json).expect("render junior sample");
+    if update_requested() {
+        fs::write(skeleton_path("samples/junior.html"), &rendered)
+            .expect("write skeleton/samples/junior.html");
+    }
+    let committed = junior_html();
+    assert_eq!(
+        rendered, committed,
+        "skeleton/samples/junior.html is not the crate output for skeleton/samples/junior.json (run RZ_UPDATE_FIXTURES=1 cargo test --test acceptance)"
+    );
+
+    assert_eq!(
+        rendered.matches("rz-entry--experience").count(),
+        1,
+        "junior sample must have exactly one experience entry"
+    );
+    assert_eq!(
+        rendered.matches("rz-entry--project").count(),
+        3,
+        "junior sample must have exactly three project entries"
+    );
+    assert!(
+        rendered.contains(r#"<p class="rz-score">GPA 3.7</p>"#),
+        "junior sample must render the string score as GPA 3.7"
+    );
+    assert!(
+        !rendered.contains("rz-photo"),
+        "junior sample must omit a photo"
+    );
+}
+
 fn dump(el: scraper::ElementRef<'_>, depth: usize) -> String {
     let pad = "  ".repeat(depth);
     let mut attrs: Vec<String> = el

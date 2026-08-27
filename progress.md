@@ -75,3 +75,7 @@ Human decision (`docs/plans/fonts-decision.md`): Font Library (submit original f
 ## 2026-08-24 — ZG-5 done (phase 2 of 2)
 
 File/drop (`classifyFile` content-first), `not-json-file` names the file, `localStorage['resumezen.resume']` holds the raw JSON, Forget restores the cloned sample article (no fetch). GAN: Reviewer BLESS → Tester BLESS → Architect BLESS. Tester `PROBE_PORT=4431 just verify` exit 0. Commit `e33212f`. Board `done`. Completion: `docs/plans/zg-5-completion.md`. ZG-6 is next (new `Intent` for sample buttons — do not reuse `ShowIt`).
+
+## 2026-08-27 — ZG-6 in progress
+
+Format named (JSON Resume + schema link), closed-sidebar sentence, copyable Alex Rivera example, Jordan + junior sample buttons as a new `Sample` Intent (no Store). Vendored schema at `b25e3f4bbafd349c2c5bbaa62602c03c228762db`. Junior sample `Sam Okoro` locked in `acceptance.rs`. Board `in-progress`. Evidence: `docs/plans/zg-6-execution.md`.
