@@ -95,3 +95,7 @@ Plain-language chrome (Appearance, For screen / For paper, Screen / Paper / Scre
 ## 2026-08-27 — ZG-7 Reviewer BLESS (PR #23)
 
 Walked the full diff vs `main` (`8842b9c…797a7a0`). Every ZG-7 AC holds: closed-chrome `textContent` has the prescribed words and none of the banned jargon; one `Print / Save as PDF` on `.preview-controls__print` still calls iframe `print()`; `Print preview` unique; badges Screen / Paper / Screen + paper; About is `[role=dialog].about-panel` with Free during the preview and the exact GitHub href; designers slot empty; no invented price; chrome has no `rz-` class/id; `MARKET-QUALITY-BAR.md` unchanged; `U3_PRINT_PAGES` and theme print CSS untouched. Pinto left `in-progress`. No merge. Verdict: `docs/plans/zg-7-reviewer.md`.
+
+## 2026-08-27 — ZG-7 Tester BLESS (PR #23)
+
+Tester re-ran the suite on `6d360cf` (rustc 1.87.0 installed; rust-version not lowered). `npm run test:unit` 154/154 including `zg-7.test.mjs`. Isolated ZG-7 probes all PASS (`no-jargon`, `one-print`, `badges`, `about`, `print-on-white`, `bar-q1`). Full probes: RZ-3 / S1–S5 / U3 Jordan 2/2/2 PASS. `just fmt` / clippy pedantic / cargo test green. Chrome has no `rz-` class/id; `MARKET-QUALITY-BAR.md` unchanged. Full probes fail only pre-existing `ZG-11/page-count quarto` 4-vs-3 (not a ZG-7 reject). Board left `in-progress`. Verdict: `docs/plans/zg-7-tester.md`.
