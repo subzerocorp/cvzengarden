@@ -564,7 +564,7 @@ async function rz3BrowserProbes(page) {
     pass("Print preview does not keep Nightgarden screen motion running");
   }
 
-  await page.getByRole("button", { name: "Screen" }).click();
+  await page.getByRole("button", { name: "Screen", exact: true }).click();
   await page.waitForTimeout(200);
 
   const leak = await page.evaluate(() => {
@@ -659,7 +659,7 @@ function reportColdPaint(timing) {
 
 async function s2Probes(page) {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.getByRole("button", { name: "Screen" }).click();
+  await page.getByRole("button", { name: "Screen", exact: true }).click();
 
   for (const id of THEME_IDS) {
     await selectTheme(page, id);
@@ -760,7 +760,7 @@ async function pdfPagesForTheme(browser, href) {
 
 async function s3Probes(browser, page) {
   await selectTheme(page, "nightgarden");
-  await page.getByRole("button", { name: "Screen" }).click();
+  await page.getByRole("button", { name: "Screen", exact: true }).click();
   await page.waitForTimeout(200);
 
   const screenMotion = await page.evaluate(() => {
@@ -830,7 +830,7 @@ async function s3Probes(browser, page) {
 
 async function u3IframePrintProbes(browser, page) {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.getByRole("button", { name: "Screen" }).click();
+  await page.getByRole("button", { name: "Screen", exact: true }).click();
 
   for (const id of THEME_IDS) {
     await selectTheme(page, id);
