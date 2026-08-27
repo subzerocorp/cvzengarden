@@ -35,7 +35,11 @@ Explain the résumé format in plain words and let a first-timer start from a sa
 
 ## Verification
 
-Pending the full matrix on this branch (`PROBE_PORT` not 4173).
+- `cargo fmt --check` / `cargo clippy` pedantic / `cargo test` (renderer + renderer-wasm): PASS
+- `junior_sample_html_is_crate_output`: PASS
+- `node --test` 147 unit tests: PASS
+- ZG-6 probes (`PROBE_PORT=4313`, isolated runner after `npm run build`): all PASS (see list above)
+- Full `probes.mjs` also ran the existing RZ/ZG-5/U3/ZG-12/ZG-4 suite: U3 Jordan print stays 2/2/2. One **pre-existing environment** miss: `ZG-11/page-count quarto` long-resume.html is 4 pages on Chromium 151 in this VM (LONG_PRINT_PAGES is 3). Theme print CSS and `U3_PRINT_PAGES` were not changed. ZG-6/junior-all-themes asserts ≤ 2 and passed.
 
 ## Board
 

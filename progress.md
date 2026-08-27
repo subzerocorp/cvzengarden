@@ -78,4 +78,4 @@ File/drop (`classifyFile` content-first), `not-json-file` names the file, `local
 
 ## 2026-08-27 — ZG-6 in progress
 
-Format named (JSON Resume + schema link), closed-sidebar sentence, copyable Alex Rivera example, Jordan + junior sample buttons as a new `Sample` Intent (no Store). Vendored schema at `b25e3f4bbafd349c2c5bbaa62602c03c228762db`. Junior sample `Sam Okoro` locked in `acceptance.rs`. Board `in-progress`. Evidence: `docs/plans/zg-6-execution.md`.
+Format named (JSON Resume + schema link), closed-sidebar sentence, copyable Alex Rivera example, Jordan + junior sample buttons as a new `Sample` Intent (no Store). Vendored schema at `b25e3f4bbafd349c2c5bbaa62602c03c228762db`. Junior sample `Sam Okoro` locked in `acceptance.rs`. Board `in-progress`. Evidence: `docs/plans/zg-6-execution.md`. All `ZG-6/*` probes PASS. Draft PR: not production; U3 and HTTPS untouched.
