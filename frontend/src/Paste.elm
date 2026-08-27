@@ -8,14 +8,17 @@ on reload.
 `Effect`s for `Main` to turn into port commands. `text` is the editing
 buffer; `accepted` is the last résumé that classified and rendered (the
 datum stored under `resumezen.resume`). Restore sets both; Forget clears
-both. Every message the Author can see is a plain sentence built here —
-no crate text ever reaches the panel; `Main` sends it to the console
-instead.
+both. A Sample click fills the buffer and renders without touching
+`accepted` or storage. Every message the Author can see is a plain
+sentence built here — no crate text ever reaches the panel; `Main` sends
+it to the console instead.
 
 Public panel state: `data-paste-status`, `data-paste-attempt`,
-`data-paste-error`, `[data-drop-zone]`.
+`data-paste-error`, `[data-drop-zone]`, `[data-copy-example]`,
+`[data-copy-state]`.
 -}
 
+import Generated.Samples as Samples
 import Html exposing (Html, button, div, h2, p, textarea)
 import Html.Attributes as Attr exposing (attribute, class, id, type_)
 import Html.Events exposing (onClick, onInput)
@@ -33,6 +36,8 @@ type alias Model =
     , accepted : Maybe String
     , status : Status
     , attempt : Int
+    , copy : CopyState
+    , copyGen : Int
     }
 
 
@@ -44,11 +49,19 @@ type Status
 
 
 {-| Who asked for this render. Author failures are sentences; Restore
-failures drop the stored key and stay on Jordan Hale.
+failures drop the stored key and stay on Jordan Hale. Sample fills the
+buffer and draws without writing storage.
 -}
 type Intent
     = Author
     | Restore
+    | Sample
+
+
+type CopyState
+    = CopyIdle
+    | CopyCopied
+    | CopyFailed
 
 
 type Failure
@@ -63,6 +76,8 @@ type Effect
     | Store String
     | Forget
     | RestoreSample
+    | Copy String
+    | WaitClearCopy Int
 
 
 type alias File =
@@ -73,7 +88,14 @@ type alias File =
 
 init : Model
 init =
-    { open = False, text = "", accepted = Nothing, status = Idle, attempt = 0 }
+    { open = False
+    , text = ""
+    , accepted = Nothing
+    , status = Idle
+    , attempt = 0
+    , copy = CopyIdle
+    , copyGen = 0
+    }
 
 
 
@@ -87,6 +109,11 @@ type Msg
     | FileOpened File
     | Restored String
     | ForgetClicked
+    | StartJordan
+    | StartJunior
+    | CopyExample
+    | CopyFinished Bool
+    | ClearCopy Int
 
 
 update : Msg -> Model -> ( Model, List Effect )
@@ -109,6 +136,21 @@ update msg model =
 
         ForgetClicked ->
             forget model
+
+        StartJordan ->
+            startSample Samples.jordan model
+
+        StartJunior ->
+            startSample Samples.junior model
+
+        CopyExample ->
+            beginCopy model
+
+        CopyFinished ok ->
+            finishCopy ok model
+
+        ClearCopy gen ->
+            clearCopy gen model
 
 
 submit : Model -> ( Model, List Effect )
@@ -139,6 +181,43 @@ restore json model =
 
         Classify.Rejected _ ->
             discardStored model
+
+
+startSample : String -> Model -> ( Model, List Effect )
+startSample json model =
+    case Classify.classify json of
+        Accepted accepted ->
+            beginRender Sample accepted { model | text = accepted }
+
+        Classify.Rejected problem ->
+            reject problem { model | text = json }
+
+
+beginCopy : Model -> ( Model, List Effect )
+beginCopy model =
+    let
+        gen =
+            model.copyGen + 1
+    in
+    ( { model | copy = CopyIdle, copyGen = gen }, [ Copy exampleJson ] )
+
+
+finishCopy : Bool -> Model -> ( Model, List Effect )
+finishCopy ok model =
+    if ok then
+        ( { model | copy = CopyCopied }, [ WaitClearCopy model.copyGen ] )
+
+    else
+        ( { model | copy = CopyFailed }, [] )
+
+
+clearCopy : Int -> Model -> ( Model, List Effect )
+clearCopy gen model =
+    if gen == model.copyGen && model.copy == CopyCopied then
+        ( { model | copy = CopyIdle }, [] )
+
+    else
+        ( model, [] )
 
 
 forget : Model -> ( Model, List Effect )
@@ -201,22 +280,30 @@ rendered result model =
 
 keep : Intent -> String -> String -> Model -> ( Model, List Effect )
 keep intent json html model =
-    let
-        shown =
-            { model | status = Shown, accepted = Just json }
-    in
     case intent of
         Author ->
-            ( shown, [ Swap html, Store json ] )
+            ( { model | status = Shown, accepted = Just json }
+            , [ Swap html, Store json ]
+            )
 
         Restore ->
-            ( { shown | text = json }, [ Swap html ] )
+            ( { model | status = Shown, accepted = Just json, text = json }
+            , [ Swap html ]
+            )
+
+        Sample ->
+            ( { model | status = Shown, text = json }
+            , [ Swap html ]
+            )
 
 
 failRender : Intent -> String -> Model -> ( Model, List Effect )
 failRender intent raw model =
     case intent of
         Author ->
+            ( { model | status = Failed RenderFailed }, [ LogDebug raw ] )
+
+        Sample ->
             ( { model | status = Failed RenderFailed }, [ LogDebug raw ] )
 
         Restore ->
@@ -243,6 +330,8 @@ view model =
             , onClick ToggleOpen
             ]
             [ Html.text "Use my résumé" ]
+        , p [ class "paste__lede" ]
+            [ Html.text sidebarSentence ]
         , p [ class "paste__hint" ]
             [ Html.text "Nothing leaves your browser until you publish." ]
         , viewPanel model
@@ -257,7 +346,8 @@ viewPanel model =
         , class "paste__panel"
         , Attr.hidden (not model.open)
         ]
-        [ viewPasteBox model
+        [ viewHelp model
+        , viewPasteBox model
         , viewOpenFile
         , viewDropZone
         , button
@@ -268,6 +358,73 @@ viewPanel model =
             [ Html.text "Show it" ]
         , viewStatus model.status
         ]
+
+
+viewHelp : Model -> Html Msg
+viewHelp model =
+    div [ class "paste__help" ]
+        [ p [ class "paste__format" ]
+            [ Html.text "This site styles a "
+            , Html.a
+                [ class "paste__schema"
+                , Attr.href schemaHref
+                ]
+                [ Html.text "JSON Resume" ]
+            , Html.text " — a plain text file. Paste yours, or start from a sample."
+            ]
+        , Html.pre
+            [ class "paste__example"
+            , attribute "data-example" ""
+            ]
+            [ Html.text exampleJson ]
+        , button
+            (copyButtonAttrs model.copy)
+            [ Html.text (copyButtonLabel model.copy) ]
+        , button
+            [ type_ "button"
+            , class "btn btn--md btn--outline paste__sample"
+            , onClick StartJordan
+            ]
+            [ Html.text "Start from Jordan's sample" ]
+        , button
+            [ type_ "button"
+            , class "btn btn--md btn--outline paste__sample"
+            , onClick StartJunior
+            ]
+            [ Html.text "Start from a short sample" ]
+        ]
+
+
+copyButtonAttrs : CopyState -> List (Html.Attribute Msg)
+copyButtonAttrs copy =
+    [ type_ "button"
+    , class "btn btn--md btn--outline paste__copy"
+    , attribute "data-copy-example" ""
+    , onClick CopyExample
+    ]
+        ++ (case copy of
+                CopyIdle ->
+                    []
+
+                CopyCopied ->
+                    [ attribute "data-copy-state" "copied" ]
+
+                CopyFailed ->
+                    [ attribute "data-copy-state" "failed" ]
+           )
+
+
+copyButtonLabel : CopyState -> String
+copyButtonLabel copy =
+    case copy of
+        CopyIdle ->
+            "Copy example"
+
+        CopyCopied ->
+            "Copied"
+
+        CopyFailed ->
+            copyFailedSentence
 
 
 viewPasteBox : Model -> Html Msg
@@ -342,6 +499,9 @@ viewStatus status =
         Rendering Author _ ->
             p [ class "paste__note" ] [ Html.text "Drawing your résumé…" ]
 
+        Rendering Sample _ ->
+            p [ class "paste__note" ] [ Html.text "Drawing your résumé…" ]
+
         Shown ->
             p [ class "paste__note" ]
                 [ Html.text "This is your résumé now. Pick any Theme or print it." ]
@@ -377,6 +537,38 @@ viewFailure failure =
 
 
 -- COPY
+
+
+sidebarSentence : String
+sidebarSentence =
+    "Your résumé is a small text file (JSON Resume). Paste it, open it, or start from a sample."
+
+
+schemaHref : String
+schemaHref =
+    "https://jsonresume.org/schema"
+
+
+copyFailedSentence : String
+copyFailedSentence =
+    "Copy failed — select the text and copy it"
+
+
+{-| 10-line JSON Resume that validates and renders. Kept here (not generated)
+so the help example is the copy the Author sees, not a second file.
+-}
+exampleJson : String
+exampleJson =
+    """{
+  "basics": {
+    "name": "Alex Rivera",
+    "label": "Junior Designer",
+    "email": "alex@rivera.example"
+  },
+  "work": [
+    { "name": "Harbor Books", "position": "Clerk", "startDate": "2024-06" }
+  ]
+}"""
 
 
 problemSentence : Problem -> String

@@ -20,6 +20,8 @@ import Html.Events exposing (onClick)
 import Html.Keyed as Keyed
 import Json.Decode as Decode
 import Paste
+import Process
+import Task
 import ThemeId
 
 
@@ -81,6 +83,14 @@ port onFileBytes : ({ name : String, text : String } -> msg) -> Sub msg
 
 
 port onStoredResume : (String -> msg) -> Sub msg
+
+
+{-| Write a string to the clipboard. The answer arrives on `onCopied`.
+-}
+port copyText : String -> Cmd msg
+
+
+port onCopied : (Bool -> msg) -> Sub msg
 
 
 
@@ -227,6 +237,13 @@ pasteCommand effect =
 
         Paste.RestoreSample ->
             restoreSample ()
+
+        Paste.Copy text ->
+            copyText text
+
+        Paste.WaitClearCopy gen ->
+            Process.sleep 2000
+                |> Task.perform (\_ -> PasteMsg (Paste.ClearCopy gen))
 
 
 applyTheme : String -> Bool -> Model -> ( Model, Cmd Msg )
@@ -553,6 +570,7 @@ subscriptions _ =
         , onRendered (decodeRendered >> Rendered)
         , onFileBytes (Paste.FileOpened >> PasteMsg)
         , onStoredResume (Paste.Restored >> PasteMsg)
+        , onCopied (Paste.CopyFinished >> PasteMsg)
         ]
 
 

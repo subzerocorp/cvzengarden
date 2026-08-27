@@ -7,10 +7,11 @@
     "build": "npm run gen && node scripts/build-wasm.mjs && elm make src/Main.elm --output=dist/garden.js && node scripts/copy-dist.mjs",
     "start": "npm run build && node scripts/serve.mjs",
     "probe": "npm run build && node scripts/probes.mjs",
-    "test:unit": "node --test scripts static",
+    "test:unit": "node --test --test-reporter=spec $(find scripts static -name '*.test.mjs')",
     "test": "npm run test:unit && npm run probe"
   },
   "devDependencies": {
+    "ajv": "^8.20.0",
     "elm": "^0.19.1-6",
     "playwright": "^1.56.1"
   }

@@ -35,6 +35,7 @@ import { countPdfPages, printToPdf } from "./probes/lib/pdf.mjs";
 import { sheetSourceFor } from "./probes/lib/sheet-source.mjs";
 import { zg4Probes } from "./probes/zg-4.mjs";
 import { zg5Probes } from "./probes/zg-5.mjs";
+import { zg6Probes } from "./probes/zg-6.mjs";
 import { zg11Probes } from "./probes/zg-11.mjs";
 import { zg12Probes } from "./probes/zg-12.mjs";
 
@@ -1113,6 +1114,7 @@ async function browserProbes() {
     await zg12Group(browser);
     await zg4Probes({ browser, origin, report: { pass, fail }, repoDir, frontendDir });
     await zg5Probes({ browser, origin, report: { pass, fail }, repoDir, frontendDir });
+    await zg6Probes({ browser, origin, report: { pass, fail }, repoDir, frontendDir });
   }
 
   await browser.close();
@@ -1150,4 +1152,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log("\nAll RZ-3, RZ-S1…S5, U3 print, ZG-23, ZG-4, ZG-5, ZG-11 and ZG-12 probes passed.");
+console.log("\nAll RZ-3, RZ-S1…S5, U3 print, ZG-23, ZG-4, ZG-5, ZG-6, ZG-11 and ZG-12 probes passed.");

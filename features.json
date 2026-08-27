@@ -111,6 +111,19 @@
           "resume_local_storage",
           "forget_restores_sample"
         ]
+      },
+      {
+        "id": "zg-6",
+        "title": "ZG-6: explain the résumé format and start from a sample (7859ba0; GAN close PR #22)",
+        "status": "completed",
+        "features": [
+          "format_named_json_resume",
+          "sidebar_small_text_file",
+          "copy_example_alex_rivera",
+          "sample_intent_no_store",
+          "junior_sample_sam_okoro",
+          "vendored_resume_schema"
+        ]
       }
     ]
   }

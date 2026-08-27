@@ -75,3 +75,15 @@ Human decision (`docs/plans/fonts-decision.md`): Font Library (submit original f
 ## 2026-08-24 — ZG-5 done (phase 2 of 2)
 
 File/drop (`classifyFile` content-first), `not-json-file` names the file, `localStorage['resumezen.resume']` holds the raw JSON, Forget restores the cloned sample article (no fetch). GAN: Reviewer BLESS → Tester BLESS → Architect BLESS. Tester `PROBE_PORT=4431 just verify` exit 0. Commit `e33212f`. Board `done`. Completion: `docs/plans/zg-5-completion.md`. ZG-6 is next (new `Intent` for sample buttons — do not reuse `ShowIt`).
+
+## 2026-08-27 — ZG-6 in progress
+
+Format named (JSON Resume + schema link), closed-sidebar sentence, copyable Alex Rivera example, Jordan + junior sample buttons as a new `Sample` Intent (no Store). Vendored schema at `b25e3f4bbafd349c2c5bbaa62602c03c228762db`. Junior sample `Sam Okoro` locked in `acceptance.rs`. Board `in-progress`. Evidence: `docs/plans/zg-6-execution.md`. All `ZG-6/*` probes PASS. Draft PR: not production; U3 and HTTPS untouched.
+
+## 2026-08-27 — ZG-6 Tester BLESS (PR #22)
+
+Tester re-ran the suite on `8db67f3`. `npm run test:unit` 147/147 (18 `*.test.mjs` via `find`). Isolated ZG-6 probes all PASS. `junior_sample_html_is_crate_output` PASS on rustc 1.87. U3 Jordan print 2/2/2. Static greps empty as required. Full probes fail only pre-existing `ZG-11/page-count quarto` 4-vs-3 (not a ZG-6 reject). Board left `in-progress`. Verdict: `docs/plans/zg-6-tester.md`.
+
+## 2026-08-27 — ZG-6 Architect BLESS (PR #22)
+
+Architecture holds: third `Paste.Intent` (`Sample`) Swap-only; ShowIt/Author still Stores; one key `resumezen.resume`; JSON Resume only stored Resume; `Generated.Samples` build-embedded; ZG-14 still owns dist copy of `skeleton/samples`; chrome has no `rz-` class/id; Themes still target `html`/`body`/`.rz-*`/`[data-rz-*]`; scope stayed ZG-6; U3 and HTTPS untouched. DoD met. Board `done`. Completion: `docs/plans/zg-6-completion.md`. QA draft host `https://6a90bc39674c4e34c89c8c34--cvzengarden.netlify.app`. PR #22 left open; production not published.

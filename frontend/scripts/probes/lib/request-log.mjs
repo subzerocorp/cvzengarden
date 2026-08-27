@@ -23,7 +23,7 @@ export function isGardenAsset(url, origin) {
   if (pathname === "/" || pathname === "/index.html") {
     return true;
   }
-  if (pathname === "/chrome.css" || pathname === "/garden.js" || pathname === "/ports.js" || pathname === "/render.js" || pathname === "/sandbox.html") {
+  if (pathname === "/chrome.css" || pathname === "/garden.js" || pathname === "/ports.js" || pathname === "/clipboard.js" || pathname === "/render.js" || pathname === "/sandbox.html") {
     return true;
   }
   if (pathname.startsWith("/wasm/")) {

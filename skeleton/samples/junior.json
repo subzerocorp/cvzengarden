@@ -1,0 +1,82 @@
+{
+  "basics": {
+    "name": "Sam Okoro",
+    "label": "Junior Web Developer",
+    "email": "sam@okoro.example",
+    "summary": "Recent graduate who builds small websites for shops and campus groups. I care about clear HTML, honest CSS, and pages that print."
+  },
+  "work": [
+    {
+      "name": "Harbor Books",
+      "location": "Oakland, CA",
+      "position": "Sales Associate",
+      "startDate": "2023-06",
+      "endDate": "2025-05",
+      "highlights": [
+        "Ran the shop floor and the store website used for event sign-ups.",
+        "Wrote the weekly email as a single HTML file staff could edit without a CMS."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "institution": "Laney College",
+      "area": "Web Development",
+      "studyType": "Certificate",
+      "startDate": "2021-08",
+      "endDate": "2023-05",
+      "score": "3.7",
+      "courses": [
+        "HTML and CSS",
+        "JavaScript Fundamentals",
+        "Accessible Documents"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "name": "Neighborhood Library Hours",
+      "description": "A one-page site so neighbors can see open hours and holiday closures.",
+      "startDate": "2024-09",
+      "endDate": "2024-12",
+      "highlights": [
+        "Prints on one letter page so the desk can tape it to the door."
+      ]
+    },
+    {
+      "name": "Campus Club Roster",
+      "description": "A listing page for a student club, generated from a JSON file.",
+      "startDate": "2024-02",
+      "endDate": "2024-05",
+      "highlights": [
+        "Officers update the JSON; the page stays one HTML file."
+      ]
+    },
+    {
+      "name": "Recipe Cards",
+      "description": "Printable cards from a family recipe list.",
+      "startDate": "2023",
+      "highlights": [
+        "Each card is an article with ingredients as a list."
+      ]
+    }
+  ],
+  "skills": [
+    {
+      "name": "Front-end",
+      "level": "Beginner",
+      "keywords": [
+        "HTML",
+        "CSS",
+        "JavaScript"
+      ]
+    },
+    {
+      "name": "Tools",
+      "keywords": [
+        "Git",
+        "Figma"
+      ]
+    }
+  ]
+}
