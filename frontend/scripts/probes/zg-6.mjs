@@ -98,7 +98,7 @@ async function loadAjv() {
 }
 
 function compileValidator(Ajv, schema) {
-  return new Ajv({ allErrors: true, validateFormats: false }).compile(schema);
+  return new Ajv({ allErrors: true, validateFormats: false, strict: false }).compile(schema);
 }
 
 function schemaFail(report, slug, reasons, passText) {
