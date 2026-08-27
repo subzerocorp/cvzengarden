@@ -90,4 +90,4 @@ Architecture holds: third `Paste.Intent` (`Sample`) Swap-only; ShowIt/Author sti
 
 ## 2026-08-27 — ZG-7 in progress
 
-Plain-language chrome (Appearance, For screen / For paper, Screen / Paper / Screen + paper, Print / Save as PDF), About dialog with “Free during the preview”, GitHub href string-checked offline. View toggle still **Print preview**. `U3_PRINT_PAGES` and HTTPS / issue #9 untouched. Board `in-progress`, not `done`. Evidence: `docs/plans/zg-7-execution.md`. Draft PR for Product & QA on a Netlify draft host, not production.
+Plain-language chrome (Appearance, For screen / For paper, Screen / Paper / Screen + paper, Print / Save as PDF), About dialog with “Free during the preview”, GitHub href string-checked offline. View toggle still **Print preview**. `U3_PRINT_PAGES` and HTTPS / issue #9 untouched. Board `in-progress`, not `done`. Evidence: `docs/plans/zg-7-execution.md`. Draft PR #23 for Product & QA on a Netlify draft host, not production. All `ZG-7/*` probes PASS; U3 2/2/2 PASS. Same-run leftover `ZG-11/page-count quarto` 4-vs-3 is the pre-existing main failure recorded on ZG-6.
