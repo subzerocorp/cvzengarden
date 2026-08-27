@@ -39,3 +39,9 @@ Branch `cursor/zg-6-explain-sample-3d9c` vs `main` (`aa5b037…e2d1894`). Review
 - `schema-example` validates the Elm `exampleJson` constant (same bytes as `pre[data-example]`), not a live page scrape — acceptable for an offline schema probe.
 - `openGarden({ permissions })` opens a second BrowserContext and never closes it. Leak, not an AC miss.
 - ZG-11/page-count quarto 4 vs 3 on Chromium 151 is a pre-existing environment miss. Not a ZG-6 reject.
+
+## Re-review (`fa35ea8` + `e815371`)
+
+Blocker 1 only. `test:unit` is now `node --test --test-reporter=spec $(find scripts static -name '*.test.mjs')`. Under `sh`, `find` returns all 18 `*.test.mjs` files (including `build-wasm`, every `scripts/probes/lib/*.test.mjs`, `static/render.test.mjs`). `npm run test:unit`: 147 pass / 0 fail. Those commits touch only `frontend/package.json` and `docs/plans/zg-6-execution.md` — product AC files unchanged. U3 / HTTPS untouched.
+
+**REVIEWER BLESS ZG-6**
