@@ -12,6 +12,7 @@ Theme id resolution is pure (`ThemeId`). History and the iframe stylesheet
 are isolated actions (ports).
 -}
 
+import About
 import Browser
 import Generated.Themes as Themes exposing (Target(..), Theme)
 import Html exposing (Html, button, div, h1, h2, iframe, li, p, span, ul)
@@ -93,6 +94,11 @@ port copyText : String -> Cmd msg
 port onCopied : (Bool -> msg) -> Sub msg
 
 
+{-| Move keyboard focus to an element id after Elm has patched the DOM.
+-}
+port focusId : String -> Cmd msg
+
+
 
 -- MODEL
 
@@ -127,6 +133,7 @@ type alias Model =
     , appearance : Appearance
     , prefersDark : Bool
     , paste : Paste.Model
+    , about : About.Model
     }
 
 
@@ -147,6 +154,7 @@ init flags =
             , appearance = FollowSystem
             , prefersDark = flags.prefersDark
             , paste = Paste.init
+            , about = About.init
             }
     in
     ( model
@@ -170,6 +178,7 @@ type Msg
     | SystemPrefersDark Bool
     | PrintRequested
     | PasteMsg Paste.Msg
+    | AboutMsg About.Msg
     | Rendered (Result String String)
 
 
@@ -202,6 +211,10 @@ update msg model =
         PasteMsg pasteMsg ->
             Paste.update pasteMsg model.paste
                 |> applyPaste model
+
+        AboutMsg aboutMsg ->
+            About.update aboutMsg model.about
+                |> applyAbout model
 
         Rendered result ->
             Paste.rendered result model.paste
@@ -244,6 +257,22 @@ pasteCommand effect =
         Paste.WaitClearCopy gen ->
             Process.sleep 2000
                 |> Task.perform (\_ -> PasteMsg (Paste.ClearCopy gen))
+
+
+applyAbout : Model -> ( About.Model, List About.Effect ) -> ( Model, Cmd Msg )
+applyAbout model ( about, effects ) =
+    ( { model | about = about }
+    , Cmd.batch (List.map aboutCommand effects)
+    )
+
+
+{-| The only place an About effect becomes an action.
+-}
+aboutCommand : About.Effect -> Cmd Msg
+aboutCommand effect =
+    case effect of
+        About.Focus target ->
+            focusId target
 
 
 applyTheme : String -> Bool -> Model -> ( Model, Cmd Msg )
@@ -327,6 +356,7 @@ viewSidebar model selected =
         , viewSwitcher model selected
         , viewPreviewControls model.preview
         , viewAppearance model.appearance
+        , Html.map AboutMsg (About.view model.about)
         ]
 
 
@@ -336,7 +366,7 @@ viewBrand =
         [ p [ class "app-eyebrow" ] [ Html.text "ResumeZen" ]
         , h1 [ class "app-title" ] [ Html.text "Garden" ]
         , p [ class "app-lede" ]
-            [ Html.text "One Skeleton. Flip a Theme. Print stays print." ]
+            [ Html.text "Pick a look for your résumé. Your content stays the same. Print it or share the link." ]
         ]
 
 
@@ -344,11 +374,6 @@ viewSwitcher : Model -> Theme -> Html Msg
 viewSwitcher model selected =
     div [ class "theme-switcher" ]
         [ h2 [ class "theme-switcher__title" ] [ Html.text "Themes" ]
-        , p [ class "theme-switcher__hint" ]
-            [ Html.text "Labels come from "
-            , Html.code [] [ Html.text "/* rz-target */" ]
-            , Html.text ". A print Theme is not judged on hover."
-            ]
         , viewFilters model.filter
         , ul
             [ class "theme-switcher__list"
@@ -357,6 +382,8 @@ viewSwitcher model selected =
             (visibleThemes model.filter
                 |> List.map (viewThemeItem selected.id)
             )
+        , p [ class "theme-switcher__note" ]
+            [ Html.text "Every theme prints in dark ink on white paper" ]
         ]
 
 
@@ -365,11 +392,11 @@ viewFilters current =
     div
         [ class "theme-switcher__filters"
         , attribute "role" "group"
-        , attribute "aria-label" "Filter themes by target"
+        , attribute "aria-label" "Show looks for"
         ]
         [ filterButton FilterAll "All" current
-        , filterButton FilterWeb "Web" current
-        , filterButton FilterPrint "Print" current
+        , filterButton FilterWeb "For screen" current
+        , filterButton FilterPrint "For paper" current
         ]
 
 
@@ -446,13 +473,13 @@ targetLabel : Target -> String
 targetLabel target =
     case target of
         Web ->
-            "web"
+            "Screen"
 
         Print ->
-            "print"
+            "Paper"
 
         Both ->
-            "both"
+            "Screen + paper"
 
 
 viewPreviewControls : Preview -> Html Msg
@@ -470,14 +497,12 @@ viewPreviewControls preview =
         , button
             [ type_ "button"
             , class "btn btn--md btn--outline preview-controls__print"
+            , attribute "aria-label" "Print / Save as PDF"
             , onClick PrintRequested
             ]
-            [ Html.text "Print" ]
+            [ Html.text "Print / Save as PDF" ]
         , p [ class "preview-controls__hint" ]
-            [ Html.text "Print preview emulates "
-            , Html.code [] [ Html.text "@media print" ]
-            , Html.text ". Browser print uses the active Theme’s print CSS."
-            ]
+            [ Html.text "What you see here is what the printer prints." ]
         ]
 
 
@@ -505,11 +530,11 @@ previewButton preview label current =
 viewAppearance : Appearance -> Html Msg
 viewAppearance appearance =
     div [ class "appearance" ]
-        [ h2 [ class "appearance__title" ] [ Html.text "Chrome" ]
+        [ h2 [ class "appearance__title" ] [ Html.text "Appearance" ]
         , div
             [ class "appearance__row"
             , attribute "role" "group"
-            , attribute "aria-label" "Chrome appearance"
+            , attribute "aria-label" "Light or dark"
             ]
             [ appearanceButton FollowSystem "System" appearance
             , appearanceButton PinLight "Light" appearance
@@ -563,7 +588,7 @@ viewStage preview =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
+subscriptions model =
     Sub.batch
         [ preferDarkChanged SystemPrefersDark
         , onThemeQuery ThemeQueryChanged
@@ -571,6 +596,7 @@ subscriptions _ =
         , onFileBytes (Paste.FileOpened >> PasteMsg)
         , onStoredResume (Paste.Restored >> PasteMsg)
         , onCopied (Paste.CopyFinished >> PasteMsg)
+        , Sub.map AboutMsg (About.subscriptions model.about)
         ]
 
 

@@ -170,6 +170,7 @@ body {
 .paste__lede,
 .paste__hint,
 .theme-switcher__hint,
+.theme-switcher__note,
 .preview-controls__hint {
   margin: 0;
   color: var(--muted-foreground);
@@ -509,6 +510,96 @@ body {
   width: 100%;
 }
 
+.app-footer {
+  margin-top: auto;
+  padding-top: 0.35rem;
+}
+
+.about-link {
+  color: var(--link);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.about-link:hover {
+  color: var(--link-hover);
+}
+
+.about-link:active {
+  color: var(--link-active);
+}
+
+.about-link:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.about-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: color-mix(in srgb, var(--foreground) 40%, transparent);
+}
+
+.about-panel__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  width: min(28rem, 100%);
+  max-height: calc(100vh - 2.5rem);
+  overflow: auto;
+  padding: 1.2rem 1.25rem 1.3rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--popover);
+  color: var(--popover-foreground);
+  box-shadow: 0 0.6rem 2rem color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+
+.about-panel__title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.about-panel__lede,
+.about-panel__price,
+.about-panel__repo {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.about-panel__repo-link {
+  color: var(--link);
+  font-weight: 600;
+}
+
+.about-panel__repo-link:hover {
+  color: var(--link-hover);
+}
+
+.about-panel__designers {
+  min-height: 0;
+}
+
+.about-panel__slot-title {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.about-panel__close {
+  align-self: flex-start;
+}
+
 .garden-stage {
   position: relative;
   min-width: 0;
@@ -557,7 +648,8 @@ body {
     background: transparent;
   }
 
-  .app-sidebar {
+  .app-sidebar,
+  .about-panel {
     display: none;
   }
 
