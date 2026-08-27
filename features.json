@@ -124,6 +124,18 @@
           "junior_sample_sam_okoro",
           "vendored_resume_schema"
         ]
+      },
+      {
+        "id": "zg-7",
+        "title": "ZG-7: plain-language chrome, About panel, free during preview",
+        "status": "in_progress",
+        "features": [
+          "plain_language_chrome",
+          "about_panel_dialog",
+          "free_during_preview",
+          "print_save_as_pdf_label",
+          "theme_badges_screen_paper"
+        ]
       }
     ]
   }
