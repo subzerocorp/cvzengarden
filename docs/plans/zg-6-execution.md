@@ -44,7 +44,7 @@ Explain the résumé format in plain words and let a first-timer start from a sa
 
 ## Board
 
-- status: in-progress (Architect marks done after GAN)
+- status: done (Architect BLESS; PR #22 left open)
 
 ## Non-goals honored
 

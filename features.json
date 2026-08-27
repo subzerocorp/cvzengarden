@@ -114,8 +114,8 @@
       },
       {
         "id": "zg-6",
-        "title": "ZG-6: explain the résumé format and start from a sample",
-        "status": "in_progress",
+        "title": "ZG-6: explain the résumé format and start from a sample (7859ba0; GAN close PR #22)",
+        "status": "completed",
         "features": [
           "format_named_json_resume",
           "sidebar_small_text_file",
