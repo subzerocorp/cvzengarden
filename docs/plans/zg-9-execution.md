@@ -29,4 +29,14 @@ Named probes `ZG-9/mobile-first`, `sheet`, `escape`, `desktop-unchanged`, `no-hs
 
 ## Execution Evidence
 
-_Pending phase 2._
+Log: `/tmp/zg9-probes.log` (`PROBE_PORT=4498 node scripts/probes.mjs` after `npm run build`). Rust half (`cargo fmt --check`, clippy pedantic, `cargo test` on renderer + renderer-wasm) was green on rustc 1.87.0 before that run.
+
+- [x] `ZG-9/mobile-first` — `PASS  ZG-9/mobile-first #garden-frame top 0 < 80 and .rz-name is in the 390×844 viewport`
+- [x] `ZG-9/sheet` — `PASS  ZG-9/sheet Theme opens the sheet; #theme-option-quarto swaps themes/quarto.css and closes it`
+- [x] `ZG-9/escape` — `PASS  ZG-9/escape Escape closes the sheet and returns focus to Theme`
+- [x] `ZG-9/desktop-unchanged` — `PASS  ZG-9/desktop-unchanged Theme toggle hidden at 1280×800; S1–S5 date geometry unchanged`
+- [x] `ZG-9/no-hscroll` — `PASS  ZG-9/no-hscroll documentElement.scrollWidth ≤ 390 for all three themes`
+- [x] Existing RZ-3 / S1–S5 / U3 / ZG-4/5/6/7/8 — all PASS in the same run. `U3_PRINT_PAGES` still `{nightgarden: 2, quarto: 2, switchyard: 2}`; Garden/iframe and chrome-shell printToPDF 2/2/2. View toggle still **Print preview**. `.preview-controls__print` unchanged. Chrome markup/CSS `rz-` check silent (no FAIL). ZG-8 copy-link / unknown `?theme=` PASS.
+- [ ] `just verify` exit 0 — rust + every ZG-9 / U3 / S1–S5 / ZG-8 probe green. Same-run leftover: `FAIL  ZG-11/page-count quarto … long-resume.html is 4 page(s), LONG_PRINT_PAGES is 3` (pre-existing on main / PR #24 Tester note; sandbox-only; chrome and `U3_PRINT_PAGES` untouched). Not fixed here.
+
+Unit tests: `npm run test:unit` 177/177 including `frontend/scripts/probes/zg-9.test.mjs`.

@@ -127,3 +127,7 @@ Phone résumé first: `sidebarOpen : Bool`, Theme toggle (`aria-expanded`), Esca
 ## 2026-08-28 — ZG-9 phase 2 of 2
 
 Named probes `ZG-9/mobile-first`, `sheet`, `escape`, `desktop-unchanged`, `no-hscroll` plus unit-tested calculations (`zg-9.test.mjs`). Tester README mentions the phone Theme sheet. Board stays `in-progress`. Probe evidence pending.
+
+## 2026-08-28 — ZG-9 in progress (evidence)
+
+All five `ZG-9/*` probes PASS at 390×844 / 1280×800. Existing RZ-3 / S1–S5 / U3 Jordan 2/2/2 / ZG-4/5/6/7/8 PASS. `npm run test:unit` 177/177. Rust fmt / clippy pedantic / cargo test green on rustc 1.87.0. Same-run leftover `ZG-11/page-count quarto` 4-vs-3 is the pre-existing main failure. Board `in-progress`, not `done`. Evidence: `docs/plans/zg-9-execution.md`. Draft PR #25. U3, HTTPS, theme print CSS, ZG-8 Copied flash, and `MARKET-QUALITY-BAR.md` untouched.

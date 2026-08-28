@@ -6,7 +6,7 @@ rank = "q"
 labels = ["avril", "round-1", "chrome", "avril-blessed"]
 start_at = "2026-08-28T01:14:51.000000Z"
 created = "2026-08-23T23:55:14.306093Z"
-updated = "2026-08-28T01:14:51.000000Z"
+updated = "2026-08-28T01:22:00.000000Z"
 +++
 
 ## Why
@@ -32,3 +32,14 @@ F5 — Elena
 - none
 ## Notes
 - none
+
+## Execution Evidence
+
+Generator evidence: `docs/plans/zg-9-execution.md`. Board stays `in-progress` (not done). Draft PR #25. Production not published.
+
+- [x] `ZG-9/mobile-first` — `#garden-frame` top 0 < 80; `.rz-name` in the 390×844 viewport
+- [x] `ZG-9/sheet` — Theme opens the sheet; `#theme-option-quarto` swaps `themes/quarto.css` and closes it
+- [x] `ZG-9/escape` — Escape closes the sheet and returns focus to Theme
+- [x] `ZG-9/desktop-unchanged` — Theme toggle hidden at 1280×800; S2 date geometry unchanged
+- [x] `ZG-9/no-hscroll` — `scrollWidth` ≤ 390 for Nightgarden / Quarto / Switchyard
+- [ ] `just verify` exit 0 — rust + ZG-9 / U3 / S1–S5 / ZG-8 green. Same-run leftover: `ZG-11/page-count quarto` 4-vs-3 (pre-existing; not this ticket)
