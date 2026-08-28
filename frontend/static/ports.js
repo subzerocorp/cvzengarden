@@ -11,6 +11,7 @@
  */
 import { writeClipboard } from "./clipboard.js";
 import { gardenSearch, readGardenQuery } from "./garden-query.js";
+import { estimateLabel, estimatePages, pageGeometry } from "./page-estimate.js";
 import { contractVersion, render, swapResume, version } from "./render.js";
 
 const FRAME_ID = "garden-frame";
@@ -29,6 +30,12 @@ const app = Elm.Main.init({
 let previewMedia = "screen";
 const originalMedia = new WeakMap();
 let themeSwapGen = 0;
+let estimateFrame = 0;
+let bodyObserver = null;
+let observedBody = null;
+let measuringHeight = false;
+let lastBodyHeight = null;
+const guardedHtml = new WeakSet();
 
 const prefersDark = window.matchMedia("(prefers-color-scheme: dark)");
 prefersDark.addEventListener("change", (event) => {
@@ -120,6 +127,155 @@ function applyPreview(doc) {
   }
 }
 
+function collectPageRules(sheet) {
+  const found = [];
+  walkPageRules(sheet?.cssRules, found);
+  return found;
+}
+
+function walkPageRules(rules, found) {
+  if (!rules) {
+    return;
+  }
+
+  for (const rule of Array.from(rules)) {
+    if (rule.type === CSSRule.PAGE_RULE) {
+      found.push({
+        selector: rule.selectorText ?? "",
+        size: rule.style.getPropertyValue("size"),
+        marginTop: rule.style.getPropertyValue("margin-top"),
+        marginRight: rule.style.getPropertyValue("margin-right"),
+        marginBottom: rule.style.getPropertyValue("margin-bottom"),
+        marginLeft: rule.style.getPropertyValue("margin-left"),
+      });
+    }
+
+    if (rule.type === CSSRule.MEDIA_RULE || rule.type === CSSRule.SUPPORTS_RULE) {
+      walkPageRules(rule.cssRules, found);
+    }
+  }
+}
+
+function measureResumeHeight(doc, contentWidthPx) {
+  const html = doc.documentElement;
+  const resume = doc.querySelector(".rz-resume");
+  if (!html || !resume) {
+    return 0;
+  }
+
+  // Constraining html width resizes body. Drop the observer for this
+  // task so the echo cannot schedule another measure (which would leave
+  // style="" forever).
+  measuringHeight = true;
+  if (bodyObserver) {
+    bodyObserver.disconnect();
+  }
+  forgetEmptyStyle(html);
+  html.style.width = `${contentWidthPx}px`;
+  const height = resume.getBoundingClientRect().height;
+  html.style.removeProperty("width");
+  html.removeAttribute("style");
+  lastBodyHeight = observedBody?.getBoundingClientRect().height ?? lastBodyHeight;
+  requestAnimationFrame(() => {
+    html.removeAttribute("style");
+    if (bodyObserver && observedBody) {
+      bodyObserver.observe(observedBody);
+    }
+    requestAnimationFrame(() => {
+      html.removeAttribute("style");
+      measuringHeight = false;
+    });
+  });
+  return height;
+}
+
+function forgetEmptyStyle(html) {
+  if (guardedHtml.has(html)) {
+    return;
+  }
+  guardedHtml.add(html);
+  new MutationObserver(() => {
+    if (html.getAttribute("style") === "") {
+      html.removeAttribute("style");
+    }
+  }).observe(html, { attributes: true, attributeFilter: ["style"] });
+}
+
+function watchResumeBody(doc) {
+  const body = doc?.body;
+  if (!body || body === observedBody) {
+    return;
+  }
+
+  if (bodyObserver) {
+    bodyObserver.disconnect();
+  }
+
+  bodyObserver = new ResizeObserver((entries) => {
+    const height = entries[0]?.contentRect.height;
+    const changed = lastBodyHeight === null || (Number.isFinite(height) && Math.abs(height - lastBodyHeight) >= 0.5);
+    if (Number.isFinite(height)) {
+      lastBodyHeight = height;
+    }
+    if (measuringHeight || !changed) {
+      return;
+    }
+    schedulePageEstimate();
+  });
+  bodyObserver.observe(body);
+  observedBody = body;
+}
+
+function schedulePageEstimate() {
+  if (estimateFrame !== 0) {
+    return;
+  }
+
+  estimateFrame = requestAnimationFrame(() => {
+    estimateFrame = 0;
+    sendPageEstimate();
+  });
+}
+
+function sendPageEstimate() {
+  if (previewMedia !== "print") {
+    return;
+  }
+
+  const iframe = gardenFrame();
+  const doc = iframe?.contentDocument;
+  if (!doc) {
+    return;
+  }
+
+  let sheet = null;
+  try {
+    sheet = doc.getElementById(THEME_LINK_ID)?.sheet ?? null;
+  } catch {
+    return;
+  }
+  if (!sheet) {
+    return;
+  }
+
+  let rules;
+  try {
+    rules = collectPageRules(sheet);
+  } catch {
+    return;
+  }
+
+  const geometry = pageGeometry(rules);
+  const heightPx = measureResumeHeight(doc, geometry.contentWidthPx);
+  const pages = estimatePages(heightPx, geometry.contentHeightPx);
+  app.ports.pageEstimate.send({
+    pages,
+    paper: geometry.paper,
+    source: geometry.source,
+    label: estimateLabel(pages, geometry.paper),
+  });
+}
+
 function whenStylesheetReady(link) {
   if (!link) {
     return Promise.resolve();
@@ -162,6 +318,8 @@ async function setThemeHref(href) {
     try {
       if (current.sheet && current.sheet.cssRules) {
         applyPreview(doc);
+        watchResumeBody(doc);
+        schedulePageEstimate();
         return;
       }
     } catch {
@@ -194,6 +352,8 @@ async function setThemeHref(href) {
   }
 
   applyPreview(doc);
+  watchResumeBody(doc);
+  schedulePageEstimate();
 }
 
 async function setPreviewMedia(media) {
@@ -204,6 +364,8 @@ async function setPreviewMedia(media) {
     return;
   }
   applyPreview(doc);
+  watchResumeBody(doc);
+  schedulePageEstimate();
 }
 
 function currentHref() {
