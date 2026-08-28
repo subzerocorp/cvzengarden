@@ -155,3 +155,7 @@ Named probes `ZG-10/paper-size`, `paper-size-fallbacks`, `estimate-matches-formu
 ## 2026-08-28 — ZG-10 in progress (evidence)
 
 All nine `ZG-10/*` probes PASS. Existing RZ-3 / S1–S5 / U3 Jordan 2/2/2 / ZG-4/5/6/7/8/9 PASS. `npm run test:unit` 193/193. Rust fmt / clippy pedantic / cargo test green on rustc 1.87.0. Same-run leftover `ZG-11/page-count quarto` 4-vs-3 is the pre-existing main failure. Board `in-progress`, not `done`. Evidence: `docs/plans/zg-10-execution.md`. Draft PR #26. U3, HTTPS, theme print CSS, ZG-8 Copied flash, and `MARKET-QUALITY-BAR.md` untouched.
+
+## 2026-08-28 — ZG-10 Reviewer BLESS (PR #26)
+
+Review only. Diff vs `802c0d5` is 14 ZG-10 files. Pure `page-estimate.js`, ports measure, Elm Print-preview readout, `[data-pdf-hint]` after the ZG-7 sentence, named `ZG-10/*` probes, and prescribed unit cases are present. Locks hold (Print preview, `.preview-controls__print`, one `Print /` button, no chrome `rz-`, U3 2/2/2, ZG-8 copy-link + unknown theme, ZG-9 Theme sheet). `themes/` and `U3_PRINT_PAGES` untouched. Carved-out `ZG-11/page-count quarto` not a reject. Board stays `in-progress`. Verdict: `docs/plans/zg-10-reviewer.md`.
