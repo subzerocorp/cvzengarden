@@ -171,3 +171,7 @@ Architecture holds: page estimate is chrome data (`Maybe PageEstimate`) plus pur
 ## 2026-08-28 — ZG-13 in progress (evidence)
 
 Self-hosted first-party faces (EB Garamond, IBM Plex Sans, Syne, Outfit) under `themes/fonts/` with `OFL.txt`. `@font-face` is `local()` then `url("fonts/…")`. No jsDelivr. All five named probes PASS: `ZG-13/no-third-party`, `font-files`, `fonts-load`, `fallback` (ignored 11 font-load errors), `BAR-L1 PASS`. U3 Jordan still 2/2/2 — same-face swap did not reflow. `U3_PRINT_PAGES` / `LONG_PRINT_PAGES` untouched. `npm run test:unit` 206/206. Rust fmt / clippy pedantic / cargo test green on rustc 1.87.0. Same-run leftover `ZG-11/page-count quarto` 4-vs-3 is the pre-existing main failure. Board `in-progress`, not `done`. Evidence: `docs/plans/zg-13-execution.md`. Draft PR #27. HTTPS / issue #9 untouched.
+
+## 2026-08-28 — ZG-13 Tester BLESS (PR #27)
+
+Tester re-ran the suite on `83d4a09` (rustc 1.87.0 installed; rust-version not lowered). `npm run test:unit` 206/206 including `theme-fonts.test.mjs` and `zg-13.test.mjs`. Isolated + full probes (`PROBE_PORT=4521` / `4522`): all five named ZG-13 lines PASS; `BAR-L1 PASS`; S3/U3 Jordan 2/2/2. `grep -rn jsdelivr themes/*.css` empty; `@font-face` 4/4/5. `just fmt` / clippy pedantic / cargo test green. Full probes fail only pre-existing `ZG-11/page-count quarto` 4-vs-3 (not a ZG-13 reject). Board left `in-progress`. PR left draft. Verdict: `docs/plans/zg-13-tester.md`.
