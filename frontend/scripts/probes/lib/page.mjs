@@ -97,7 +97,7 @@ export async function openResumePage(browser, { origin, theme, width, height = 8
  * messages so a probe can assert on them. `beforeNavigate` may add routes
  * before the first request.
  */
-export async function openGarden(browser, origin, { beforeNavigate, width = 1280, height = 800, permissions } = {}) {
+export async function openGarden(browser, origin, { beforeNavigate, width = 1280, height = 800, permissions, path = "/" } = {}) {
   const context = permissions
     ? await browser.newContext({ viewport: { width, height } })
     : null;
@@ -116,7 +116,7 @@ export async function openGarden(browser, origin, { beforeNavigate, width = 1280
   if (beforeNavigate) {
     await beforeNavigate(page);
   }
-  await page.goto(`${origin}/`, { waitUntil: "networkidle" });
+  await page.goto(`${origin}${path}`, { waitUntil: "networkidle" });
   await page.frameLocator("#garden-frame").locator(".rz-resume").waitFor();
   await page.waitForFunction(() => typeof window.resumezen?.render === "function");
   return { page, pageErrors, requests, consoleMessages };
