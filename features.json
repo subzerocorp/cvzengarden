@@ -140,7 +140,7 @@
       {
         "id": "zg-8",
         "title": "ZG-8: copy a link to this exact view; say so when ?theme= is unknown",
-        "status": "in_progress",
+        "status": "completed",
         "features": [
           "copy_link_clipboard",
           "view_query_param",

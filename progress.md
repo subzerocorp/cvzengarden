@@ -115,3 +115,7 @@ Walked the full diff vs `main` (`f0a5ab2…7a88fa6`). Every ZG-8 AC holds: `.cop
 ## 2026-08-28 — ZG-8 Tester BLESS (PR #24)
 
 Tester re-ran the suite on `f40b8bb` (rustc 1.87.0 installed; rust-version not lowered). `npm run test:unit` 167/167 including `zg-8.test.mjs` and `garden-query.test.mjs`. Full probes (`PROBE_PORT=4489`): all eight `ZG-8/*` PASS; S4 permalink + Back, S5, U3 Jordan 2/2/2, ZG-4/5/6/7 PASS. `just fmt` / clippy pedantic / cargo test green. View toggle still **Print preview**; `.preview-controls__print` kept. Full probes fail only pre-existing `ZG-11/page-count quarto` 4-vs-3 (not a ZG-8 reject). Board left `in-progress`. Verdict: `docs/plans/zg-8-tester.md`.
+
+## 2026-08-28 — ZG-8 Architect BLESS (PR #24)
+
+Architecture holds: ThemeId.fromQuery is Known|Unknown|Absent; gardenSearch is the same generation as theme; history and clipboard stay in ports.js; CopyLink is Idle|Copied|Failed with CopyHref at the port edge. Unknown ?theme= is not rewritten. Chrome has no `rz-` class/id; Themes still target `html`/`body`/`.rz-*`/`[data-rz-*]`; `MARKET-QUALITY-BAR.md` unchanged. Locks hold (Print preview, `.preview-controls__print`, Sample does not Store, U3 2/2/2). Scope stayed ZG-8; U3 and HTTPS untouched. DoD met. Board `done`. Completion: `docs/plans/zg-8-completion.md`. PR #24 left draft; production not published.
