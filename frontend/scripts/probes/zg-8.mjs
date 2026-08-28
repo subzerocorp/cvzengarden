@@ -251,7 +251,8 @@ async function unknownThemeProbe({ browser, origin, report }) {
   const notice = page.locator('[data-theme-notice="unknown"]');
   await notice.waitFor();
   const text = await notice.evaluate((node) => node.textContent);
-  await notice.locator("button").click();
+  await page.locator(".theme-notice__close").click();
+  await page.waitForSelector("[data-theme-notice]", { state: "detached" });
   const gone = (await page.locator("[data-theme-notice]").count()) === 0;
   const themeAfter = new URL(page.url()).searchParams.get("theme");
   await page.close();

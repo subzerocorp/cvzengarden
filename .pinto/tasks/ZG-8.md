@@ -23,16 +23,16 @@ F3, F4 — Elena, Marcus, Devon
 - Redirecting/rewriting the URL to the fallback (loses the sender's intent)
 - Persisting the Author's Resume in the URL (size, privacy)
 ## Acceptance criteria
-- [ ] Probe `ZG-8/copy-link`: in a context created with `context.grantPermissions(['clipboard-read','clipboard-write'])`, with `?theme=quarto` and Print preview active, clicking `.copy-link` puts `…/?theme=quarto&view=print` (param order-insensitive) on the clipboard and `[data-copy-state="copied"]` is present with text `Copied` for ≥ 1 s, then absent
-- [ ] Probe `ZG-8/copy-failed`: with `navigator.clipboard.writeText` overridden via `page.addInitScript` to reject with `NotAllowedError`, clicking `.copy-link` shows `[data-copy-state="failed"]` whose text contains `select the address bar`, the text `Copied` never appears (sampled for 500 ms), and no `pageerror` is recorded
-- [ ] Probe `ZG-8/view-url`: opening `/?theme=quarto&view=print` in a fresh context shows the Print preview button `aria-pressed="true"` and iframe `body` background is white for Nightgarden's `?theme=nightgarden&view=print` too; reload keeps `view=print`
-- [ ] Probe `ZG-8/view-back`: Screen → Print preview → browser Back returns to Screen and the URL drops/sets `view=screen`
-- [ ] Probe `ZG-8/unknown-theme`: `/?theme=banana` selects Nightgarden, URL still contains `theme=banana`, `[data-theme-notice="unknown"]` `textContent` contains `banana` and `Nightgarden`; clicking its close button removes it
-- [ ] Probe `ZG-8/notice-escaped`: `/?theme=%3Cb%3Ex%3C%2Fb%3E` shows a notice whose `textContent` contains the literal `<b>x</b>` and which contains no `<b>` element (`querySelector('b')` is null)
-- [ ] Probe `ZG-8/no-notice`: `/?theme=Quarto`, `/`, and `/?theme=` (empty — the existing S5 load) each show no `[data-theme-notice]`
-- [ ] Probe `ZG-8/invalid-view`: `?view=sideways` opens Screen with no crash and no notice
-- [ ] Existing S4 permalink + Back and S5 probes still pass
-- [ ] `just verify` green
+- [x] Probe `ZG-8/copy-link`: in a context created with `context.grantPermissions(['clipboard-read','clipboard-write'])`, with `?theme=quarto` and Print preview active, clicking `.copy-link` puts `…/?theme=quarto&view=print` (param order-insensitive) on the clipboard and `[data-copy-state="copied"]` is present with text `Copied` for ≥ 1 s, then absent
+- [x] Probe `ZG-8/copy-failed`: with `navigator.clipboard.writeText` overridden via `page.addInitScript` to reject with `NotAllowedError`, clicking `.copy-link` shows `[data-copy-state="failed"]` whose text contains `select the address bar`, the text `Copied` never appears (sampled for 500 ms), and no `pageerror` is recorded
+- [x] Probe `ZG-8/view-url`: opening `/?theme=quarto&view=print` in a fresh context shows the Print preview button `aria-pressed="true"` and iframe `body` background is white for Nightgarden's `?theme=nightgarden&view=print` too; reload keeps `view=print`
+- [x] Probe `ZG-8/view-back`: Screen → Print preview → browser Back returns to Screen and the URL drops/sets `view=screen`
+- [x] Probe `ZG-8/unknown-theme`: `/?theme=banana` selects Nightgarden, URL still contains `theme=banana`, `[data-theme-notice="unknown"]` `textContent` contains `banana` and `Nightgarden`; clicking its close button removes it
+- [x] Probe `ZG-8/notice-escaped`: `/?theme=%3Cb%3Ex%3C%2Fb%3E` shows a notice whose `textContent` contains the literal `<b>x</b>` and which contains no `<b>` element (`querySelector('b')` is null)
+- [x] Probe `ZG-8/no-notice`: `/?theme=Quarto`, `/`, and `/?theme=` (empty — the existing S5 load) each show no `[data-theme-notice]`
+- [x] Probe `ZG-8/invalid-view`: `?view=sideways` opens Screen with no crash and no notice
+- [x] Existing S4 permalink + Back and S5 probes still pass
+- [ ] `just verify` green — rust + ZG-8 / S4 / S5 / U3 / ZG-7 green; leftover is pre-existing `ZG-11/page-count quarto` (see `docs/plans/zg-8-execution.md`)
 ## Dependencies
 - none
 ## Notes

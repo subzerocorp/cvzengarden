@@ -103,3 +103,7 @@ Tester re-ran the suite on `6d360cf` (rustc 1.87.0 installed; rust-version not l
 ## 2026-08-27 — ZG-7 Architect BLESS (PR #23)
 
 Architecture holds: chrome copy is plain language; heading is Appearance not Chrome; one Print / Save as PDF; Print preview name unchanged. About is `[role=dialog].about-panel` with Free during the preview, exact GitHub href, empty For designers slot, no invented price. Chrome has no `rz-` class/id; Themes still target `html`/`body`/`.rz-*`/`[data-rz-*]`; `MARKET-QUALITY-BAR.md` unchanged. Scope stayed ZG-7; U3 and HTTPS untouched. DoD met. Board `done`. Completion: `docs/plans/zg-7-completion.md`. PR #23 left open; production not published.
+
+## 2026-08-28 — ZG-8 in progress
+
+Copy link (`.copy-link`) writes `location.href`; 2 s Copied; reject → `Copy failed — select the address bar and copy it` (never Copied). `view=print|screen` mirrors the Print preview toggle. Unknown `?theme=` keeps the URL and names the miss in Elm `text`. `ThemeId.fromQuery` is `Known | Unknown | Absent`. Board `in-progress`, not `done`. Evidence: `docs/plans/zg-8-execution.md`. Draft PR #24. All `ZG-8/*` probes PASS; S4 permalink + Back, S5, U3 2/2/2, ZG-7 PASS. Same-run leftover `ZG-11/page-count quarto` 4-vs-3 is the pre-existing main failure. U3 and HTTPS untouched.

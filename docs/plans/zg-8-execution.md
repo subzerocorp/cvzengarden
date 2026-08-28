@@ -29,4 +29,18 @@ Named probes `ZG-8/copy-link`, `copy-failed`, `view-url`, `view-back`, `unknown-
 
 ## Execution Evidence
 
-_Filled after probes run._
+Log: `/tmp/zg8-probes.log` (`PROBE_PORT=4488 node scripts/probes.mjs` after `npm run build`). Rust half (`cargo fmt --check`, clippy pedantic, `cargo test` on renderer + renderer-wasm) was green on rustc 1.87.0 before that run.
+
+- [x] `ZG-8/copy-link` — `PASS  ZG-8/copy-link Copy link writes ?theme=quarto&view=print and shows Copied for ≥ 1s`
+- [x] `ZG-8/copy-failed` — `PASS  ZG-8/copy-failed rejected writeText shows Copy failed and never Copied`
+- [x] `ZG-8/view-url` — `PASS  ZG-8/view-url ?theme=&view=print opens Print preview; Nightgarden print body is white; reload keeps view`
+- [x] `ZG-8/view-back` — `PASS  ZG-8/view-back Back after Print preview returns to Screen and drops or sets view=screen`
+- [x] `ZG-8/unknown-theme` — `PASS  ZG-8/unknown-theme unknown ?theme=banana keeps the URL, names the miss, and Close dismisses it`
+- [x] `ZG-8/notice-escaped` — `PASS  ZG-8/notice-escaped unknown theme notice renders the raw query as text, not markup`
+- [x] `ZG-8/no-notice` — `PASS  ZG-8/no-notice /?theme=Quarto, /, and /?theme= show no theme notice`
+- [x] `ZG-8/invalid-view` — `PASS  ZG-8/invalid-view ?view=sideways opens Screen with no notice and no crash`
+- [x] Existing S4 permalink + Back and S5 — all PASS in the same run (S5 `?theme=quarto` / Back Nightgarden / cold `switchyard` / empty+unknown default).
+- [x] Existing RZ-3 / S1–S5 / U3 / ZG-4/5/6/7 — all PASS. `U3_PRINT_PAGES` still `{nightgarden: 2, quarto: 2, switchyard: 2}`; Garden/iframe and chrome-shell printToPDF 2/2/2. View toggle still **Print preview**. `.preview-controls__print` unchanged. Chrome markup/CSS `rz-` check silent (no FAIL).
+- [ ] `just verify` exit 0 — rust + every ZG-8 / U3 / S4 / S5 / ZG-7 probe green. Same-run leftover: `FAIL  ZG-11/page-count quarto … long-resume.html is 4 page(s), LONG_PRINT_PAGES is 3` (pre-existing on main / PR #23 Tester note; sandbox-only; chrome and `U3_PRINT_PAGES` untouched). Not fixed here.
+
+Unit tests: `npm run test:unit` 167/167 including `frontend/scripts/probes/zg-8.test.mjs` and `frontend/static/garden-query.test.mjs`.
