@@ -5,7 +5,7 @@ agent: status
 
 ## Dashboard (read-only)
 
-!`./scripts/status-dashboard 2>/dev/null || python3 scripts/status-dashboard 2>/dev/null || echo "(no scripts/status-dashboard in this project — report from the board and tracking artifacts below instead)"`
+!`./scripts/status-dashboard 2>/dev/null || python3 scripts/status-dashboard 2>/dev/null || echo "(no scripts/status-dashboard in this project — report from pinto list --json below instead)"`
 
 Open items on the board:
 !`command -v pinto >/dev/null 2>&1 && pinto list --json 2>/dev/null | python3 -c 'import json,sys;d=json.load(sys.stdin);rows=[t for t in (d if isinstance(d,list) else d.get("tasks",[])) if t.get("status")!="done"];print("\n".join("{} [{}] {}".format(t.get("id"),t.get("status"),t.get("title")) for t in rows) or "board clear (no open items)")' || echo "(pinto not on PATH)"`
