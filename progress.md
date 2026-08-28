@@ -135,3 +135,7 @@ All five `ZG-9/*` probes PASS at 390×844 / 1280×800. Existing RZ-3 / S1–S5 /
 ## 2026-08-28 — ZG-9 Reviewer BLESS (PR #25)
 
 Walked the full diff vs `main` (`bc664a9…b66dabc`). Every ZG-9 AC holds: ≤720px stage-first + Theme sheet; `sidebarOpen` / `aria-expanded` / Escape + `focusId`; body lock only inside the 720px query; desktop ≥721px toggle hidden and grid unchanged. Named probes present. Locks hold (`Print preview`, `.preview-controls__print`, no chrome `rz-`, `U3_PRINT_PAGES` 2/2/2, Sample does not Store, `test:unit` find-glob untouched, ZG-8 copy-link + unknown `?theme=` untouched). Pinto left `in-progress`. No merge. Verdict: `docs/plans/zg-9-reviewer.md`.
+
+## 2026-08-28 — ZG-9 Tester BLESS (PR #25)
+
+Tester re-ran the suite on `a10f188` (rustc 1.87.0 installed; rust-version not lowered). `npm run test:unit` 177/177 including `zg-9.test.mjs`. Full probes (`PROBE_PORT=4490`): all five `ZG-9/*` PASS; S1–S5, U3 Jordan 2/2/2, ZG-4/5/6/7/8 PASS. `just fmt` / clippy pedantic / cargo test green. View toggle still **Print preview**; `.preview-controls__print` kept. Full probes fail only pre-existing `ZG-11/page-count quarto` 4-vs-3 (not a ZG-9 reject). Board left `in-progress`. Verdict: `docs/plans/zg-9-tester.md`.
