@@ -2,4 +2,4 @@
 - Reviewer, Tester, and Architect each emitted an explicit `BLESS` on every phase.
 - `just verify` is green (fmt, clippy pedantic, cargo test, frontend probes).
 - Chrome has no `rz-` class or id; Themes target only `html`/`body`/`.rz-*`/`[data-rz-*]`; JSON Resume is the only stored Resume.
-- Commit messages reference the PBI id; `progress.md` and `features.json` updated.
+- Commit messages reference the PBI id; `progress.md` updated. Board I/O is `pinto` CLI only (never hand-edit `.pinto/tasks/*.md`).

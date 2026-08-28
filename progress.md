@@ -179,3 +179,7 @@ Tester re-ran the suite on `83d4a09` (rustc 1.87.0 installed; rust-version not l
 ## 2026-08-28 — ZG-13 Architect BLESS (PR #27)
 
 Architecture holds: first-party faces are Theme-layer Font Library seed data (`themes/fonts/` + `OFL.txt`); each Theme stays one pure CSS file with `local()` then origin-relative `url("fonts/…")`; no JS webfont loader. Chrome has no `rz-` class/id; Themes still target `html`/`body`/`.rz-*`/`[data-rz-*]`. Probe calculations stay in `theme-fonts.mjs`; actions stay in `zg-13.mjs`. Font Library policy on `themes/README.md` (CC BY 4.0 inbound, HTTPS CDN for submitted Themes, no host allowlist, first-party never phones a CDN). Locks hold (U3 2/2/2, constants untouched, no typeface change, no print re-baseline, HTTPS / issue #9 untouched). Scope stayed ZG-13. Residual ZG-11 quarto 4-vs-3 is not a hold. Reviewer BLESS already on disk (`83d4a09` / `docs/plans/zg-13-reviewer.md`). DoD met except the noted leftover `just verify` line. Board `done`. Completion: `docs/plans/zg-13-completion.md`. PR #27 left draft; production stays ZG-10; CoS holds ship.
+
+## 2026-08-28 — Pinto is the only planning SoT
+
+`features.json` retired. Every commit it tracked already had a ZG card (`pinto list --json`: 23 items, 14 done / 9 todo). Shared DoD and open cards ZG-19/20/21 now say board I/O is the `pinto` CLI only — never hand-edit `.pinto/tasks/*.md`. `just status` / `scripts/status-dashboard` / `.opencode` preflight count from `pinto list --json` only. No new ZGs. No Garden / walk-in / host / DNS change.

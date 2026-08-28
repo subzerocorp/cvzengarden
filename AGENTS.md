@@ -32,7 +32,7 @@ No Tailwind, no CSS-in-JS, no JS in themes, no second Skeleton.
 
 ## Board
 
-Pinto is the only board: `.pinto/` (project `resumezen`, key `ZG`). Inspect with `pinto list --json`, `pinto show ZG-n --json`, `pinto next --json`. Older `RZ-*` ids in `docs/planning/` and the GitHub PRs are historical planning; new PBIs are `ZG-*`.
+Pinto is the only board: `.pinto/` (project `resumezen`, key `ZG`). All board I/O is the `pinto` CLI (`pinto list --json`, `pinto show ZG-n --json`, `pinto next --json`, `pinto add`, `pinto edit`); never hand-edit `.pinto/tasks/*.md`. Older `RZ-*` ids in `docs/planning/` and the GitHub PRs are historical planning; new PBIs are `ZG-*`.
 
 ## Verification matrix
 

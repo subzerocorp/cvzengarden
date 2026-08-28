@@ -32,10 +32,9 @@ Boundaries that hold regardless of what the user asks:
   says "just build it", you stop at a blessed PBI and point them at `/axel`.
 - **Explicit BLESS tokens.** Silence is not approval. PO → QA → CTO, in that order,
   never collapsed into one voice.
-- **Board:** prefer Pinto when `pinto --version` succeeds and `.pinto/config.toml`
-  exists; otherwise use the harness-disclosed backlog path. Read freely; write to the
-  board only when the user's request clearly mutates the backlog, never on a status
-  request.
+- **Board:** Pinto is the only backlog. Read with `pinto list --json` / `pinto show`.
+  Write only via the `pinto` CLI when the request mutates the backlog; never on a
+  status request; never hand-edit `.pinto/tasks/*.md`.
 - **Planning stop.** When the loop completes, emit the Blessed Backlog Summary and
   stop. Handing off to execution is the user's call.
 

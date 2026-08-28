@@ -55,8 +55,7 @@ serve port="4310":
     cd frontend && npm run build && PORT={{port}} node scripts/serve.mjs
 
 harness-validate:
-    jq -e 'type == "object"' features.json > /dev/null && echo "features.json: OK"
-    pinto list --json > /dev/null && echo "pinto board: OK"
+    pinto list --json | jq -e 'type == "array"' > /dev/null && echo "pinto board: OK"
 
 # Orchestration status dashboard (in-harness UI)
 status:
