@@ -111,3 +111,7 @@ Copy link (`.copy-link`) writes `location.href`; 2 s Copied; reject → `Copy fa
 ## 2026-08-28 — ZG-8 Reviewer BLESS (PR #24)
 
 Walked the full diff vs `main` (`f0a5ab2…7a88fa6`). Every ZG-8 AC holds: `.copy-link` writes `location.href`; 2 s `Copied`; reject → address-bar sentence and never `Copied`; `view=print|screen` shares `gardenSearch` with `theme`; unknown `?theme=` keeps the URL and names the miss in Elm `text`; `ThemeId.fromQuery` is `Known | Unknown | Absent`. Named probes present. Locks hold (`Print preview`, `.preview-controls__print`, no chrome `rz-`, `U3_PRINT_PAGES` 2/2/2, Sample does not Store, `test:unit` find-glob untouched). Pinto left `in-progress`. No merge. Verdict: `docs/plans/zg-8-reviewer.md`.
+
+## 2026-08-28 — ZG-8 Tester BLESS (PR #24)
+
+Tester re-ran the suite on `f40b8bb` (rustc 1.87.0 installed; rust-version not lowered). `npm run test:unit` 167/167 including `zg-8.test.mjs` and `garden-query.test.mjs`. Full probes (`PROBE_PORT=4489`): all eight `ZG-8/*` PASS; S4 permalink + Back, S5, U3 Jordan 2/2/2, ZG-4/5/6/7 PASS. `just fmt` / clippy pedantic / cargo test green. View toggle still **Print preview**; `.preview-controls__print` kept. Full probes fail only pre-existing `ZG-11/page-count quarto` 4-vs-3 (not a ZG-8 reject). Board left `in-progress`. Verdict: `docs/plans/zg-8-tester.md`.
