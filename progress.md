@@ -107,3 +107,7 @@ Architecture holds: chrome copy is plain language; heading is Appearance not Chr
 ## 2026-08-28 — ZG-8 in progress
 
 Copy link (`.copy-link`) writes `location.href`; 2 s Copied; reject → `Copy failed — select the address bar and copy it` (never Copied). `view=print|screen` mirrors the Print preview toggle. Unknown `?theme=` keeps the URL and names the miss in Elm `text`. `ThemeId.fromQuery` is `Known | Unknown | Absent`. Board `in-progress`, not `done`. Evidence: `docs/plans/zg-8-execution.md`. Draft PR #24. All `ZG-8/*` probes PASS; S4 permalink + Back, S5, U3 2/2/2, ZG-7 PASS. Same-run leftover `ZG-11/page-count quarto` 4-vs-3 is the pre-existing main failure. U3 and HTTPS untouched.
+
+## 2026-08-28 — ZG-8 Reviewer BLESS (PR #24)
+
+Walked the full diff vs `main` (`f0a5ab2…7a88fa6`). Every ZG-8 AC holds: `.copy-link` writes `location.href`; 2 s `Copied`; reject → address-bar sentence and never `Copied`; `view=print|screen` shares `gardenSearch` with `theme`; unknown `?theme=` keeps the URL and names the miss in Elm `text`; `ThemeId.fromQuery` is `Known | Unknown | Absent`. Named probes present. Locks hold (`Print preview`, `.preview-controls__print`, no chrome `rz-`, `U3_PRINT_PAGES` 2/2/2, Sample does not Store, `test:unit` find-glob untouched). Pinto left `in-progress`. No merge. Verdict: `docs/plans/zg-8-reviewer.md`.
