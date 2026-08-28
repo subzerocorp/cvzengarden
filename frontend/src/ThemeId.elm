@@ -1,9 +1,18 @@
-module ThemeId exposing (fallback, fromQuery, themeFromQuery)
+module ThemeId exposing (FromQuery(..), fallback, fallbackTheme, fromQuery, themeFromQuery, themeFromResult)
 
-{-| Pure Theme id resolution. Unknown or empty query → Nightgarden.
+{-| Pure Theme id resolution.
+
+`fromQuery` distinguishes a known Theme id, an unknown raw value, and an
+absent/empty `theme` param. History and URL rewriting stay in `ports.js`.
 -}
 
 import Generated.Themes as Themes exposing (Theme)
+
+
+type FromQuery
+    = Known String
+    | Unknown String
+    | Absent
 
 
 fallback : String
@@ -11,26 +20,41 @@ fallback =
     "nightgarden"
 
 
-fromQuery : String -> String
+fromQuery : String -> FromQuery
 fromQuery raw =
     let
-        id =
-            raw
-                |> String.trim
-                |> String.toLower
+        trimmed =
+            String.trim raw
     in
-    case Themes.themeById id of
-        Just theme ->
-            theme.id
+    if trimmed == "" then
+        Absent
 
-        Nothing ->
-            fallback
+    else
+        case Themes.themeById (String.toLower trimmed) of
+            Just theme ->
+                Known theme.id
+
+            Nothing ->
+                Unknown raw
 
 
 themeFromQuery : String -> Theme
 themeFromQuery raw =
-    Themes.themeById (fromQuery raw)
-        |> Maybe.withDefault fallbackTheme
+    themeFromResult (fromQuery raw)
+
+
+themeFromResult : FromQuery -> Theme
+themeFromResult result =
+    case result of
+        Known id ->
+            Themes.themeById id
+                |> Maybe.withDefault fallbackTheme
+
+        Unknown _ ->
+            fallbackTheme
+
+        Absent ->
+            fallbackTheme
 
 
 fallbackTheme : Theme

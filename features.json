@@ -136,6 +136,17 @@
           "print_save_as_pdf_label",
           "theme_badges_screen_paper"
         ]
+      },
+      {
+        "id": "zg-8",
+        "title": "ZG-8: copy a link to this exact view; say so when ?theme= is unknown",
+        "status": "completed",
+        "features": [
+          "copy_link_clipboard",
+          "view_query_param",
+          "unknown_theme_notice",
+          "theme_id_from_query_result"
+        ]
       }
     ]
   }

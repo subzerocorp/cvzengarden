@@ -148,6 +148,7 @@ body {
 
 .paste,
 .theme-switcher,
+.theme-notice,
 .preview-controls,
 .appearance {
   display: flex;
@@ -171,6 +172,7 @@ body {
 .paste__hint,
 .theme-switcher__hint,
 .theme-switcher__note,
+.theme-notice__text,
 .preview-controls__hint {
   margin: 0;
   color: var(--muted-foreground);
@@ -233,6 +235,38 @@ body {
 .theme-switcher__name {
   font-weight: 600;
   font-size: 0.92rem;
+}
+
+.theme-notice {
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--sidebar-border);
+  border-radius: var(--radius);
+  background: var(--sidebar-accent);
+}
+
+.theme-notice__text {
+  margin: 0;
+}
+
+.theme-notice__close {
+  flex: 0 0 auto;
+  padding: 0.15rem 0.4rem;
+  border: 1px solid var(--sidebar-border);
+  border-radius: var(--radius);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.theme-notice__close:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }
 
 .badge {
@@ -466,12 +500,14 @@ body {
   overflow-x: auto;
 }
 
-.paste__copy[data-copy-state="copied"] {
+.paste__copy[data-copy-state="copied"],
+.copy-link[data-copy-state="copied"] {
   color: var(--success);
   border-color: color-mix(in srgb, var(--success) 45%, var(--border));
 }
 
-.paste__copy[data-copy-state="failed"] {
+.paste__copy[data-copy-state="failed"],
+.copy-link[data-copy-state="failed"] {
   color: var(--destructive);
   border-color: color-mix(in srgb, var(--destructive) 45%, var(--border));
 }
@@ -479,7 +515,8 @@ body {
 .paste__copy,
 .paste__sample,
 .paste__open,
-.paste__forget {
+.paste__forget,
+.copy-link {
   position: relative;
   width: 100%;
 }
