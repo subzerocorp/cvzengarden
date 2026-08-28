@@ -139,3 +139,7 @@ Walked the full diff vs `main` (`bc664a9…b66dabc`). Every ZG-9 AC holds: ≤72
 ## 2026-08-28 — ZG-9 Tester BLESS (PR #25)
 
 Tester re-ran the suite on `a10f188` (rustc 1.87.0 installed; rust-version not lowered). `npm run test:unit` 177/177 including `zg-9.test.mjs`. Full probes (`PROBE_PORT=4490`): all five `ZG-9/*` PASS; S1–S5, U3 Jordan 2/2/2, ZG-4/5/6/7/8 PASS. `just fmt` / clippy pedantic / cargo test green. View toggle still **Print preview**; `.preview-controls__print` kept. Full probes fail only pre-existing `ZG-11/page-count quarto` 4-vs-3 (not a ZG-9 reject). Board left `in-progress`. Verdict: `docs/plans/zg-9-tester.md`.
+
+## 2026-08-28 — ZG-9 Architect BLESS (PR #25)
+
+Architecture holds: phone Theme sheet is chrome data (`sidebarOpen`) plus a screen-only presentation override; Escape/`focusId` stay at the existing port edge. Chrome has no `rz-` class/id; Themes still target `html`/`body`/`.rz-*`/`[data-rz-*]`; `MARKET-QUALITY-BAR.md` unchanged. Locks hold (Print preview, `.preview-controls__print`, Sample does not Store, U3 2/2/2, ZG-8 copy-link + unknown `?theme=`). Scope stayed ZG-9; U3 and HTTPS untouched. DoD met. Board `done`. Completion: `docs/plans/zg-9-completion.md`. PR #25 left draft; production not published.

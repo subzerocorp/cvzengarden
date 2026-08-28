@@ -151,7 +151,7 @@
       {
         "id": "zg-9",
         "title": "ZG-9: phone résumé first; Theme sheet",
-        "status": "in_progress",
+        "status": "completed",
         "features": [
           "phone_stage_first",
           "theme_sheet",
