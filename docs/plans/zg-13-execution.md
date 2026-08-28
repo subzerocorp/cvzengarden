@@ -29,4 +29,16 @@ A same-face swap that reflows print pages. Do not edit `U3_PRINT_PAGES` or `LONG
 
 ## Execution Evidence
 
-Pending phase 2.
+Log: `/tmp/zg13-probes.log` (`PROBE_PORT=4520 npm run probe` after `npm run build` / `copy-dist`). Rust half (`cargo fmt --check`, clippy pedantic, `cargo test` on renderer + renderer-wasm) was green on rustc 1.87.0 before that run.
+
+- [x] `grep -rn "jsdelivr" themes/*.css` — empty. `grep -c "@font-face"`: quarto.css 4, switchyard.css 4, nightgarden.css 5.
+- [x] `ZG-13/no-third-party` — `PASS  ZG-13/no-third-party cycled nightgarden → quarto → switchyard and printed; 27 request(s), all 127.0.0.1/localhost`
+- [x] `ZG-13/font-files` — `PASS  ZG-13/font-files 13 @font-face url(s) 200 font/woff2 under /themes/fonts/ and frontend/dist/themes/fonts/`
+- [x] `ZG-13/fonts-load` — `PASS  ZG-13/fonts-load EB Garamond @ quarto; IBM Plex Sans @ switchyard; Syne @ nightgarden; no watched family in error`
+- [x] `ZG-13/fallback` — `PASS  ZG-13/fallback aborted **/themes/fonts/**; .rz-name height 65.421875; S2 + BAR-U2 green; ignored 11 font-load error(s)`
+- [x] `themes/fonts/*/OFL.txt` — eb-garamond, ibm-plex-sans, syne, outfit. `themes/README.md` contains `Font Library`, `CC BY 4.0`, and `HTTPS CDN`.
+- [x] `BAR-L1` — `PASS  BAR-L1 PASS`
+- [x] `U3_PRINT_PAGES` / `LONG_PRINT_PAGES` — not in `git diff -- frontend/scripts/probes.mjs`. S3 Nightgarden print 2 pages; U3 Garden/iframe and chrome-shell printToPDF 2/2/2. Same-face swap did not reflow.
+- [ ] `just verify` exit 0 — rust + every ZG-13 / U3 / S1–S5 / ZG-4…10 probe green. Same-run leftover: `FAIL  ZG-11/page-count quarto … long-resume.html is 4 page(s), LONG_PRINT_PAGES is 3` (pre-existing on main / PR #26 Tester note; sandbox-only; chrome and `U3_PRINT_PAGES` untouched). Not fixed here.
+
+Unit tests: `npm run test:unit` 206/206 including `frontend/scripts/probes/lib/theme-fonts.test.mjs` and `frontend/scripts/probes/zg-13.test.mjs`.
