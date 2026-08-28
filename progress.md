@@ -167,3 +167,15 @@ Tester re-ran the suite on `565b5fc` (rustc 1.87.0 installed; rust-version not l
 ## 2026-08-28 — ZG-10 Architect BLESS (PR #26)
 
 Architecture holds: page estimate is chrome data (`Maybe PageEstimate`) plus pure geometry calculations; CSSOM collect and the one-task constrained-height measure stay at the `ports.js` edge. Chrome has no `rz-` class/id; Themes still target `html`/`body`/`.rz-*`/`[data-rz-*]`; `MARKET-QUALITY-BAR.md` unchanged. Locks hold (Print preview, `.preview-controls__print`, one `Print /` button, Sample does not Store, U3 2/2/2, ZG-8 copy-link + unknown `?theme=`, ZG-9 Theme sheet). Scope stayed ZG-10; U3 and HTTPS untouched. DoD met. Board `done`. Completion: `docs/plans/zg-10-completion.md`. PR #26 left draft; production not published.
+
+## 2026-08-28 — ZG-13 in progress (evidence)
+
+Self-hosted first-party faces (EB Garamond, IBM Plex Sans, Syne, Outfit) under `themes/fonts/` with `OFL.txt`. `@font-face` is `local()` then `url("fonts/…")`. No jsDelivr. All five named probes PASS: `ZG-13/no-third-party`, `font-files`, `fonts-load`, `fallback` (ignored 11 font-load errors), `BAR-L1 PASS`. U3 Jordan still 2/2/2 — same-face swap did not reflow. `U3_PRINT_PAGES` / `LONG_PRINT_PAGES` untouched. `npm run test:unit` 206/206. Rust fmt / clippy pedantic / cargo test green on rustc 1.87.0. Same-run leftover `ZG-11/page-count quarto` 4-vs-3 is the pre-existing main failure. Board `in-progress`, not `done`. Evidence: `docs/plans/zg-13-execution.md`. Draft PR #27. HTTPS / issue #9 untouched.
+
+## 2026-08-28 — ZG-13 Tester BLESS (PR #27)
+
+Tester re-ran the suite on `83d4a09` (rustc 1.87.0 installed; rust-version not lowered). `npm run test:unit` 206/206 including `theme-fonts.test.mjs` and `zg-13.test.mjs`. Isolated + full probes (`PROBE_PORT=4521` / `4522`): all five named ZG-13 lines PASS; `BAR-L1 PASS`; S3/U3 Jordan 2/2/2. `grep -rn jsdelivr themes/*.css` empty; `@font-face` 4/4/5. `just fmt` / clippy pedantic / cargo test green. Full probes fail only pre-existing `ZG-11/page-count quarto` 4-vs-3 (not a ZG-13 reject). Board left `in-progress`. PR left draft. Verdict: `docs/plans/zg-13-tester.md`.
+
+## 2026-08-28 — ZG-13 Architect BLESS (PR #27)
+
+Architecture holds: first-party faces are Theme-layer Font Library seed data (`themes/fonts/` + `OFL.txt`); each Theme stays one pure CSS file with `local()` then origin-relative `url("fonts/…")`; no JS webfont loader. Chrome has no `rz-` class/id; Themes still target `html`/`body`/`.rz-*`/`[data-rz-*]`. Probe calculations stay in `theme-fonts.mjs`; actions stay in `zg-13.mjs`. Font Library policy on `themes/README.md` (CC BY 4.0 inbound, HTTPS CDN for submitted Themes, no host allowlist, first-party never phones a CDN). Locks hold (U3 2/2/2, constants untouched, no typeface change, no print re-baseline, HTTPS / issue #9 untouched). Scope stayed ZG-13. Residual ZG-11 quarto 4-vs-3 is not a hold. Reviewer BLESS already on disk (`83d4a09` / `docs/plans/zg-13-reviewer.md`). DoD met except the noted leftover `just verify` line. Board `done`. Completion: `docs/plans/zg-13-completion.md`. PR #27 left draft; production stays ZG-10; CoS holds ship.

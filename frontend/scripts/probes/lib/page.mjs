@@ -112,7 +112,7 @@ export async function openGarden(browser, origin, { beforeNavigate, width = 1280
   const consoleMessages = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("request", (request) => requests.push(request.url()));
-  page.on("console", (message) => consoleMessages.push({ type: message.type(), text: message.text() }));
+  page.on("console", (message) => consoleMessages.push({ type: message.type(), text: message.text(), locationUrl: message.location().url }));
   if (beforeNavigate) {
     await beforeNavigate(page);
   }
