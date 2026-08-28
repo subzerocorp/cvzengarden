@@ -159,3 +159,7 @@ All nine `ZG-10/*` probes PASS. Existing RZ-3 / S1–S5 / U3 Jordan 2/2/2 / ZG-4
 ## 2026-08-28 — ZG-10 Reviewer BLESS (PR #26)
 
 Review only. Diff vs `802c0d5` is 14 ZG-10 files. Pure `page-estimate.js`, ports measure, Elm Print-preview readout, `[data-pdf-hint]` after the ZG-7 sentence, named `ZG-10/*` probes, and prescribed unit cases are present. Locks hold (Print preview, `.preview-controls__print`, one `Print /` button, no chrome `rz-`, U3 2/2/2, ZG-8 copy-link + unknown theme, ZG-9 Theme sheet). `themes/` and `U3_PRINT_PAGES` untouched. Carved-out `ZG-11/page-count quarto` not a reject. Board stays `in-progress`. Verdict: `docs/plans/zg-10-reviewer.md`.
+
+## 2026-08-28 — ZG-10 Tester BLESS (PR #26)
+
+Tester re-ran the suite on `565b5fc` (rustc 1.87.0 installed; rust-version not lowered). `npm run test:unit` 193/193 including `page-estimate.test.mjs` and `zg-10.test.mjs`. Full probes (`PROBE_PORT=4491`): all nine `ZG-10/*` PASS; S1–S5, S3, U3 Jordan 2/2/2, ZG-4/5/6/7/8/9 PASS. `just fmt` / clippy pedantic / cargo test green. View toggle still **Print preview**; `.preview-controls__print` kept; one `Print /` button. Full probes fail only pre-existing `ZG-11/page-count quarto` 4-vs-3 (not a ZG-10 reject). Quarto About N of 2 vs 3 is residual (shorter stored sample). Board left `in-progress`. Verdict: `docs/plans/zg-10-tester.md`.
