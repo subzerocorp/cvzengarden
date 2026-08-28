@@ -18,7 +18,7 @@ npm install
 npm start
 ```
 
-Opens the Garden at [http://127.0.0.1:4173/](http://127.0.0.1:4173/). The Theme switcher (`.theme-switcher`) changes only the Theme `<link>` href inside the iframe. Screen view shows web motion; the View toggle **Print preview** still emulates print media and is mirrored as `?view=print` / `?view=screen`. **Copy link** (`.copy-link`) copies the address bar. An unknown `?theme=` keeps that URL and names the miss. **Print / Save as PDF** (`.preview-controls__print`) prints the sandboxed document so the active Theme’s print CSS is what you get. Testers: heading **Appearance** (not Chrome); filters **All / For screen / For paper**; badges **Screen / Paper / Screen + paper**; About opens a dialog that says **Free during the preview**.
+Opens the Garden at [http://127.0.0.1:4173/](http://127.0.0.1:4173/). The Theme switcher (`.theme-switcher`) changes only the Theme `<link>` href inside the iframe. Screen view shows web motion; the View toggle **Print preview** still emulates print media and is mirrored as `?view=print` / `?view=screen`. **Copy link** (`.copy-link`) copies the address bar. An unknown `?theme=` keeps that URL and names the miss. **Print / Save as PDF** (`.preview-controls__print`) prints the sandboxed document so the active Theme’s print CSS is what you get. Testers: heading **Appearance** (not Chrome); filters **All / For screen / For paper**; badges **Screen / Paper / Screen + paper**; About opens a dialog that says **Free during the preview**. On a phone (≤720px) the résumé fills the first screen; a **Theme** button opens the sidebar as a sheet.
 
 ```bash
 npm test

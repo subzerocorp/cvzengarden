@@ -117,6 +117,16 @@ body {
   border-right: 1px solid var(--sidebar-border);
 }
 
+.app-sidebar__sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.btn.sidebar-toggle {
+  display: none;
+}
+
 .app-brand {
   display: flex;
   flex-direction: column;
@@ -748,5 +758,83 @@ body {
 
   .garden-frame {
     min-height: 80vh;
+  }
+}
+
+/* Phone: résumé first. ≥721px is unchanged, including the 52rem single column. */
+@media screen and (max-width: 720px) {
+  html:has(.app-shell--sidebar-open),
+  body:has(.app-shell--sidebar-open) {
+    overflow: hidden;
+  }
+
+  .app-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow: hidden;
+  }
+
+  .garden-stage,
+  .garden-stage--print {
+    order: -1;
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    padding: 0;
+  }
+
+  .garden-frame,
+  .garden-stage--print .garden-frame {
+    min-height: 0;
+    height: 100%;
+  }
+
+  .app-sidebar {
+    order: 1;
+    flex: 0 0 auto;
+    position: sticky;
+    bottom: 0;
+    z-index: 8;
+    gap: 0;
+    padding: 0.65rem 0.85rem;
+    border-right: 0;
+    border-bottom: 0;
+    border-top: 1px solid var(--sidebar-border);
+  }
+
+  .btn.sidebar-toggle {
+    display: inline-flex;
+    width: 100%;
+  }
+
+  .app-sidebar__sheet {
+    display: none;
+  }
+
+  .app-sidebar--open {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 12;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-height: min(90dvh, 100%);
+    padding: 0.75rem 0.85rem 0.85rem;
+    overflow: hidden;
+    box-shadow: 0 -0.6rem 2rem color-mix(in srgb, var(--foreground) 12%, transparent);
+  }
+
+  .app-sidebar--open .sidebar-toggle {
+    order: 2;
+  }
+
+  .app-sidebar--open .app-sidebar__sheet {
+    display: flex;
+    order: 1;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
   }
 }

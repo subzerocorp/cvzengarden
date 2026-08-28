@@ -14,6 +14,7 @@ are isolated actions (ports).
 
 import About
 import Browser
+import Browser.Events as Events
 import CopyLink
 import Generated.Themes as Themes exposing (Target(..), Theme)
 import Html exposing (Html, button, div, h1, h2, iframe, li, p, span, ul)
@@ -155,6 +156,7 @@ type alias Model =
     , about : About.Model
     , copyLink : CopyLink.Model
     , themeNotice : Maybe String
+    , sidebarOpen : Bool
     }
 
 
@@ -175,6 +177,7 @@ init flags =
         , about = About.init
         , copyLink = CopyLink.init
         , themeNotice = Nothing
+        , sidebarOpen = False
         }
 
 
@@ -194,6 +197,8 @@ type Msg
     | AboutMsg About.Msg
     | CopyLinkMsg CopyLink.Msg
     | DismissNotice
+    | ToggleSidebar
+    | CloseSidebar
     | Rendered (Result String String)
 
 
@@ -240,6 +245,16 @@ update msg model =
 
         DismissNotice ->
             ( { model | themeNotice = Nothing }, Cmd.none )
+
+        ToggleSidebar ->
+            if model.sidebarOpen then
+                closeSidebar model
+
+            else
+                ( { model | sidebarOpen = True }, Cmd.none )
+
+        CloseSidebar ->
+            closeSidebar model
 
         Rendered result ->
             Paste.rendered result model.paste
@@ -318,6 +333,27 @@ copyLinkCommand effect =
                 |> Task.perform (\_ -> CopyLinkMsg (CopyLink.Clear gen))
 
 
+closeSidebar : Model -> ( Model, Cmd Msg )
+closeSidebar model =
+    ( { model | sidebarOpen = False }
+    , if model.sidebarOpen then
+        focusId themeToggleId
+
+      else
+        Cmd.none
+    )
+
+
+themeToggleId : String
+themeToggleId =
+    "theme-toggle"
+
+
+themeSheetId : String
+themeSheetId =
+    "theme-sheet"
+
+
 applyLoadedQuery : GardenQuery -> Model -> ( Model, Cmd Msg )
 applyLoadedQuery query model =
     let
@@ -359,7 +395,11 @@ applyTheme id pushQuery model =
         Just theme ->
             let
                 next =
-                    { model | selectedId = theme.id, themeNotice = Nothing }
+                    { model
+                        | selectedId = theme.id
+                        , themeNotice = Nothing
+                        , sidebarOpen = False
+                    }
 
                 hrefCmd =
                     setThemeHref theme.href
@@ -408,6 +448,7 @@ view model =
     in
     div
         [ class "app-shell"
+        , classList [ ( "app-shell--sidebar-open", model.sidebarOpen ) ]
         , attribute "data-theme" (themeMode model)
         , attribute "data-preview" (previewMedia model.preview)
         ]
@@ -435,15 +476,43 @@ themeMode model =
 
 viewSidebar : Model -> Theme -> Html Msg
 viewSidebar model selected =
-    Html.aside [ class "app-sidebar" ]
-        [ viewBrand
-        , Html.map PasteMsg (Paste.view model.paste)
-        , viewSwitcher model selected
-        , viewThemeNotice model.themeNotice
-        , viewPreviewControls model
-        , viewAppearance model.appearance
-        , Html.map AboutMsg (About.view model.about)
+    Html.aside
+        [ class "app-sidebar"
+        , classList [ ( "app-sidebar--open", model.sidebarOpen ) ]
         ]
+        [ viewSidebarToggle model.sidebarOpen
+        , div
+            [ class "app-sidebar__sheet"
+            , id themeSheetId
+            ]
+            [ viewBrand
+            , Html.map PasteMsg (Paste.view model.paste)
+            , viewSwitcher model selected
+            , viewThemeNotice model.themeNotice
+            , viewPreviewControls model
+            , viewAppearance model.appearance
+            , Html.map AboutMsg (About.view model.about)
+            ]
+        ]
+
+
+viewSidebarToggle : Bool -> Html Msg
+viewSidebarToggle open =
+    button
+        [ type_ "button"
+        , class "btn btn--md btn--primary sidebar-toggle"
+        , id themeToggleId
+        , attribute "aria-expanded"
+            (if open then
+                "true"
+
+             else
+                "false"
+            )
+        , attribute "aria-controls" themeSheetId
+        , onClick ToggleSidebar
+        ]
+        [ Html.text "Theme" ]
 
 
 viewBrand : Html Msg
@@ -712,7 +781,30 @@ subscriptions model =
         , onCopied (Paste.CopyFinished >> PasteMsg)
         , onLinkCopied (CopyLink.Finished >> CopyLinkMsg)
         , Sub.map AboutMsg (About.subscriptions model.about)
+        , sidebarKeys model
         ]
+
+
+sidebarKeys : Model -> Sub Msg
+sidebarKeys model =
+    if model.sidebarOpen then
+        Events.onKeyDown escapeDecoder
+
+    else
+        Sub.none
+
+
+escapeDecoder : Decode.Decoder Msg
+escapeDecoder =
+    Decode.field "key" Decode.string
+        |> Decode.andThen
+            (\key ->
+                if key == "Escape" then
+                    Decode.succeed CloseSidebar
+
+                else
+                    Decode.fail "not escape"
+            )
 
 
 {-| `{ ok : Bool, html : String, error : String }` from the port, as a Result.
