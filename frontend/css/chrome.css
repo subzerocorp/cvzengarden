@@ -183,7 +183,8 @@ body {
 .theme-switcher__hint,
 .theme-switcher__note,
 .theme-notice__text,
-.preview-controls__hint {
+.preview-controls__hint,
+.preview-controls__pages {
   margin: 0;
   color: var(--muted-foreground);
   font-size: 0.78rem;

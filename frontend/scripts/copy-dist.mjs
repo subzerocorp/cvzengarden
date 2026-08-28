@@ -21,6 +21,7 @@ function copyFile(from, to) {
 
 copyFile(path.join(frontendDir, "static", "index.html"), path.join(distDir, "index.html"));
 copyFile(path.join(frontendDir, "static", "ports.js"), path.join(distDir, "ports.js"));
+copyFile(path.join(frontendDir, "static", "page-estimate.js"), path.join(distDir, "page-estimate.js"));
 copyFile(path.join(frontendDir, "static", "clipboard.js"), path.join(distDir, "clipboard.js"));
 copyFile(path.join(frontendDir, "static", "garden-query.js"), path.join(distDir, "garden-query.js"));
 copyFile(path.join(frontendDir, "static", "render.js"), path.join(distDir, "render.js"));

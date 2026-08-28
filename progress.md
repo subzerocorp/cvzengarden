@@ -143,3 +143,7 @@ Tester re-ran the suite on `a10f188` (rustc 1.87.0 installed; rust-version not l
 ## 2026-08-28 — ZG-9 Architect BLESS (PR #25)
 
 Architecture holds: phone Theme sheet is chrome data (`sidebarOpen`) plus a screen-only presentation override; Escape/`focusId` stay at the existing port edge. Chrome has no `rz-` class/id; Themes still target `html`/`body`/`.rz-*`/`[data-rz-*]`; `MARKET-QUALITY-BAR.md` unchanged. Locks hold (Print preview, `.preview-controls__print`, Sample does not Store, U3 2/2/2, ZG-8 copy-link + unknown `?theme=`). Scope stayed ZG-9; U3 and HTTPS untouched. DoD met. Board `done`. Completion: `docs/plans/zg-9-completion.md`. PR #25 left draft; production not published.
+
+## 2026-08-28 — ZG-10 phase 1 of 2
+
+Pure `page-estimate.js` (`pageGeometry` / `estimatePages` / `estimateLabel`) plus `ports.js` `collectPageRules`, sync constrained-height measure, and rAF-coalesced inbound `pageEstimate`. Elm readout only in Print preview; Save as PDF hint in both views after the ZG-7 sentence. Board `in-progress`. Plan: `docs/plans/zg-10-execution.md`. `themes/` and `U3_PRINT_PAGES` untouched.

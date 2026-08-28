@@ -112,6 +112,19 @@ port onLinkCopied : (Bool -> msg) -> Sub msg
 port focusId : String -> Cmd msg
 
 
+type alias PageEstimate =
+    { pages : Int
+    , paper : String
+    , source : String
+    , label : String
+    }
+
+
+{-| Constrained-column page estimate from ports.js. Shown only in Print preview.
+-}
+port pageEstimate : (PageEstimate -> msg) -> Sub msg
+
+
 
 -- MODEL
 
@@ -157,6 +170,7 @@ type alias Model =
     , copyLink : CopyLink.Model
     , themeNotice : Maybe String
     , sidebarOpen : Bool
+    , pageEstimate : Maybe PageEstimate
     }
 
 
@@ -178,6 +192,7 @@ init flags =
         , copyLink = CopyLink.init
         , themeNotice = Nothing
         , sidebarOpen = False
+        , pageEstimate = Nothing
         }
 
 
@@ -199,6 +214,7 @@ type Msg
     | DismissNotice
     | ToggleSidebar
     | CloseSidebar
+    | PageEstimateReceived PageEstimate
     | Rendered (Result String String)
 
 
@@ -255,6 +271,9 @@ update msg model =
 
         CloseSidebar ->
             closeSidebar model
+
+        PageEstimateReceived estimate ->
+            ( { model | pageEstimate = Just estimate }, Cmd.none )
 
         Rendered result ->
             Paste.rendered result model.paste
@@ -686,7 +705,26 @@ viewPreviewControls model =
             [ Html.text "Print / Save as PDF" ]
         , p [ class "preview-controls__hint" ]
             [ Html.text "What you see here is what the printer prints." ]
+        , p [ class "preview-controls__hint", attribute "data-pdf-hint" "" ]
+            [ Html.text "Choose \"Save as PDF\" in the print dialog to get a PDF." ]
+        , viewPageEstimate model
         ]
+
+
+viewPageEstimate : Model -> Html Msg
+viewPageEstimate model =
+    case ( model.preview, model.pageEstimate ) of
+        ( PrintPreview, Just estimate ) ->
+            p
+                [ class "preview-controls__pages"
+                , attribute "data-page-estimate" (String.fromInt estimate.pages)
+                , attribute "data-page-size" estimate.paper
+                , attribute "data-page-size-source" estimate.source
+                ]
+                [ Html.text estimate.label ]
+
+        _ ->
+            Html.text ""
 
 
 previewButton : Preview -> String -> Preview -> Html Msg
@@ -781,6 +819,7 @@ subscriptions model =
         , onCopied (Paste.CopyFinished >> PasteMsg)
         , onLinkCopied (CopyLink.Finished >> CopyLinkMsg)
         , Sub.map AboutMsg (About.subscriptions model.about)
+        , pageEstimate PageEstimateReceived
         , sidebarKeys model
         ]
 
