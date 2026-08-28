@@ -147,6 +147,16 @@
           "unknown_theme_notice",
           "theme_id_from_query_result"
         ]
+      },
+      {
+        "id": "zg-9",
+        "title": "ZG-9: phone résumé first; Theme sheet",
+        "status": "in_progress",
+        "features": [
+          "phone_stage_first",
+          "theme_sheet",
+          "sidebar_escape_focus"
+        ]
       }
     ]
   }
