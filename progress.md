@@ -163,3 +163,7 @@ Review only. Diff vs `802c0d5` is 14 ZG-10 files. Pure `page-estimate.js`, ports
 ## 2026-08-28 — ZG-10 Tester BLESS (PR #26)
 
 Tester re-ran the suite on `565b5fc` (rustc 1.87.0 installed; rust-version not lowered). `npm run test:unit` 193/193 including `page-estimate.test.mjs` and `zg-10.test.mjs`. Full probes (`PROBE_PORT=4491`): all nine `ZG-10/*` PASS; S1–S5, S3, U3 Jordan 2/2/2, ZG-4/5/6/7/8/9 PASS. `just fmt` / clippy pedantic / cargo test green. View toggle still **Print preview**; `.preview-controls__print` kept; one `Print /` button. Full probes fail only pre-existing `ZG-11/page-count quarto` 4-vs-3 (not a ZG-10 reject). Quarto About N of 2 vs 3 is residual (shorter stored sample). Board left `in-progress`. Verdict: `docs/plans/zg-10-tester.md`.
+
+## 2026-08-28 — ZG-10 Architect BLESS (PR #26)
+
+Architecture holds: page estimate is chrome data (`Maybe PageEstimate`) plus pure geometry calculations; CSSOM collect and the one-task constrained-height measure stay at the `ports.js` edge. Chrome has no `rz-` class/id; Themes still target `html`/`body`/`.rz-*`/`[data-rz-*]`; `MARKET-QUALITY-BAR.md` unchanged. Locks hold (Print preview, `.preview-controls__print`, one `Print /` button, Sample does not Store, U3 2/2/2, ZG-8 copy-link + unknown `?theme=`, ZG-9 Theme sheet). Scope stayed ZG-10; U3 and HTTPS untouched. DoD met. Board `done`. Completion: `docs/plans/zg-10-completion.md`. PR #26 left draft; production not published.

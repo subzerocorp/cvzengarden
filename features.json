@@ -161,7 +161,7 @@
       {
         "id": "zg-10",
         "title": "ZG-10: honest page count + Save as PDF hint",
-        "status": "in_progress",
+        "status": "completed",
         "features": [
           "page_estimate_module",
           "print_preview_page_readout",
