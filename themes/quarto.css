@@ -20,7 +20,7 @@
   font-weight: 400;
   font-display: swap;
   src: local("EB Garamond"), local("Garamond"),
-    url("https://cdn.jsdelivr.net/fontsource/fonts/eb-garamond@5.2.5/latin-400-normal.woff2") format("woff2");
+    url("fonts/eb-garamond/latin-400-normal.woff2") format("woff2");
 }
 
 @font-face {
@@ -29,7 +29,7 @@
   font-weight: 400;
   font-display: swap;
   src: local("EB Garamond Italic"),
-    url("https://cdn.jsdelivr.net/fontsource/fonts/eb-garamond@5.2.5/latin-400-italic.woff2") format("woff2");
+    url("fonts/eb-garamond/latin-400-italic.woff2") format("woff2");
 }
 
 @font-face {
@@ -38,7 +38,7 @@
   font-weight: 600;
   font-display: swap;
   src: local("EB Garamond SemiBold"),
-    url("https://cdn.jsdelivr.net/fontsource/fonts/eb-garamond@5.2.5/latin-600-normal.woff2") format("woff2");
+    url("fonts/eb-garamond/latin-600-normal.woff2") format("woff2");
 }
 
 @font-face {
@@ -47,7 +47,7 @@
   font-weight: 700;
   font-display: swap;
   src: local("EB Garamond Bold"),
-    url("https://cdn.jsdelivr.net/fontsource/fonts/eb-garamond@5.2.5/latin-700-normal.woff2") format("woff2");
+    url("fonts/eb-garamond/latin-700-normal.woff2") format("woff2");
 }
 
 @page {

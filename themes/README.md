@@ -23,4 +23,8 @@ First-party set (RZ-5): three different designers, three targets. Open [`../skel
 - Do not depend on `skeleton/preview.css`. That file is a local readability aid, not part of the contract.
 - You may define your own custom properties. Prefer `--rz-*` for theme-internal tokens so they cannot collide with chrome tokens.
 
+## Fonts
+
+First-party Themes self-host from `themes/fonts/` — the seed of the **Font Library**. Designers may submit original fonts to the Font Library under **CC BY 4.0**. Submitted Themes may also `@font-face` or CSS-`@import` any public font from an **HTTPS CDN** (no host allowlist). JS webfont loaders remain forbidden. Seed families that arrived under SIL OFL (EB Garamond, IBM Plex Sans, Syne, Outfit) keep SIL OFL and ship `OFL.txt`; we do not relicense them as CC BY 4.0.
+
 [`_blank.css`](_blank.css) is a comment-only starting template, not a visual theme.

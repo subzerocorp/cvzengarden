@@ -41,6 +41,25 @@ for (const name of fs.readdirSync(themesDir)) {
   copyFile(path.join(themesDir, name), path.join(themeOut, name));
 }
 
+function copyDir(from, to) {
+  fs.mkdirSync(to, { recursive: true });
+  for (const entry of fs.readdirSync(from, { withFileTypes: true })) {
+    const src = path.join(from, entry.name);
+    const dest = path.join(to, entry.name);
+    if (entry.isDirectory()) {
+      copyDir(src, dest);
+    } else {
+      copyFile(src, dest);
+    }
+  }
+}
+
+const fontsSrc = path.join(themesDir, "fonts");
+if (!fs.existsSync(fontsSrc)) {
+  throw new Error("themes/fonts is missing: first-party Themes self-host from the Font Library seed");
+}
+copyDir(fontsSrc, path.join(themeOut, "fonts"));
+
 // Wasm glue + binary from `npm run build`'s wasm-pack step (never committed).
 const wasmDir = path.join(frontendDir, "static", "wasm");
 if (!fs.existsSync(wasmDir)) {
