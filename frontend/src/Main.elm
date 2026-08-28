@@ -14,6 +14,7 @@ are isolated actions (ports).
 
 import About
 import Browser
+import CopyLink
 import Generated.Themes as Themes exposing (Target(..), Theme)
 import Html exposing (Html, button, div, h1, h2, iframe, li, p, span, ul)
 import Html.Attributes as Attr exposing (attribute, class, classList, id, src, title, type_)
@@ -42,7 +43,10 @@ port printGarden : () -> Cmd msg
 port pushThemeQuery : String -> Cmd msg
 
 
-port onThemeQuery : (String -> msg) -> Sub msg
+port pushViewQuery : String -> Cmd msg
+
+
+port onGardenQuery : ({ theme : String, view : String } -> msg) -> Sub msg
 
 
 {-| Render a JSON Resume text with the Wasm renderer; the answer arrives on
@@ -94,6 +98,14 @@ port copyText : String -> Cmd msg
 port onCopied : (Bool -> msg) -> Sub msg
 
 
+{-| Write `location.href` to the clipboard. The answer arrives on `onLinkCopied`.
+-}
+port copyLink : () -> Cmd msg
+
+
+port onLinkCopied : (Bool -> msg) -> Sub msg
+
+
 {-| Move keyboard focus to an element id after Elm has patched the DOM.
 -}
 port focusId : String -> Cmd msg
@@ -123,6 +135,13 @@ type Appearance
 type alias Flags =
     { prefersDark : Bool
     , themeQuery : String
+    , viewQuery : String
+    }
+
+
+type alias GardenQuery =
+    { theme : String
+    , view : String
     }
 
 
@@ -134,6 +153,8 @@ type alias Model =
     , prefersDark : Bool
     , paste : Paste.Model
     , about : About.Model
+    , copyLink : CopyLink.Model
+    , themeNotice : Maybe String
     }
 
 
@@ -143,26 +164,18 @@ type alias Model =
 
 init : Flags -> ( Model, Cmd Msg )
 init flags =
-    let
-        theme =
-            ThemeId.themeFromQuery flags.themeQuery
-
-        model =
-            { selectedId = theme.id
-            , preview = Screen
-            , filter = FilterAll
-            , appearance = FollowSystem
-            , prefersDark = flags.prefersDark
-            , paste = Paste.init
-            , about = About.init
-            }
-    in
-    ( model
-    , Cmd.batch
-        [ setThemeHref theme.href
-        , setPreviewMedia "screen"
-        ]
-    )
+    applyLoadedQuery
+        { theme = flags.themeQuery, view = flags.viewQuery }
+        { selectedId = ThemeId.fallback
+        , preview = Screen
+        , filter = FilterAll
+        , appearance = FollowSystem
+        , prefersDark = flags.prefersDark
+        , paste = Paste.init
+        , about = About.init
+        , copyLink = CopyLink.init
+        , themeNotice = Nothing
+        }
 
 
 
@@ -171,7 +184,7 @@ init flags =
 
 type Msg
     = SelectTheme String
-    | ThemeQueryChanged String
+    | GardenQueryChanged GardenQuery
     | SetPreview Preview
     | SetFilter Filter
     | SetAppearance Appearance
@@ -179,6 +192,8 @@ type Msg
     | PrintRequested
     | PasteMsg Paste.Msg
     | AboutMsg About.Msg
+    | CopyLinkMsg CopyLink.Msg
+    | DismissNotice
     | Rendered (Result String String)
 
 
@@ -188,12 +203,15 @@ update msg model =
         SelectTheme id ->
             applyTheme id True model
 
-        ThemeQueryChanged raw ->
-            applyTheme (ThemeId.fromQuery raw) False model
+        GardenQueryChanged query ->
+            applyLoadedQuery query model
 
         SetPreview preview ->
             ( { model | preview = preview }
-            , setPreviewMedia (previewMedia preview)
+            , Cmd.batch
+                [ setPreviewMedia (previewMedia preview)
+                , pushViewQuery (previewMedia preview)
+                ]
             )
 
         SetFilter filter ->
@@ -215,6 +233,13 @@ update msg model =
         AboutMsg aboutMsg ->
             About.update aboutMsg model.about
                 |> applyAbout model
+
+        CopyLinkMsg copyMsg ->
+            CopyLink.update copyMsg model.copyLink
+                |> applyCopyLink model
+
+        DismissNotice ->
+            ( { model | themeNotice = Nothing }, Cmd.none )
 
         Rendered result ->
             Paste.rendered result model.paste
@@ -275,6 +300,56 @@ aboutCommand effect =
             focusId target
 
 
+applyCopyLink : Model -> ( CopyLink.Model, List CopyLink.Effect ) -> ( Model, Cmd Msg )
+applyCopyLink model ( link, effects ) =
+    ( { model | copyLink = link }
+    , Cmd.batch (List.map copyLinkCommand effects)
+    )
+
+
+copyLinkCommand : CopyLink.Effect -> Cmd Msg
+copyLinkCommand effect =
+    case effect of
+        CopyLink.CopyHref ->
+            copyLink ()
+
+        CopyLink.WaitClear gen ->
+            Process.sleep 2000
+                |> Task.perform (\_ -> CopyLinkMsg (CopyLink.Clear gen))
+
+
+applyLoadedQuery : GardenQuery -> Model -> ( Model, Cmd Msg )
+applyLoadedQuery query model =
+    let
+        resolved =
+            ThemeId.fromQuery query.theme
+
+        theme =
+            ThemeId.themeFromResult resolved
+
+        preview =
+            previewFromQuery query.view
+
+        notice =
+            case resolved of
+                ThemeId.Unknown raw ->
+                    Just raw
+
+                _ ->
+                    Nothing
+    in
+    ( { model
+        | selectedId = theme.id
+        , preview = preview
+        , themeNotice = notice
+      }
+    , Cmd.batch
+        [ setThemeHref theme.href
+        , setPreviewMedia (previewMedia preview)
+        ]
+    )
+
+
 applyTheme : String -> Bool -> Model -> ( Model, Cmd Msg )
 applyTheme id pushQuery model =
     case Themes.themeById id of
@@ -284,7 +359,7 @@ applyTheme id pushQuery model =
         Just theme ->
             let
                 next =
-                    { model | selectedId = theme.id }
+                    { model | selectedId = theme.id, themeNotice = Nothing }
 
                 hrefCmd =
                     setThemeHref theme.href
@@ -309,6 +384,16 @@ previewMedia preview =
 
         PrintPreview ->
             "print"
+
+
+previewFromQuery : String -> Preview
+previewFromQuery raw =
+    case String.toLower (String.trim raw) of
+        "print" ->
+            PrintPreview
+
+        _ ->
+            Screen
 
 
 
@@ -354,7 +439,8 @@ viewSidebar model selected =
         [ viewBrand
         , Html.map PasteMsg (Paste.view model.paste)
         , viewSwitcher model selected
-        , viewPreviewControls model.preview
+        , viewThemeNotice model.themeNotice
+        , viewPreviewControls model
         , viewAppearance model.appearance
         , Html.map AboutMsg (About.view model.about)
         ]
@@ -482,8 +568,35 @@ targetLabel target =
             "Screen + paper"
 
 
-viewPreviewControls : Preview -> Html Msg
-viewPreviewControls preview =
+viewThemeNotice : Maybe String -> Html Msg
+viewThemeNotice notice =
+    case notice of
+        Nothing ->
+            Html.text ""
+
+        Just raw ->
+            div
+                [ class "theme-notice"
+                , attribute "data-theme-notice" "unknown"
+                , attribute "role" "status"
+                ]
+                [ p [ class "theme-notice__text" ]
+                    [ Html.text "No theme called \""
+                    , Html.text raw
+                    , Html.text "\" — showing Nightgarden."
+                    ]
+                , button
+                    [ type_ "button"
+                    , class "theme-notice__close"
+                    , attribute "aria-label" "Dismiss theme notice"
+                    , onClick DismissNotice
+                    ]
+                    [ Html.text "Close" ]
+                ]
+
+
+viewPreviewControls : Model -> Html Msg
+viewPreviewControls model =
     div [ class "preview-controls" ]
         [ h2 [ class "preview-controls__title" ] [ Html.text "View" ]
         , div
@@ -491,9 +604,10 @@ viewPreviewControls preview =
             , attribute "role" "group"
             , attribute "aria-label" "Screen or print preview"
             ]
-            [ previewButton Screen "Screen" preview
-            , previewButton PrintPreview "Print preview" preview
+            [ previewButton Screen "Screen" model.preview
+            , previewButton PrintPreview "Print preview" model.preview
             ]
+        , Html.map CopyLinkMsg (CopyLink.view model.copyLink)
         , button
             [ type_ "button"
             , class "btn btn--md btn--outline preview-controls__print"
@@ -591,11 +705,12 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ preferDarkChanged SystemPrefersDark
-        , onThemeQuery ThemeQueryChanged
+        , onGardenQuery GardenQueryChanged
         , onRendered (decodeRendered >> Rendered)
         , onFileBytes (Paste.FileOpened >> PasteMsg)
         , onStoredResume (Paste.Restored >> PasteMsg)
         , onCopied (Paste.CopyFinished >> PasteMsg)
+        , onLinkCopied (CopyLink.Finished >> CopyLinkMsg)
         , Sub.map AboutMsg (About.subscriptions model.about)
         ]
 
@@ -636,9 +751,10 @@ port preferDarkChanged : (Bool -> msg) -> Sub msg
 
 flagsDecoder : Decode.Decoder Flags
 flagsDecoder =
-    Decode.map2 Flags
+    Decode.map3 Flags
         (Decode.field "prefersDark" Decode.bool)
         (Decode.field "themeQuery" Decode.string)
+        (Decode.field "viewQuery" Decode.string)
 
 
 main : Program Decode.Value Model Msg
@@ -648,7 +764,7 @@ main =
             \value ->
                 init
                     (Decode.decodeValue flagsDecoder value
-                        |> Result.withDefault { prefersDark = False, themeQuery = "" }
+                        |> Result.withDefault { prefersDark = False, themeQuery = "", viewQuery = "" }
                     )
         , view = view
         , update = update

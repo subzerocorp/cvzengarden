@@ -1,11 +1,12 @@
 +++
 id = "ZG-8"
 title = "Copy a link to this exact view and say so when a theme in the URL does not exist"
-status = "todo"
+status = "in-progress"
 rank = "p"
 labels = ["avril", "round-1", "chrome", "avril-blessed"]
+start_at = "2026-08-28T00:25:00.000000Z"
 created = "2026-08-23T23:55:14.295176Z"
-updated = "2026-08-24T01:13:24.349108Z"
+updated = "2026-08-28T00:25:00.000000Z"
 +++
 
 ## Why

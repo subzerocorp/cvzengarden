@@ -10,6 +10,7 @@
  * iframe.src stays sandbox.html.
  */
 import { writeClipboard } from "./clipboard.js";
+import { gardenSearch, readGardenQuery } from "./garden-query.js";
 import { contractVersion, render, swapResume, version } from "./render.js";
 
 const FRAME_ID = "garden-frame";
@@ -21,6 +22,7 @@ const app = Elm.Main.init({
   flags: {
     prefersDark: window.matchMedia("(prefers-color-scheme: dark)").matches,
     themeQuery: new URLSearchParams(window.location.search).get("theme") || "",
+    viewQuery: new URLSearchParams(window.location.search).get("view") || "",
   },
 });
 
@@ -204,10 +206,14 @@ async function setPreviewMedia(media) {
   applyPreview(doc);
 }
 
-function themeUrl(id) {
-  const url = new URL(window.location.href);
-  url.searchParams.set("theme", id);
-  return url.pathname + url.search + url.hash;
+function currentHref() {
+  return window.location.pathname + window.location.search + window.location.hash;
+}
+
+function pushGarden(next, state) {
+  if (next !== currentHref()) {
+    window.history.pushState(state, "", next);
+  }
 }
 
 app.ports.setThemeHref.subscribe((href) => {
@@ -316,16 +322,15 @@ app.ports.printGarden.subscribe(() => {
 });
 
 app.ports.pushThemeQuery.subscribe((id) => {
-  const next = themeUrl(id);
-  const current = window.location.pathname + window.location.search + window.location.hash;
-  if (next !== current) {
-    window.history.pushState({ theme: id }, "", next);
-  }
+  pushGarden(gardenSearch(window.location.href, { theme: id }), { theme: id });
+});
+
+app.ports.pushViewQuery.subscribe((view) => {
+  pushGarden(gardenSearch(window.location.href, { view }), { view });
 });
 
 window.addEventListener("popstate", () => {
-  const raw = new URLSearchParams(window.location.search).get("theme") || "";
-  app.ports.onThemeQuery.send(raw);
+  app.ports.onGardenQuery.send(readGardenQuery(window.location.search));
 });
 
 /**
@@ -461,6 +466,13 @@ app.ports.copyText.subscribe((text) => {
   writeClipboard(text).then(
     () => app.ports.onCopied.send(true),
     () => app.ports.onCopied.send(false),
+  );
+});
+
+app.ports.copyLink.subscribe(() => {
+  writeClipboard(window.location.href).then(
+    () => app.ports.onLinkCopied.send(true),
+    () => app.ports.onLinkCopied.send(false),
   );
 });
 
