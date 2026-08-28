@@ -464,6 +464,11 @@ app.ports.copyText.subscribe((text) => {
   );
 });
 
+app.ports.focusId.subscribe((id) => {
+  const focus = () => document.getElementById(id)?.focus();
+  requestAnimationFrame(() => requestAnimationFrame(focus));
+});
+
 const originalReady = captureOriginalResume();
 
 originalReady.then(() => {

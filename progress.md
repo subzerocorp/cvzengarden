@@ -87,3 +87,19 @@ Tester re-ran the suite on `8db67f3`. `npm run test:unit` 147/147 (18 `*.test.mj
 ## 2026-08-27 — ZG-6 Architect BLESS (PR #22)
 
 Architecture holds: third `Paste.Intent` (`Sample`) Swap-only; ShowIt/Author still Stores; one key `resumezen.resume`; JSON Resume only stored Resume; `Generated.Samples` build-embedded; ZG-14 still owns dist copy of `skeleton/samples`; chrome has no `rz-` class/id; Themes still target `html`/`body`/`.rz-*`/`[data-rz-*]`; scope stayed ZG-6; U3 and HTTPS untouched. DoD met. Board `done`. Completion: `docs/plans/zg-6-completion.md`. QA draft host `https://6a90bc39674c4e34c89c8c34--cvzengarden.netlify.app`. PR #22 left open; production not published.
+
+## 2026-08-27 — ZG-7 in progress
+
+Plain-language chrome (Appearance, For screen / For paper, Screen / Paper / Screen + paper, Print / Save as PDF), About dialog with “Free during the preview”, GitHub href string-checked offline. View toggle still **Print preview**. `U3_PRINT_PAGES` and HTTPS / issue #9 untouched. Board `in-progress`, not `done`. Evidence: `docs/plans/zg-7-execution.md`. Draft PR #23 for Product & QA on a Netlify draft host, not production. All `ZG-7/*` probes PASS; U3 2/2/2 PASS. Same-run leftover `ZG-11/page-count quarto` 4-vs-3 is the pre-existing main failure recorded on ZG-6.
+
+## 2026-08-27 — ZG-7 Reviewer BLESS (PR #23)
+
+Walked the full diff vs `main` (`8842b9c…797a7a0`). Every ZG-7 AC holds: closed-chrome `textContent` has the prescribed words and none of the banned jargon; one `Print / Save as PDF` on `.preview-controls__print` still calls iframe `print()`; `Print preview` unique; badges Screen / Paper / Screen + paper; About is `[role=dialog].about-panel` with Free during the preview and the exact GitHub href; designers slot empty; no invented price; chrome has no `rz-` class/id; `MARKET-QUALITY-BAR.md` unchanged; `U3_PRINT_PAGES` and theme print CSS untouched. Pinto left `in-progress`. No merge. Verdict: `docs/plans/zg-7-reviewer.md`.
+
+## 2026-08-27 — ZG-7 Tester BLESS (PR #23)
+
+Tester re-ran the suite on `6d360cf` (rustc 1.87.0 installed; rust-version not lowered). `npm run test:unit` 154/154 including `zg-7.test.mjs`. Isolated ZG-7 probes all PASS (`no-jargon`, `one-print`, `badges`, `about`, `print-on-white`, `bar-q1`). Full probes: RZ-3 / S1–S5 / U3 Jordan 2/2/2 PASS. `just fmt` / clippy pedantic / cargo test green. Chrome has no `rz-` class/id; `MARKET-QUALITY-BAR.md` unchanged. Full probes fail only pre-existing `ZG-11/page-count quarto` 4-vs-3 (not a ZG-7 reject). Board left `in-progress`. Verdict: `docs/plans/zg-7-tester.md`.
+
+## 2026-08-27 — ZG-7 Architect BLESS (PR #23)
+
+Architecture holds: chrome copy is plain language; heading is Appearance not Chrome; one Print / Save as PDF; Print preview name unchanged. About is `[role=dialog].about-panel` with Free during the preview, exact GitHub href, empty For designers slot, no invented price. Chrome has no `rz-` class/id; Themes still target `html`/`body`/`.rz-*`/`[data-rz-*]`; `MARKET-QUALITY-BAR.md` unchanged. Scope stayed ZG-7; U3 and HTTPS untouched. DoD met. Board `done`. Completion: `docs/plans/zg-7-completion.md`. PR #23 left open; production not published.
