@@ -147,3 +147,11 @@ Architecture holds: phone Theme sheet is chrome data (`sidebarOpen`) plus a scre
 ## 2026-08-28 — ZG-10 phase 1 of 2
 
 Pure `page-estimate.js` (`pageGeometry` / `estimatePages` / `estimateLabel`) plus `ports.js` `collectPageRules`, sync constrained-height measure, and rAF-coalesced inbound `pageEstimate`. Elm readout only in Print preview; Save as PDF hint in both views after the ZG-7 sentence. Board `in-progress`. Plan: `docs/plans/zg-10-execution.md`. `themes/` and `U3_PRINT_PAGES` untouched.
+
+## 2026-08-28 — ZG-10 phase 2 of 2
+
+Named probes `ZG-10/paper-size`, `paper-size-fallbacks`, `estimate-matches-formula`, `estimate-near-pdf`, `updates-on-switch`, `updates-on-content`, `min-one`, `hint`, `no-guide-lines` plus prescribed `page-estimate.test.mjs` cases. Tester README mentions About N pages and the print-dialog hint. Board stays `in-progress`. Probe evidence pending.
+
+## 2026-08-28 — ZG-10 in progress (evidence)
+
+All nine `ZG-10/*` probes PASS. Existing RZ-3 / S1–S5 / U3 Jordan 2/2/2 / ZG-4/5/6/7/8/9 PASS. `npm run test:unit` 193/193. Rust fmt / clippy pedantic / cargo test green on rustc 1.87.0. Same-run leftover `ZG-11/page-count quarto` 4-vs-3 is the pre-existing main failure. Board `in-progress`, not `done`. Evidence: `docs/plans/zg-10-execution.md`. Draft PR #26. U3, HTTPS, theme print CSS, ZG-8 Copied flash, and `MARKET-QUALITY-BAR.md` untouched.

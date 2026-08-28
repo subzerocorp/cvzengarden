@@ -33,6 +33,9 @@ let themeSwapGen = 0;
 let estimateFrame = 0;
 let bodyObserver = null;
 let observedBody = null;
+let measuringHeight = false;
+let lastBodyHeight = null;
+const guardedHtml = new WeakSet();
 
 const prefersDark = window.matchMedia("(prefers-color-scheme: dark)");
 prefersDark.addEventListener("change", (event) => {
@@ -160,10 +163,42 @@ function measureResumeHeight(doc, contentWidthPx) {
     return 0;
   }
 
+  // Constraining html width resizes body. Drop the observer for this
+  // task so the echo cannot schedule another measure (which would leave
+  // style="" forever).
+  measuringHeight = true;
+  if (bodyObserver) {
+    bodyObserver.disconnect();
+  }
+  forgetEmptyStyle(html);
   html.style.width = `${contentWidthPx}px`;
   const height = resume.getBoundingClientRect().height;
+  html.style.removeProperty("width");
   html.removeAttribute("style");
+  lastBodyHeight = observedBody?.getBoundingClientRect().height ?? lastBodyHeight;
+  requestAnimationFrame(() => {
+    html.removeAttribute("style");
+    if (bodyObserver && observedBody) {
+      bodyObserver.observe(observedBody);
+    }
+    requestAnimationFrame(() => {
+      html.removeAttribute("style");
+      measuringHeight = false;
+    });
+  });
   return height;
+}
+
+function forgetEmptyStyle(html) {
+  if (guardedHtml.has(html)) {
+    return;
+  }
+  guardedHtml.add(html);
+  new MutationObserver(() => {
+    if (html.getAttribute("style") === "") {
+      html.removeAttribute("style");
+    }
+  }).observe(html, { attributes: true, attributeFilter: ["style"] });
 }
 
 function watchResumeBody(doc) {
@@ -176,7 +211,15 @@ function watchResumeBody(doc) {
     bodyObserver.disconnect();
   }
 
-  bodyObserver = new ResizeObserver(() => {
+  bodyObserver = new ResizeObserver((entries) => {
+    const height = entries[0]?.contentRect.height;
+    const changed = lastBodyHeight === null || (Number.isFinite(height) && Math.abs(height - lastBodyHeight) >= 0.5);
+    if (Number.isFinite(height)) {
+      lastBodyHeight = height;
+    }
+    if (measuringHeight || !changed) {
+      return;
+    }
     schedulePageEstimate();
   });
   bodyObserver.observe(body);

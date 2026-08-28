@@ -144,8 +144,9 @@ async function measureConstrainedHeight(page, contentWidthPx) {
     const doc = document.getElementById("garden-frame").contentDocument;
     const html = doc.documentElement;
     const resume = doc.querySelector(".rz-resume");
-    html.style.width = `${width}px`;
+    html.style.setProperty("width", `${width}px`);
     const height = resume.getBoundingClientRect().height;
+    html.style.removeProperty("width");
     html.removeAttribute("style");
     return height;
   }, contentWidthPx);
@@ -252,6 +253,13 @@ async function estimateMatchesFormulaProbe({ browser, origin, report }) {
     await waitForThemeHref(page, id);
     const n = await probeComputedPages(page);
     await page.waitForSelector(`[data-page-estimate="${n}"]`, { timeout: 5000 });
+    try {
+      await page.waitForFunction(() => {
+        return document.getElementById("garden-frame")?.contentDocument?.documentElement.getAttribute("style") === null;
+      }, { timeout: 5000 });
+    } catch {
+      // fall through to the style assertion
+    }
     const style = await htmlStyleAttribute(page);
     seen.push(`${id} ${n}`);
     if (style !== null) {
@@ -414,6 +422,14 @@ async function hintProbe({ browser, origin, report }) {
 async function noGuideLinesProbe({ browser, origin, report }) {
   const { page } = await openGarden(browser, origin, { path: "/?view=print" });
   await waitForThemeHref(page, "nightgarden");
+  await page.waitForSelector("[data-page-estimate]");
+  try {
+    await page.waitForFunction(() => {
+      return document.getElementById("garden-frame")?.contentDocument?.documentElement.getAttribute("style") === null;
+    }, { timeout: 5000 });
+  } catch {
+    // fall through to guideLineReasons
+  }
   const snapshot = await page.evaluate(() => {
     const stage = document.querySelector(".garden-stage--print");
     const stageKids = stage ? [...stage.children] : [];
