@@ -18,7 +18,7 @@ test("requestsSince returns only the entries after the mark", () => {
 });
 
 test("offGardenRequests keeps page assets and Theme sheets", () => {
-  const urls = [`${origin}/`, `${origin}/wasm/x_bg.wasm`, `${origin}/themes/quarto.css`, `${origin}/sandbox.html`, `${origin}/clipboard.js`, `${origin}/garden-query.js`];
+  const urls = [`${origin}/`, `${origin}/wasm/x_bg.wasm`, `${origin}/themes/quarto.css`, `${origin}/themes/fonts/syne/latin-700-normal.woff2`, `${origin}/sandbox.html`, `${origin}/clipboard.js`, `${origin}/garden-query.js`];
   assert.deepEqual(offGardenRequests(urls, origin), []);
 });
 

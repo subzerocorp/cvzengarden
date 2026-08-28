@@ -29,6 +29,9 @@ export function isGardenAsset(url, origin) {
   if (pathname.startsWith("/wasm/")) {
     return true;
   }
+  if (pathname.startsWith("/themes/fonts/") && pathname.endsWith(".woff2")) {
+    return true;
+  }
   return pathname.startsWith("/themes/") && pathname.endsWith(".css");
 }
 
