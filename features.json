@@ -157,6 +157,16 @@
           "theme_sheet",
           "sidebar_escape_focus"
         ]
+      },
+      {
+        "id": "zg-10",
+        "title": "ZG-10: honest page count + Save as PDF hint",
+        "status": "in_progress",
+        "features": [
+          "page_estimate_module",
+          "print_preview_page_readout",
+          "save_as_pdf_hint"
+        ]
       }
     ]
   }
