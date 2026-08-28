@@ -123,3 +123,7 @@ Architecture holds: ThemeId.fromQuery is Known|Unknown|Absent; gardenSearch is t
 ## 2026-08-28 — ZG-9 phase 1 of 2
 
 Phone résumé first: `sidebarOpen : Bool`, Theme toggle (`aria-expanded`), Escape + `focusId`, selecting a Theme closes the sheet. ≤720px CSS puts `.garden-stage` first and fills the viewport; `.app-sidebar` is a sticky bottom bar; `.app-sidebar--open` is the sheet. Desktop ≥721px grid unchanged. Board `in-progress`. Plan: `docs/plans/zg-9-execution.md`. U3, HTTPS, theme print CSS, ZG-8 Copied flash, and `MARKET-QUALITY-BAR.md` untouched.
+
+## 2026-08-28 — ZG-9 phase 2 of 2
+
+Named probes `ZG-9/mobile-first`, `sheet`, `escape`, `desktop-unchanged`, `no-hscroll` plus unit-tested calculations (`zg-9.test.mjs`). Tester README mentions the phone Theme sheet. Board stays `in-progress`. Probe evidence pending.
