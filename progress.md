@@ -119,3 +119,7 @@ Tester re-ran the suite on `f40b8bb` (rustc 1.87.0 installed; rust-version not l
 ## 2026-08-28 — ZG-8 Architect BLESS (PR #24)
 
 Architecture holds: ThemeId.fromQuery is Known|Unknown|Absent; gardenSearch is the same generation as theme; history and clipboard stay in ports.js; CopyLink is Idle|Copied|Failed with CopyHref at the port edge. Unknown ?theme= is not rewritten. Chrome has no `rz-` class/id; Themes still target `html`/`body`/`.rz-*`/`[data-rz-*]`; `MARKET-QUALITY-BAR.md` unchanged. Locks hold (Print preview, `.preview-controls__print`, Sample does not Store, U3 2/2/2). Scope stayed ZG-8; U3 and HTTPS untouched. DoD met. Board `done`. Completion: `docs/plans/zg-8-completion.md`. PR #24 left draft; production not published.
+
+## 2026-08-28 — ZG-9 phase 1 of 2
+
+Phone résumé first: `sidebarOpen : Bool`, Theme toggle (`aria-expanded`), Escape + `focusId`, selecting a Theme closes the sheet. ≤720px CSS puts `.garden-stage` first and fills the viewport; `.app-sidebar` is a sticky bottom bar; `.app-sidebar--open` is the sheet. Desktop ≥721px grid unchanged. Board `in-progress`. Plan: `docs/plans/zg-9-execution.md`. U3, HTTPS, theme print CSS, ZG-8 Copied flash, and `MARKET-QUALITY-BAR.md` untouched.

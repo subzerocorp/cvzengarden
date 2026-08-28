@@ -1,11 +1,12 @@
 +++
 id = "ZG-9"
 title = "On a phone show the résumé first and fold the controls into a Theme button"
-status = "todo"
+status = "in-progress"
 rank = "q"
 labels = ["avril", "round-1", "chrome", "avril-blessed"]
+start_at = "2026-08-28T01:14:51.000000Z"
 created = "2026-08-23T23:55:14.306093Z"
-updated = "2026-08-24T01:13:24.363034Z"
+updated = "2026-08-28T01:14:51.000000Z"
 +++
 
 ## Why
