@@ -69,8 +69,13 @@ fallbackTheme =
                     first
 
                 [] ->
+                    -- Only reachable with an empty catalog, which the generator
+                    -- refuses to produce. A synthesised theme has no designer,
+                    -- so it carries no byline rather than an invented one.
                     { id = fallback
                     , name = "Nightgarden"
                     , href = "themes/nightgarden.css"
                     , target = Themes.Web
+                    , author = ""
+                    , url = Nothing
                     }

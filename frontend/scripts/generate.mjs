@@ -8,7 +8,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const frontendDir = path.resolve(__dirname, "..");
@@ -26,20 +26,45 @@ function titleFromId(id) {
     .join(" ");
 }
 
-function parseTheme(fileName, source) {
+/**
+ * A theme's portfolio link, or "" when the header has none we will render.
+ * Only http(s) survives: a header is designer-supplied text that becomes an
+ * href, so `javascript:` and every other scheme is dropped rather than
+ * escaped.
+ */
+export function safeThemeUrl(raw) {
+  const value = (raw ?? "").trim();
+  if (!value) {
+    return "";
+  }
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "http:" || parsed.protocol === "https:" ? value : "";
+  } catch {
+    return "";
+  }
+}
+
+export function parseTheme(fileName, source) {
   const id = fileName.replace(/\.css$/i, "");
   const targetMatch = source.match(/\/\*\s*rz-target:\s*(web|print|both)\s*\*\//i);
   const nameMatch = source.match(/^\s*\*\s*Name:\s*(.+)$/m);
+  const authorMatch = source.match(/^\s*\*\s*Author:\s*(.+)$/m);
+  const urlMatch = source.match(/^\s*\*\s*URL:\s*(.+)$/m);
   const targetRaw = (targetMatch?.[1] ?? "both").toLowerCase();
   const target =
     targetRaw === "web" ? "Web" : targetRaw === "print" ? "Print" : "Both";
   const name = (nameMatch?.[1] ?? "").trim() || titleFromId(id);
+  // No Author: line means no byline at all — never a fabricated one.
+  const author = (authorMatch?.[1] ?? "").trim();
 
   return {
     id,
     name,
     href: `themes/${fileName}`,
     target,
+    author,
+    url: safeThemeUrl(urlMatch?.[1]),
   };
 }
 
@@ -59,6 +84,8 @@ function writeThemesElm(themes) {
       , name = "${elmEscape(theme.name)}"
       , href = "${elmEscape(theme.href)}"
       , target = ${theme.target}
+      , author = "${elmEscape(theme.author)}"
+      , url = ${theme.url ? `Just "${elmEscape(theme.url)}"` : "Nothing"}
       }`,
     )
     .join("\n    ,\n");
@@ -81,6 +108,8 @@ type alias Theme =
     , name : String
     , href : String
     , target : Target
+    , author : String
+    , url : Maybe String
     }
 
 
@@ -136,22 +165,6 @@ function writeSandbox(defaultHref) {
   fs.writeFileSync(path.join(outDir, "sandbox.html"), sandbox);
 }
 
-const files = fs
-  .readdirSync(themesDir)
-  .filter((name) => name.endsWith(".css") && !SKIP.has(name))
-  .sort((a, b) => a.localeCompare(b));
-
-if (files.length === 0) {
-  throw new Error("No Garden themes found in themes/*.css");
-}
-
-const themes = files.map((fileName) => {
-  const source = fs.readFileSync(path.join(themesDir, fileName), "utf8");
-  return parseTheme(fileName, source);
-});
-
-const defaultTheme = themes.find((theme) => theme.id === "nightgarden") ?? themes[0];
-
 function writeSamplesElm() {
   const jordanPath = path.join(repoDir, "skeleton", "resume.json");
   const juniorPath = path.join(repoDir, "skeleton", "samples", "junior.json");
@@ -179,10 +192,33 @@ junior =
   fs.writeFileSync(path.join(outDir, "Samples.elm"), contents);
 }
 
-writeThemesElm(themes);
-writeSamplesElm();
-writeSandbox(defaultTheme.href);
+function main() {
+  const files = fs
+    .readdirSync(themesDir)
+    .filter((name) => name.endsWith(".css") && !SKIP.has(name))
+    .sort((a, b) => a.localeCompare(b));
 
-console.log(
-  `Generated ${themes.length} theme(s): ${themes.map((theme) => theme.id).join(", ")}; embedded jordan + junior samples`,
-);
+  if (files.length === 0) {
+    throw new Error("No Garden themes found in themes/*.css");
+  }
+
+  const themes = files.map((fileName) => {
+    const source = fs.readFileSync(path.join(themesDir, fileName), "utf8");
+    return parseTheme(fileName, source);
+  });
+
+  const defaultTheme = themes.find((theme) => theme.id === "nightgarden") ?? themes[0];
+
+  writeThemesElm(themes);
+  writeSamplesElm();
+  writeSandbox(defaultTheme.href);
+
+  console.log(
+    `Generated ${themes.length} theme(s): ${themes.map((theme) => theme.id).join(", ")}; embedded jordan + junior samples`,
+  );
+}
+
+// Importing this module (the parseTheme unit test) must not run the generator.
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main();
+}

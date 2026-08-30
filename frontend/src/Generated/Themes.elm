@@ -16,6 +16,8 @@ type alias Theme =
     , name : String
     , href : String
     , target : Target
+    , author : String
+    , url : Maybe String
     }
 
 
@@ -25,18 +27,24 @@ all =
       , name = "Nightgarden"
       , href = "themes/nightgarden.css"
       , target = Web
+      , author = "ResumeZen"
+      , url = Just "https://github.com/subzerocorp/cvzengarden"
       }
     ,
     { id = "quarto"
       , name = "Quarto"
       , href = "themes/quarto.css"
       , target = Print
+      , author = "ResumeZen"
+      , url = Just "https://github.com/subzerocorp/cvzengarden"
       }
     ,
     { id = "switchyard"
       , name = "Switchyard"
       , href = "themes/switchyard.css"
       , target = Both
+      , author = "ResumeZen"
+      , url = Just "https://github.com/subzerocorp/cvzengarden"
       }
     ]
 

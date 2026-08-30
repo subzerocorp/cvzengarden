@@ -43,6 +43,7 @@ import { zg10Probes } from "./probes/zg-10.mjs";
 import { zg11Probes } from "./probes/zg-11.mjs";
 import { zg12Probes } from "./probes/zg-12.mjs";
 import { zg13Probes } from "./probes/zg-13.mjs";
+import { zg16Probes } from "./probes/zg-16.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const frontendDir = path.resolve(__dirname, "..");
@@ -1025,8 +1026,7 @@ async function s4Probes(page) {
     pass("S4 focused garden controls show a visible :focus-visible ring");
   }
 
-  await page.locator("#theme-option-nightgarden").focus();
-  await page.keyboard.press("Tab");
+  await page.locator("#theme-option-quarto").focus();
   await page.keyboard.press("Space");
   await waitForThemeHref(page, "quarto");
   const afterSpace = await captureFrame(page);
@@ -1125,6 +1125,7 @@ async function browserProbes() {
     await zg9Probes({ browser, origin, report: { pass, fail }, repoDir, frontendDir });
     await zg10Probes({ browser, origin, report: { pass, fail }, repoDir, frontendDir });
     await zg13Probes({ browser, origin, report: { pass, fail }, repoDir, frontendDir });
+    await zg16Probes({ browser, origin, report: { pass, fail }, repoDir, frontendDir });
   }
 
   await browser.close();
@@ -1162,4 +1163,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log("\nAll RZ-3, RZ-S1…S5, U3 print, ZG-23, ZG-4, ZG-5, ZG-6, ZG-7, ZG-8, ZG-9, ZG-10, ZG-11, ZG-12 and ZG-13 probes passed.");
+console.log("\nAll RZ-3, RZ-S1…S5, U3 print, ZG-23, ZG-4, ZG-5, ZG-6, ZG-7, ZG-8, ZG-9, ZG-10, ZG-11, ZG-12, ZG-13 and ZG-16 probes passed.");

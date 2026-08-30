@@ -17,9 +17,9 @@ import Browser
 import Browser.Events as Events
 import CopyLink
 import Generated.Themes as Themes exposing (Target(..), Theme)
-import Html exposing (Html, button, div, h1, h2, iframe, li, p, span, ul)
-import Html.Attributes as Attr exposing (attribute, class, classList, id, src, title, type_)
-import Html.Events exposing (onClick)
+import Html exposing (Html, a, button, div, h1, h2, iframe, li, p, span, ul)
+import Html.Attributes as Attr exposing (attribute, class, classList, href, id, rel, src, target, title, type_)
+import Html.Events exposing (onClick, stopPropagationOn)
 import Html.Keyed as Keyed
 import Json.Decode as Decode
 import Paste
@@ -216,6 +216,8 @@ type Msg
     | CloseSidebar
     | PageEstimateReceived PageEstimate
     | Rendered (Result String String)
+      -- Carries a byline-link click that must not also select the theme.
+    | NoOp
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -278,6 +280,9 @@ update msg model =
         Rendered result ->
             Paste.rendered result model.paste
                 |> applyPaste model
+
+        NoOp ->
+            ( model, Cmd.none )
 
 
 applyPaste : Model -> ( Paste.Model, List Paste.Effect ) -> ( Model, Cmd Msg )
@@ -630,6 +635,7 @@ viewThemeItem selectedId theme =
             , onClick (SelectTheme theme.id)
             ]
             [ span [ class "theme-switcher__name" ] [ Html.text theme.name ]
+            , viewByline theme
             , span
                 [ class "badge"
                 , classList
@@ -641,6 +647,35 @@ viewThemeItem selectedId theme =
                 [ Html.text (targetLabel theme.target) ]
             ]
         ]
+
+
+{-| The designer's credit. No `Author:` header means no byline at all, rather
+than a fabricated one. When the theme carries an http(s) `URL:` the name
+becomes a link; its click is stopped so crediting the designer never also
+swaps the theme out from under the reader.
+-}
+viewByline : Theme -> Html Msg
+viewByline theme =
+    if String.isEmpty theme.author then
+        Html.text ""
+
+    else
+        span [ class "theme-switcher__author" ]
+            [ Html.text "by "
+            , case theme.url of
+                Just link ->
+                    a
+                        [ href link
+                        , rel "noopener"
+                        , target "_blank"
+                        , class "theme-switcher__author-link"
+                        , stopPropagationOn "click" (Decode.succeed ( NoOp, True ))
+                        ]
+                        [ Html.text theme.author ]
+
+                Nothing ->
+                    Html.text theme.author
+            ]
 
 
 targetLabel : Target -> String

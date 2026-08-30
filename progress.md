@@ -191,3 +191,13 @@ Architecture holds: first-party faces are Theme-layer Font Library seed data (`t
 Fixed in `themes/quarto.css` `@media print` — whitespace only, no type change: `.rz-header` 0.8→0.55rem / 0.5→0.4rem, `.rz-section` 0.35→0.16rem, `.rz-entry` 0.25→0.18rem. Quarto has the shortest printable height (952px vs 1009 / 995), so it runs out of page first; the gaps are commented as load-bearing. long-resume quarto 4→3; `U3_PRINT_PAGES` untouched (Jordan still 2/2/2); `page1-fill` 0.91→0.90 (≥0.85); `#rz-experience` 999.9→995.4px, still above 952 for `fixture-trips-e1`. Print-scale headroom now matches switchyard exactly (3 pages at 1.01, 4 at 1.02).
 
 `just verify` exits 0 — fmt, clippy pedantic, cargo test, 165 probes, no failures. First green run on record. `LONG_PRINT_PAGES` and `MAX_LONG_PAGES` left at 3; no board move, no fixture change.
+
+## 2026-08-30 — ZG-16: every theme card credits its designer
+
+`generate.mjs parseTheme` now reads `Author:` and `URL:` from the theme header and is exported behind a main guard so the unit test can import it without running the generator. `URL:` goes through `safeThemeUrl`: only `http`/`https` survives, so a designer-supplied header cannot put `javascript:` or `data:` into an href. `Generated.Themes.Theme` gains `author : String` and `url : Maybe String`; the compiler caught `ThemeId.fallbackTheme`, whose synthesised record now carries no author rather than an invented one.
+
+Cards render `by <author>` under the name, linked when the theme has a URL. First-party headers are `Author: ResumeZen` / `URL: https://github.com/subzerocorp/cvzengarden`. No `Author:` line means no `.theme-switcher__author` at all. `themes/_blank.css` gained a `URL:` line; `themes/README.md` documents all five header fields with a worked example.
+
+The link sits inside the option button, so `stopPropagationOn "click"` keeps crediting a designer from swapping the reader's theme — measured, not assumed: Chromium fires both the link and the button handler without it. It is also its own tab stop, which invalidated S4's assumption that one Tab from nightgarden reaches quarto; `probes.mjs` now focuses `#theme-option-quarto` directly. Same claim, no adjacency assumption.
+
+New probes `ZG-16/byline`, `ZG-16/byline-link`, `ZG-16/no-fake-byline` (the last writes an authorless lab theme, regenerates, asserts the card exists with no byline, and deletes it in `finally`). `just verify` exits 0 — 170 probes, `npm run test:unit` 212/212. Screenshot `/tmp/zg16-switcher.png`. Board `review`, not `done`: the DoD's Reviewer / Tester / Architect BLESS ritual has not been run.

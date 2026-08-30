@@ -13,6 +13,32 @@ themes/
 
 First-party set (RZ-5): three different designers, three targets. Open [`../skeleton/example.html`](../skeleton/example.html), unlink `preview.css`, and link one of the files above.
 
+## Header fields
+
+The build reads five fields from the comment header at the top of each theme
+file. `Name` and `rz-target` shape the catalog; `Author` and `URL` become the
+byline on your theme card.
+
+| Field | Required | What it does |
+|---|---|---|
+| `Name` | no | Card title. Falls back to a title-cased file name. |
+| `Author` | no | Byline: the card reads `by <Author>`. Omit the line and the card shows no byline — never an invented one. |
+| `URL` | no | Wraps the byline in a link to your site. Only `http`/`https` is kept; anything else is dropped. |
+| `License` | no | Recorded for humans; the catalog does not read it. |
+| `rz-target` | no | `web`, `print`, or `both` (default). Drives the Screen/Print badge and the filters. |
+
+```css
+/**
+ * ResumeZen theme
+ * Name:        Ledger
+ * Author:      Mika Tan
+ * URL:         https://mika.example
+ * License:     CC BY-NC-SA 4.0
+ *
+ * rz-target: both
+ */
+```
+
 ## Rules
 
 - Target the class contract in [`../skeleton/CLASS-CONTRACT.md`](../skeleton/CLASS-CONTRACT.md).

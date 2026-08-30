@@ -248,6 +248,40 @@ body {
   font-size: 0.92rem;
 }
 
+/* Name and badge share the first row; the designer credit takes its own row
+   underneath, so a long name never squeezes the byline out of the card. */
+.theme-switcher__option {
+  flex-wrap: wrap;
+}
+
+.theme-switcher__name {
+  order: 1;
+}
+
+.theme-switcher__option .badge {
+  order: 2;
+}
+
+.theme-switcher__author {
+  order: 3;
+  flex-basis: 100%;
+  font-size: 0.78rem;
+  opacity: 0.75;
+}
+
+.theme-switcher__author-link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* The byline link is its own tab stop, so it needs its own ring. */
+.theme-switcher__author-link:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 .theme-notice {
   flex-direction: row;
   align-items: flex-start;
