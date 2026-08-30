@@ -67,3 +67,59 @@ AC1's "each `#theme-option-*` … contains" is what forced blocker 5. Human rule
 amend AC1 to the card, restructure so the byline is a sibling of the option button.
 Fix all five, then restart the full three-adversary chain — prior findings do not
 carry across material change.
+
+---
+
+# ZG-16 Reviewer — cycle 2 (commit `8af53d2`)
+
+## Verdict
+
+**REVIEWER REJECT ZG-16**
+
+All five cycle-1 blockers verified closed by measurement, not by reading the commit
+message: the aria snapshot now renders `button "Nightgarden Screen" [pressed]` and a
+separate `link "ResumeZen"`, and the card's `outerHTML` survives a `DOMParser`
+round-trip byte-identical, so the parser no longer hoists the anchor out. The import
+guard was mutation-tested in both directions. `safeThemeUrl` was re-attacked with 38
+hostile inputs, all rejected. The restructure is the right one. Two new blockers.
+
+## Must-fix (blockers)
+
+1. **The theme card's click target shrank to 30% of the card while the whole card still
+   paints hover.** Padding, border and background moved to `.theme-switcher__item`
+   (`chrome.css:213`) and the button was left at `padding: 0` (`:231`), with hover on
+   the `li` (`:226`). Measured at 1280×800: card 259.8×55.2, button 237×**18.2**;
+   `elementFromPoint` at the card's inner corner returns the `li`, and a click there
+   does not change the theme, yet that region lightens on hover exactly like the live
+   control. Pre-ZG-16 the button *was* the card (`width:100%` plus the padding), so
+   every pixel selected. Unmentioned in the doc comments, the commit message and
+   `progress.md`, and unasserted by any probe — an unnoticed side effect, not a
+   decision, in the product's primary control (BAR-Q1 priority 1 is ease of use).
+   Fixable without disturbing AC1's siblinghood: return the padding to the button and
+   give `.theme-switcher__author` matching padding, or keep the card frame and drive
+   the highlight from `.theme-switcher__item:has(.theme-switcher__option:hover)`.
+   Pin the hit box with a probe either way.
+2. **AC2's stated value no longer matches the code, and the AC was not amended.**
+   `safeThemeUrl` returns `parsed.href`, so `https://mika.example` yields the slashed
+   form. The change is good and cycle 1 asked for it, but a reviewer's should-fix does
+   not amend an acceptance criterion — the mirror image of cycle 1's blocker 5.
+
+## Should-fix (non-blocking)
+
+Byline link's focus ring exists (measured) but is excluded from S4's ring filter
+(`probes.mjs:1016`) and the `:focus-visible` grep (`:301`); a SIGKILL mid-probe leaves
+two lab themes plus a modified tracked `Themes.elm` (clean runs verified byte-exact —
+`mkdtempSync` per `zg-5.mjs:351` plus a themes-dir override would remove the window);
+`rebuildCatalog()` inside `finally` (`zg-16.mjs:165`) can mask the real exception and
+runs after the files are deleted; `generate.test.mjs:93` regenerates tracked build
+output as a side effect of `test:unit`; the module header claims a fuller
+calculation split than it implements; `zg-16.mjs:21` shadows the injected
+`repoDir`/`frontendDir`; `bylineReasons` proves "not a descendant" while only quarto
+proves siblinghood; `https:alert(1)` and `http:evil` normalise to live broken links
+with no warning, and header keys are case-sensitive; fixed `waitForTimeout(200)`.
+
+## Disposition
+
+Blocker 2 settled by the conductor: AC2's example amended to the parser's normalised
+form, keeping the security improvement. Blocker 1 goes back to the Generator. Chain
+restarts again — prior findings do not carry across material change.
