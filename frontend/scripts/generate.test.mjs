@@ -5,7 +5,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { parseTheme, safeThemeUrl } from "./generate.mjs";
+import { parseTheme, safeThemeUrl, suspectThemeHost } from "./generate.mjs";
 
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
 const generator = path.join(scriptsDir, "generate.mjs");
@@ -55,6 +55,38 @@ test("safeThemeUrl returns the parser's own href, not the raw input", () => {
   // Whatever the URL parser normalised away must not ride along into the href.
   assert.equal(safeThemeUrl("https://a.example/a b"), "https://a.example/a%20b");
   assert.equal(safeThemeUrl("HTTPS://A.example/Path"), "https://a.example/Path");
+});
+
+test("suspectThemeHost flags a kept URL whose host is not a domain", () => {
+  // The scheme filter passes these: the URL parser reads a special scheme with
+  // no `//` as a host, so they ship as live links that resolve for nobody.
+  assert.equal(suspectThemeHost(safeThemeUrl("https:alert(1)")), "alert(1)");
+  assert.equal(suspectThemeHost(safeThemeUrl("http:evil")), "evil");
+  assert.equal(suspectThemeHost("https://intranet/"), "intranet");
+});
+
+test("suspectThemeHost is silent on hosts a reader can reach", () => {
+  for (const fine of [
+    "https://mika.example/",
+    "http://a.b.c.example/path",
+    "http://127.0.0.1:8080/",
+    "http://localhost:3000/",
+    "http://dev.localhost/",
+    "http://[::1]/",
+    "",
+  ]) {
+    assert.equal(suspectThemeHost(fine), "", `expected ${fine || "(empty)"} to pass unremarked`);
+  }
+});
+
+test("parseTheme reports a suspect host so the build can warn, and still links it", () => {
+  const degenerate = parseTheme("ledger.css", header(["Author:      Mika Tan", "URL:         https:alert(1)"]));
+  assert.equal(degenerate.url, "https://alert(1)/", "the scheme filter kept it, so the href is the parser's own");
+  assert.equal(degenerate.suspectHost, "alert(1)");
+  assert.equal(degenerate.droppedUrl, "", "it was not dropped — the warning is the whole remedy");
+
+  const good = parseTheme("ledger.css", header(["Author:      Mika Tan", "URL:         https://mika.example"]));
+  assert.equal(good.suspectHost, "");
 });
 
 test("parseTheme trims surrounding whitespace from the byline fields", () => {

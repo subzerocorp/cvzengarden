@@ -47,6 +47,32 @@ export function safeThemeUrl(raw) {
   }
 }
 
+/**
+ * The host of a kept URL that will not resolve for anyone but its author, or
+ * "" when the host looks real.
+ *
+ * `safeThemeUrl` only judges the scheme, and the URL parser is happy to read
+ * `https:alert(1)` or `http:evil` as `https://alert(1)/` and `http://evil/` —
+ * live, shipped, permanently broken links. A host with no dot is either a
+ * local name or a typo, so it is called out rather than quietly linked;
+ * `localhost` and a bracketed IPv6 literal are the two that are neither.
+ */
+export function suspectThemeHost(url) {
+  if (!url) {
+    return "";
+  }
+  try {
+    const { hostname } = new URL(url);
+    const local = hostname === "localhost" || hostname.endsWith(".localhost");
+    if (!hostname || local || hostname.startsWith("[") || hostname.includes(".")) {
+      return "";
+    }
+    return hostname;
+  } catch {
+    return "";
+  }
+}
+
 export function parseTheme(fileName, source) {
   const id = fileName.replace(/\.css$/i, "");
   const targetMatch = source.match(/\/\*\s*rz-target:\s*(web|print|both)\s*\*\//i);
@@ -73,6 +99,9 @@ export function parseTheme(fileName, source) {
     // than wonder why their byline is not a link. Reported by main(), so
     // parseTheme stays a calculation.
     droppedUrl: rawUrl && !url ? rawUrl : "",
+    // A kept `https:` link whose host cannot resolve is worse than a dropped
+    // one — it ships as a real link that goes nowhere. Also reported by main().
+    suspectHost: suspectThemeHost(url),
   };
 }
 
@@ -219,6 +248,11 @@ function main() {
     if (theme.droppedUrl) {
       console.warn(
         `themes/${theme.id}.css: URL: ${theme.droppedUrl} is not an http(s) link — the byline ships unlinked`,
+      );
+    }
+    if (theme.suspectHost) {
+      console.warn(
+        `themes/${theme.id}.css: URL: ${theme.url} has no domain (host "${theme.suspectHost}") — the byline links somewhere no reader can reach`,
       );
     }
   }

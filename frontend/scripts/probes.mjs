@@ -1013,7 +1013,14 @@ async function s4Probes(page) {
     pass("S4 Tab reaches each theme option and Print/Screen without a pointer");
   }
 
-  const themed = visited.filter((item) => item.className.includes("theme-switcher__option") || item.className.includes("btn"));
+  // The byline link (ZG-16) is its own tab stop with its own ring, so it is
+  // held to the same standard as the option it follows.
+  const themed = visited.filter(
+    (item) =>
+      item.className.includes("theme-switcher__option") ||
+      item.className.includes("theme-switcher__author-link") ||
+      item.className.includes("btn"),
+  );
   const ringless = themed.filter((item) => {
     const width = parseFloat(item.outlineWidth || "0");
     const hasOutline = item.outlineStyle && item.outlineStyle !== "none" && width > 0;

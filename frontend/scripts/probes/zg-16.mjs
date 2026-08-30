@@ -6,20 +6,20 @@
  *
  * The card is `li.theme-switcher__item` and the byline is a sibling of
  * `#theme-option-*`, never a descendant: `button` forbids interactive
- * descendants, so a link nested inside one is never exposed as a link.
+ * descendants, so a link nested inside one is never exposed as a link. Moving
+ * the frame onto the card also moved the hit box, so the card's geometry is
+ * asserted here too: what lightens under the pointer must be what a click
+ * selects.
  *
- * Reading the page is an action; deciding whether a byline is well-formed is a
- * pure calculation, so `bylineReasons` is unit-testable without a browser.
+ * Reading the page is an action; every judgement about what was read is a pure
+ * calculation — `bylineReasons`, `plainBylineReasons`, `noFakeBylineReasons`
+ * and `hitBoxReasons` are all unit-tested without a browser in
+ * `zg-16.test.mjs`. `repoDir` and `frontendDir` are injected by the runner.
  */
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { openGarden } from "./lib/page.mjs";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const frontendDir = path.resolve(__dirname, "../..");
-const repoDir = path.resolve(frontendDir, "..");
 
 export const FIRST_PARTY_IDS = ["nightgarden", "quarto", "switchyard"];
 export const FIRST_PARTY_AUTHOR = "by ResumeZen";
@@ -68,6 +68,96 @@ export function bylineReasons(card, { wantAuthor, wantUrl }) {
   ];
 }
 
+/** Calculation: what is wrong with an authorless card, if anything. */
+export function noFakeBylineReasons(card, id) {
+  return [
+    ...(card.present ? [] : [`#theme-option-${id} never appeared in the catalog`]),
+    ...(card.hasByline ? [`card shows a byline "${card.text}" for a theme with no Author: header`] : []),
+  ];
+}
+
+/** Calculation: what is wrong with an `Author:`-without-`URL:` card, if anything. */
+export function plainBylineReasons(card, { id, wantAuthor }) {
+  if (!card.present) {
+    return [`#theme-option-${id} never appeared in the catalog`];
+  }
+  if (!card.hasByline) {
+    return [`card for ${id} has no .theme-switcher__author`];
+  }
+  return [
+    ...(card.text === wantAuthor ? [] : [`byline reads "${card.text}", want "${wantAuthor}"`]),
+    ...(card.linkHref === null ? [] : [`byline for a theme with no URL: header is a link to ${card.linkHref}`]),
+    ...(card.bylineInsideOption ? [`byline is nested inside #theme-option-${id}`] : []),
+  ];
+}
+
+/**
+ * The share of the card's height the option button must at least cover. The
+ * byline is a row of its own outside the button, so the button can never be
+ * the whole card — but it must be everything else.
+ */
+export const HIT_BOX_MIN_HEIGHT_SHARE = 0.5;
+
+const round1 = (value) => Math.round(value * 10) / 10;
+
+/**
+ * Calculation: what is wrong with one card's hit box, if anything.
+ *
+ * `card` is the card's *padding* box — the frame's own border is nobody's hit
+ * box — and `button` is `#theme-option-*`'s border box, both in viewport
+ * coordinates. `points` are sampled spots inside the card, each carrying
+ * whether the card lightens under the pointer there (`highlighted`) and
+ * whether `document.elementFromPoint` lands inside the option (`insideOption`).
+ *
+ * The invariant: the option spans the card's full width, starts flush with its
+ * top, and reaches down to the byline row, so the only region a click can miss
+ * is the byline's own box — and nothing outside the option may lighten, which
+ * is how a shrunken target advertises itself as clickable.
+ *
+ * `selected` exempts a card from the "must lighten" half only: `--accent` and
+ * `--sidebar-accent` are the same value, so the current selection is already
+ * painted at the hover tint and has no colour left to change. The other two
+ * cards carry that assertion.
+ */
+export function hitBoxReasons(geometry, { minHeightShare = HIT_BOX_MIN_HEIGHT_SHARE, tolerance = 1 } = {}) {
+  const { id, card, button, byline, points = [], selected = false } = geometry;
+  const cardRight = card.left + card.width;
+  const cardBottom = card.top + card.height;
+  const buttonRight = button.left + button.width;
+  const buttonBottom = button.top + button.height;
+  // Everything below the option is unclickable card; only the byline's own box
+  // is allowed to be there.
+  const floor = byline ? byline.top : cardBottom;
+
+  return [
+    ...(button.left > card.left + tolerance || buttonRight < cardRight - tolerance
+      ? [`option spans ${round1(button.left)}..${round1(buttonRight)} inside a card spanning ${round1(card.left)}..${round1(cardRight)}`]
+      : []),
+    ...(button.top > card.top + tolerance
+      ? [`${round1(button.top - card.top)}px of card sits above the option`]
+      : []),
+    ...(buttonBottom < floor - tolerance
+      ? [`${round1(floor - buttonBottom)}px of card between the option and ${byline ? "the byline row" : "the card's bottom"} is not clickable`]
+      : []),
+    ...(button.height < card.height * minHeightShare
+      ? [`option covers ${round1((button.height / card.height) * 100)}% of the card's height (${round1(button.height)} of ${round1(card.height)}), want at least ${round1(minHeightShare * 100)}%`]
+      : []),
+    ...points
+      .filter((point) => point.highlighted && !point.insideOption)
+      .map((point) => `the card lightens at ${point.label} (${round1(point.x)}, ${round1(point.y)}) but a click there lands on ${point.hit}, not #theme-option-${id}`),
+    ...(selected
+      ? []
+      : points
+          .filter((point) => point.mustLighten && !point.highlighted)
+          .map((point) => `${point.label} (${round1(point.x)}, ${round1(point.y)}) is inside the option but shows no hover feedback`)),
+    // Anti-vacuity: with no point required to lighten, the filter above is
+    // satisfied by hover feedback that vanished entirely.
+    ...(points.length && !selected && !points.some((point) => point.mustLighten)
+      ? ["no sampled point was required to lighten, so hover feedback is unasserted"]
+      : []),
+  ];
+}
+
 /** Action: read every theme card's byline out of the live switcher. */
 async function readCards(page, ids) {
   return page.evaluate((wanted) =>
@@ -104,8 +194,140 @@ async function bylineProbe({ browser, origin, report }) {
   }
 }
 
+// Somewhere in the preview stage, far from the switcher: the pointer parks
+// here to read each sample point's unhovered colour.
+const PARK = { x: 900, y: 780 };
+
+/**
+ * Action: read one card's boxes and the colour painted at each sample point,
+ * first with the pointer parked away and then with it on the point itself.
+ *
+ * The colour is the first non-transparent background up from
+ * `elementFromPoint`, which is what the reader actually sees there.
+ */
+async function readHitBox(page, id) {
+  const readPoint = (x, y) =>
+    page.evaluate(([px, py, themeId]) => {
+      const option = document.getElementById(`theme-option-${themeId}`);
+      let node = document.elementFromPoint(px, py);
+      const hit = node ? `${node.tagName.toLowerCase()}${node.id ? `#${node.id}` : ""}` : "nothing";
+      const insideOption = Boolean(option && node && option.contains(node));
+      let background = "";
+      while (node) {
+        const value = getComputedStyle(node).backgroundColor;
+        if (value && value !== "transparent" && !/^rgba\(.*,\s*0\)$/.test(value)) {
+          background = value;
+          break;
+        }
+        node = node.parentElement;
+      }
+      return { hit, insideOption, background };
+    }, [x, y, id]);
+
+  await page.mouse.move(PARK.x, PARK.y);
+  const boxes = await page.evaluate((themeId) => {
+    const option = document.getElementById(`theme-option-${themeId}`);
+    const card = option?.closest("li.theme-switcher__item");
+    if (!option || !card) {
+      return null;
+    }
+    const rect = (element) => {
+      const { left, top, width, height } = element.getBoundingClientRect();
+      return { left, top, width, height };
+    };
+    // The card's padding box: its own border is nobody's hit box.
+    const frame = card.getBoundingClientRect();
+    const style = getComputedStyle(card);
+    const edge = (side) => parseFloat(style[`border${side}Width`]) || 0;
+    const byline = card.querySelector(".theme-switcher__author");
+    return {
+      // The current selection is already painted at the hover tint, so it is
+      // the other cards that prove hover feedback still exists.
+      selected: option.getAttribute("aria-pressed") === "true",
+      card: {
+        left: frame.left + edge("Left"),
+        top: frame.top + edge("Top"),
+        width: frame.width - edge("Left") - edge("Right"),
+        height: frame.height - edge("Top") - edge("Bottom"),
+      },
+      frame: rect(card),
+      button: rect(option),
+      byline: byline ? rect(byline) : null,
+    };
+  }, id);
+  if (!boxes) {
+    return { id, missing: true };
+  }
+
+  const { card, byline } = boxes;
+  const sampled = [
+    { label: "the card's inner top-left corner", x: card.left + 2, y: card.top + 2, mustLighten: true },
+    { label: "the card's inner top-right corner", x: card.left + card.width - 3, y: card.top + 2 },
+    { label: "the left edge of the name row", x: card.left + 2, y: card.top + card.height * 0.25 },
+    ...(byline
+      ? [
+          { label: "the byline row's left edge", x: card.left + 2, y: byline.top + byline.height / 2 },
+          { label: "the card's inner bottom-left corner", x: card.left + 2, y: card.top + card.height - 2 },
+        ]
+      : []),
+  ];
+
+  const parked = [];
+  for (const point of sampled) {
+    parked.push(await readPoint(point.x, point.y));
+  }
+
+  const points = [];
+  for (const [index, point] of sampled.entries()) {
+    await page.mouse.move(point.x, point.y);
+    const hovered = await readPoint(point.x, point.y);
+    points.push({
+      ...point,
+      hit: hovered.hit,
+      insideOption: hovered.insideOption,
+      highlighted: hovered.background !== parked[index].background,
+    });
+  }
+  await page.mouse.move(PARK.x, PARK.y);
+
+  return { id, ...boxes, points };
+}
+
+/**
+ * The card's frame moved to the `li`, so the option button no longer defines
+ * the card's box — nothing but this probe stops it drifting back to a strip
+ * the reader cannot hit while the whole card still lights up under the pointer.
+ */
+async function hitBoxProbe({ browser, origin, report }) {
+  const { page } = await openGarden(browser, origin);
+  try {
+    for (const id of FIRST_PARTY_IDS) {
+      const geometry = await readHitBox(page, id);
+      const line = `ZG-16/hit-box ${id}`;
+      if (geometry.missing) {
+        report.fail(`${line}: #theme-option-${id} is missing`);
+        continue;
+      }
+      const reasons = hitBoxReasons(geometry);
+      if (reasons.length) {
+        report.fail(`${line}: ${reasons.join("; ")}`);
+      } else {
+        const share = round1((geometry.button.height / geometry.card.height) * 100);
+        const hover = geometry.selected
+          ? "already at the hover tint as the current selection"
+          : `lightens under the pointer and every point that lightens hits the option (${geometry.points.filter((point) => point.highlighted).length} of ${geometry.points.length} sampled points)`;
+        report.pass(
+          `${line} option ${round1(geometry.button.width)}x${round1(geometry.button.height)} covers the ${round1(geometry.card.width)}x${round1(geometry.card.height)} card down to the byline row (${share}% of its height); ${hover}`,
+        );
+      }
+    }
+  } finally {
+    await page.close();
+  }
+}
+
 /** Action: regenerate the catalog and relink the bundle the server is serving. */
-function rebuildCatalog() {
+function rebuildCatalog(frontendDir) {
   for (const [command, args] of [
     [process.execPath, [path.join(frontendDir, "scripts", "generate.mjs")]],
     [path.join(frontendDir, "node_modules", ".bin", "elm"), ["make", "src/Main.elm", "--output=dist/garden.js"]],
@@ -121,48 +343,58 @@ function rebuildCatalog() {
 /**
  * The two `viewByline` branches the shipped catalog cannot reach: an authorless
  * theme renders no byline, and an author with no URL renders plain text with no
- * link. Both lab themes go in, get built, get asserted, and come out again in
- * `finally` — a failed run must not leave the tree or dist dirty.
+ * link. Both lab themes go in, get built, get asserted, and come out again — a
+ * failed run must not leave the tree or dist dirty.
+ *
+ * Cleanup is deliberately not in a `finally`: deleting the files and rebuilding
+ * the catalog is itself fallible, and a `throw` from there would replace the
+ * probe's own exception with a rebuild error about a tree that has already been
+ * restored. It runs after the probe body instead, reports its own failure, and
+ * then the original error — if there was one — is the one that propagates.
  */
-async function labBylineProbe({ browser, origin, report }) {
+async function labBylineProbe({ browser, origin, report, repoDir, frontendDir }) {
   const written = LAB_FILES.map(([id, css]) => {
     const file = path.join(repoDir, "themes", `${id}.css`);
     fs.writeFileSync(file, css);
     return { id, file };
   });
+
+  let probeError = null;
   let page = null;
   try {
-    rebuildCatalog();
+    rebuildCatalog(frontendDir);
     ({ page } = await openGarden(browser, origin));
     const [authorless, plain] = await readCards(page, [LAB_AUTHORLESS, LAB_PLAIN]);
 
-    const authorlessReasons = [
-      ...(authorless.present ? [] : [`#theme-option-${LAB_AUTHORLESS} never appeared in the catalog`]),
-      ...(authorless.hasByline ? [`card shows a byline "${authorless.text}" for a theme with no Author: header`] : []),
-    ];
-    authorlessReasons.length
-      ? report.fail(`ZG-16/no-fake-byline: ${authorlessReasons.join("; ")}`)
+    const noFakeReasons = noFakeBylineReasons(authorless, LAB_AUTHORLESS);
+    noFakeReasons.length
+      ? report.fail(`ZG-16/no-fake-byline: ${noFakeReasons.join("; ")}`)
       : report.pass("ZG-16/no-fake-byline authorless lab theme renders a card with no .theme-switcher__author");
 
-    const plainReasons = [
-      ...(plain.present ? [] : [`#theme-option-${LAB_PLAIN} never appeared in the catalog`]),
-      ...(plain.hasByline ? [] : [`card for ${LAB_PLAIN} has no .theme-switcher__author`]),
-      ...(plain.hasByline && plain.text !== LAB_PLAIN_AUTHOR ? [`byline reads "${plain.text}", want "${LAB_PLAIN_AUTHOR}"`] : []),
-      ...(plain.linkHref === null ? [] : [`byline for a theme with no URL: header is a link to ${plain.linkHref}`]),
-      ...(plain.bylineInsideOption ? [`byline is nested inside #theme-option-${LAB_PLAIN}`] : []),
-    ];
+    const plainReasons = plainBylineReasons(plain, { id: LAB_PLAIN, wantAuthor: LAB_PLAIN_AUTHOR });
     plainReasons.length
       ? report.fail(`ZG-16/plain-byline: ${plainReasons.join("; ")}`)
       : report.pass(`ZG-16/plain-byline lab theme with Author: and no URL: renders "${plain.text}" as plain text, no <a>`);
+  } catch (error) {
+    probeError = error;
   } finally {
     if (page) {
-      await page.close();
+      await page.close().catch(() => {});
     }
+  }
+
+  try {
     for (const { id, file } of written) {
       fs.rmSync(file, { force: true });
       fs.rmSync(path.join(frontendDir, "dist", "themes", `${id}.css`), { force: true });
     }
-    rebuildCatalog();
+    rebuildCatalog(frontendDir);
+  } catch (error) {
+    report.fail(`ZG-16/lab-cleanup: the lab themes were removed but the catalog did not rebuild: ${error.message}`);
+  }
+
+  if (probeError) {
+    throw probeError;
   }
 }
 
@@ -207,6 +439,7 @@ async function bylineLinkProbe({ browser, origin, report }) {
 
 export async function zg16Probes(context) {
   await bylineProbe(context);
+  await hitBoxProbe(context);
   await bylineLinkProbe(context);
   await labBylineProbe(context);
 }

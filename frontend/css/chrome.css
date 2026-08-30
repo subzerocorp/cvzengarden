@@ -209,10 +209,13 @@ body {
 }
 
 /* The card is the li: it owns the frame and the selected state so the byline
-   can sit beside the option button instead of inside it. */
+   can sit beside the option button instead of inside it. The card's inset
+   belongs to its children, not to the li — the button carries it, so the
+   button *is* the card everywhere except the byline row, and every pixel
+   that lightens under the pointer is a pixel that selects the theme. */
 .theme-switcher__item {
   margin: 0;
-  padding: 0.55rem 0.65rem;
+  padding: 0;
   border: 1px solid var(--sidebar-border);
   border-radius: var(--radius);
   background: var(--sidebar);
@@ -223,24 +226,35 @@ body {
   border-color: var(--ring);
 }
 
-.theme-switcher__item:hover {
-  background: var(--accent);
-  color: var(--accent-foreground);
-}
-
 .theme-switcher__option {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.6rem;
   width: 100%;
-  padding: 0;
+  /* Top and side insets of the card, plus the gap above the byline. */
+  padding: 0.55rem 0.65rem 0.15rem;
   border: 0;
+  border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
   background: none;
   color: inherit;
   font: inherit;
   text-align: left;
   cursor: pointer;
+}
+
+/* A theme with no `Author:` renders no byline element, so the button is the
+   card's last element child and carries its bottom inset too. */
+.theme-switcher__option:last-child {
+  padding-bottom: 0.55rem;
+  border-radius: calc(var(--radius) - 1px);
+}
+
+/* Hover feedback belongs to the hit box, never to the whole card: lightening
+   the byline row would advertise a click that row cannot take. */
+.theme-switcher__option:hover {
+  background: var(--accent);
+  color: var(--accent-foreground);
 }
 
 .theme-switcher__option:focus-visible {
@@ -254,10 +268,12 @@ body {
 }
 
 /* The designer credit takes its own row under the name and badge, so a long
-   name never squeezes it out of the card. */
+   name never squeezes it out of the card. It carries the card's remaining
+   inset itself: the row the button cannot cover is exactly this element's
+   box, with no dead strip of card left over below it. */
 .theme-switcher__author {
   display: block;
-  margin-top: 0.15rem;
+  padding: 0 0.65rem 0.55rem;
   font-size: 0.78rem;
   opacity: 0.75;
 }
