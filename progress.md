@@ -201,3 +201,17 @@ Cards render `by <author>` under the name, linked when the theme has a URL. Firs
 The link sits inside the option button, so `stopPropagationOn "click"` keeps crediting a designer from swapping the reader's theme — measured, not assumed: Chromium fires both the link and the button handler without it. It is also its own tab stop, which invalidated S4's assumption that one Tab from nightgarden reaches quarto; `probes.mjs` now focuses `#theme-option-quarto` directly. Same claim, no adjacency assumption.
 
 New probes `ZG-16/byline`, `ZG-16/byline-link`, `ZG-16/no-fake-byline` (the last writes an authorless lab theme, regenerates, asserts the card exists with no byline, and deletes it in `finally`). `just verify` exits 0 — 170 probes, `npm run test:unit` 212/212. Screenshot `/tmp/zg16-switcher.png`. Board `review`, not `done`: the DoD's Reviewer / Tester / Architect BLESS ritual has not been run.
+
+## 2026-08-30 — ZG-16 cycle 2: byline is a sibling of the option button
+
+Reviewer REJECT of `5529b3f` (`docs/plans/zg-16-reviewer.md`), five blockers. AC1 amended: the card, not the button, is what "contains" the byline.
+
+The card is now `li.theme-switcher__item` — it owns the border, radius, background, `--selected` and hover; `#theme-option-*` stays the focusable `<button>` with `aria-pressed` and `onClick`, and `.theme-switcher__author` is its sibling. `button` forbids interactive descendants, and `role=button` is children-presentational, so the nested `<a>` was a tab stop assistive tech never exposed as a link. Outside the button the link cannot reach the selection handler, so `stopPropagationOn`, the `NoOp` Msg and its `update` branch, and the three `order:` rules all went with it; the duplicate `.theme-switcher__option` / `__name` blocks are merged. S4 is back to `focus(nightgarden)` + Tab ×2 — measured, the walk is option → byline link → next option, which also pins the byline's tab position.
+
+`parseTheme` reads `rz-target` only as its own `/* … */` comment, so `themes/README.md`'s worked example (and `themes/_blank.css:8`, pre-existing since `43517f9`) taught a form that silently parses as `Both`. Both moved to the line-1 form; the README says which comment each field lives in and why. The parser is unchanged — the line-1 form is what `CLASS-CONTRACT.md` §2 and all three first-party themes already use.
+
+`generate.test.mjs`'s import guard test asserted only `typeof parseTheme === "function"`. It now spawns a child that imports the module and asserts no `Generated N theme(s)` line and a byte-identical `src/Generated/Themes.elm`; with the guard deleted it fails. `probes/zg-16.test.mjs` covers all six `bylineReasons` branches plus the pass case, and the lab probe grew a second theme — `Author:` with no `URL:` — so both `viewByline` branches are exercised; both files are deleted and the catalog regenerated in `finally`.
+
+Should-fixes: the entry-point guard now bails on an undefined `process.argv[1]` and compares `fs.realpathSync` (a symlinked `npm run gen` was a silent no-op), in `generate.mjs` and `build-wasm.mjs`; `safeThemeUrl` returns `parsed.href`; a non-empty `URL:` that is dropped now warns instead of vanishing. `rel="nofollow ugc"` is deferred — no submitted themes yet.
+
+`just verify` exits 0 — fmt, clippy pedantic, cargo test, 171 probes, `npm run test:unit` 225/225. Board unmoved; the three-adversary chain restarts from scratch.

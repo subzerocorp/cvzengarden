@@ -15,29 +15,37 @@ First-party set (RZ-5): three different designers, three targets. Open [`../skel
 
 ## Header fields
 
-The build reads five fields from the comment header at the top of each theme
-file. `Name` and `rz-target` shape the catalog; `Author` and `URL` become the
-byline on your theme card.
+The build reads five fields from the top of each theme file. `Name` and
+`rz-target` shape the catalog; `Author` and `URL` become the byline on your
+theme card.
 
-| Field | Required | What it does |
-|---|---|---|
-| `Name` | no | Card title. Falls back to a title-cased file name. |
-| `Author` | no | Byline: the card reads `by <Author>`. Omit the line and the card shows no byline — never an invented one. |
-| `URL` | no | Wraps the byline in a link to your site. Only `http`/`https` is kept; anything else is dropped. |
-| `License` | no | Recorded for humans; the catalog does not read it. |
-| `rz-target` | no | `web`, `print`, or `both` (default). Drives the Screen/Print badge and the filters. |
+| Field | Required | Where | What it does |
+|---|---|---|---|
+| `rz-target` | no | its own `/* … */` comment, conventionally line 1 | `web`, `print`, or `both` (default). Drives the Screen/Print badge and the filters. |
+| `Name` | no | `/** … */` block | Card title. Falls back to a title-cased file name. |
+| `Author` | no | `/** … */` block | Byline: the card reads `by <Author>`. Omit the line and the card shows no byline — never an invented one. |
+| `URL` | no | `/** … */` block | Wraps the byline in a link to your site. Only `http`/`https` is kept; anything else is dropped (with a build warning). |
+| `License` | no | `/** … */` block | Recorded for humans; the catalog does not read it. |
+
+`rz-target` is the one field the build reads as a whole comment of its own, so
+it must stand alone — a `rz-target:` line *inside* the `/** … */` block is not
+read and the theme silently falls back to `both`:
 
 ```css
+/* rz-target: both */
+
 /**
  * ResumeZen theme
  * Name:        Ledger
  * Author:      Mika Tan
  * URL:         https://mika.example
  * License:     CC BY-NC-SA 4.0
- *
- * rz-target: both
  */
 ```
+
+Any other line in the block is prose for humans. The first-party themes carry a
+decorative `Target:` line that restates `rz-target` in the same breath as the
+description; the build ignores it, so only the line-1 comment decides the badge.
 
 ## Rules
 

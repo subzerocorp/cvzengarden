@@ -1026,7 +1026,11 @@ async function s4Probes(page) {
     pass("S4 focused garden controls show a visible :focus-visible ring");
   }
 
-  await page.locator("#theme-option-quarto").focus();
+  // Two Tabs off nightgarden: its byline link, then the next option. This also
+  // pins the byline's tab position — it must follow its own card's option.
+  await page.locator("#theme-option-nightgarden").focus();
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Tab");
   await page.keyboard.press("Space");
   await waitForThemeHref(page, "quarto");
   const afterSpace = await captureFrame(page);

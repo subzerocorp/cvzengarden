@@ -4,6 +4,10 @@
  * no byline at all rather than an invented one; and crediting the designer
  * never costs the reader their theme selection.
  *
+ * The card is `li.theme-switcher__item` and the byline is a sibling of
+ * `#theme-option-*`, never a descendant: `button` forbids interactive
+ * descendants, so a link nested inside one is never exposed as a link.
+ *
  * Reading the page is an action; deciding whether a byline is well-formed is a
  * pure calculation, so `bylineReasons` is unit-testable without a browser.
  */
@@ -21,33 +25,43 @@ export const FIRST_PARTY_IDS = ["nightgarden", "quarto", "switchyard"];
 export const FIRST_PARTY_AUTHOR = "by ResumeZen";
 export const FIRST_PARTY_URL = "https://github.com/subzerocorp/cvzengarden";
 
-// A theme file that exists only for the duration of `noFakeBylineProbe`.
-const LAB_ID = "zg16-lab";
-const LAB_CSS = `/**
+// Theme files that exist only for the duration of `labBylineProbe`. One has no
+// `Author:` at all, the other an `Author:` with no `URL:` — the two `viewByline`
+// branches no shipped theme reaches.
+const LAB_AUTHORLESS = "zg16-lab";
+const LAB_PLAIN = "zg16-lab-plain";
+export const LAB_PLAIN_AUTHOR = "by Lab Designer";
+
+const labCss = (fields) => `/* rz-target: both */
+
+/**
  * ResumeZen theme
- * Name:        ZG-16 Lab
- * License:     MIT
+${[...fields, "License:     MIT"].map((line) => ` * ${line}`).join("\n")}
  *
- * rz-target: both
- *
- * Written and deleted by the ZG-16 no-fake-byline probe. It deliberately has
- * no Author: line. If you are reading this in a checkout, a probe run was
- * interrupted — delete it and re-run \`npm run gen\`.
+ * Written and deleted by the ZG-16 lab-byline probe. If you are reading this
+ * in a checkout, a probe run was interrupted — delete it and re-run
+ * \`npm run gen\`.
  */
 
 .rz-resume {
 }
 `;
 
-/** Calculation: what is wrong with one card's byline, if anything. */
+const LAB_FILES = [
+  [LAB_AUTHORLESS, labCss(["Name:        ZG-16 Lab"])],
+  [LAB_PLAIN, labCss(["Name:        ZG-16 Lab Plain", "Author:      Lab Designer"])],
+];
+
+/** Calculation: what is wrong with one card's linked byline, if anything. */
 export function bylineReasons(card, { wantAuthor, wantUrl }) {
   if (!card.present) {
     return [`#theme-option-${card.id} is missing`];
   }
   if (!card.hasByline) {
-    return [`#theme-option-${card.id} has no .theme-switcher__author`];
+    return [`card for ${card.id} has no .theme-switcher__author`];
   }
   return [
+    ...(card.bylineInsideOption ? [`byline is nested inside #theme-option-${card.id}, not a sibling of it`] : []),
     ...(card.text !== wantAuthor ? [`byline reads "${card.text}", want "${wantAuthor}"`] : []),
     ...(card.linkHref !== wantUrl ? [`byline link href is ${card.linkHref ?? "absent"}, want ${wantUrl}`] : []),
     ...(!(card.linkRel ?? "").split(/\s+/).includes("noopener") ? [`byline link rel is "${card.linkRel ?? ""}", want noopener`] : []),
@@ -59,12 +73,14 @@ async function readCards(page, ids) {
   return page.evaluate((wanted) =>
     wanted.map((id) => {
       const option = document.getElementById(`theme-option-${id}`);
-      const author = option?.querySelector(".theme-switcher__author");
+      const card = option?.closest("li.theme-switcher__item");
+      const author = card?.querySelector(".theme-switcher__author");
       const link = author?.querySelector("a");
       return {
         id,
         present: Boolean(option),
         hasByline: Boolean(author),
+        bylineInsideOption: Boolean(author && option?.contains(author)),
         text: author?.textContent?.replace(/\s+/g, " ").trim() ?? null,
         linkHref: link?.getAttribute("href") ?? null,
         linkRel: link?.getAttribute("rel") ?? null,
@@ -81,7 +97,7 @@ async function bylineProbe({ browser, origin, report }) {
       const line = `ZG-16/byline ${card.id}`;
       reasons.length
         ? report.fail(`${line}: ${reasons.join("; ")}`)
-        : report.pass(`${line} "${card.text}" -> ${card.linkHref} rel=${card.linkRel}`);
+        : report.pass(`${line} "${card.text}" -> ${card.linkHref} rel=${card.linkRel}, sibling of #theme-option-${card.id}`);
     }
   } finally {
     await page.close();
@@ -102,26 +118,50 @@ function rebuildCatalog() {
   }
 }
 
-async function noFakeBylineProbe({ browser, origin, report }) {
-  const labFile = path.join(repoDir, "themes", `${LAB_ID}.css`);
-  fs.writeFileSync(labFile, LAB_CSS);
+/**
+ * The two `viewByline` branches the shipped catalog cannot reach: an authorless
+ * theme renders no byline, and an author with no URL renders plain text with no
+ * link. Both lab themes go in, get built, get asserted, and come out again in
+ * `finally` — a failed run must not leave the tree or dist dirty.
+ */
+async function labBylineProbe({ browser, origin, report }) {
+  const written = LAB_FILES.map(([id, css]) => {
+    const file = path.join(repoDir, "themes", `${id}.css`);
+    fs.writeFileSync(file, css);
+    return { id, file };
+  });
   let page = null;
   try {
     rebuildCatalog();
     ({ page } = await openGarden(browser, origin));
-    const [card] = await readCards(page, [LAB_ID]);
-    const reasons = [
-      ...(card.present ? [] : [`#theme-option-${LAB_ID} never appeared in the catalog`]),
-      ...(card.hasByline ? [`card shows a byline "${card.text}" for a theme with no Author: header`] : []),
+    const [authorless, plain] = await readCards(page, [LAB_AUTHORLESS, LAB_PLAIN]);
+
+    const authorlessReasons = [
+      ...(authorless.present ? [] : [`#theme-option-${LAB_AUTHORLESS} never appeared in the catalog`]),
+      ...(authorless.hasByline ? [`card shows a byline "${authorless.text}" for a theme with no Author: header`] : []),
     ];
-    reasons.length
-      ? report.fail(`ZG-16/no-fake-byline: ${reasons.join("; ")}`)
-      : report.pass(`ZG-16/no-fake-byline authorless lab theme renders a card with no .theme-switcher__author`);
+    authorlessReasons.length
+      ? report.fail(`ZG-16/no-fake-byline: ${authorlessReasons.join("; ")}`)
+      : report.pass("ZG-16/no-fake-byline authorless lab theme renders a card with no .theme-switcher__author");
+
+    const plainReasons = [
+      ...(plain.present ? [] : [`#theme-option-${LAB_PLAIN} never appeared in the catalog`]),
+      ...(plain.hasByline ? [] : [`card for ${LAB_PLAIN} has no .theme-switcher__author`]),
+      ...(plain.hasByline && plain.text !== LAB_PLAIN_AUTHOR ? [`byline reads "${plain.text}", want "${LAB_PLAIN_AUTHOR}"`] : []),
+      ...(plain.linkHref === null ? [] : [`byline for a theme with no URL: header is a link to ${plain.linkHref}`]),
+      ...(plain.bylineInsideOption ? [`byline is nested inside #theme-option-${LAB_PLAIN}`] : []),
+    ];
+    plainReasons.length
+      ? report.fail(`ZG-16/plain-byline: ${plainReasons.join("; ")}`)
+      : report.pass(`ZG-16/plain-byline lab theme with Author: and no URL: renders "${plain.text}" as plain text, no <a>`);
   } finally {
     if (page) {
       await page.close();
     }
-    fs.rmSync(labFile, { force: true });
+    for (const { id, file } of written) {
+      fs.rmSync(file, { force: true });
+      fs.rmSync(path.join(frontendDir, "dist", "themes", `${id}.css`), { force: true });
+    }
     rebuildCatalog();
   }
 }
@@ -129,7 +169,7 @@ async function noFakeBylineProbe({ browser, origin, report }) {
 async function bylineLinkProbe({ browser, origin, report }) {
   const { page } = await openGarden(browser, origin);
   try {
-    // The link is its own tab stop, reachable from the option without a pointer.
+    // The link follows its option in the card, so one Tab off the option reaches it.
     await page.locator("#theme-option-quarto").focus();
     await page.keyboard.press("Tab");
     const focused = await page.evaluate(() => {
@@ -143,7 +183,7 @@ async function bylineLinkProbe({ browser, origin, report }) {
     await page.context().route(/github\.com/, (route) => route.abort());
     const popup = page.context().waitForEvent("page", { timeout: 2000 }).catch(() => null);
     const before = await page.locator("#theme-option-nightgarden").getAttribute("aria-pressed");
-    await page.locator("#theme-option-quarto .theme-switcher__author a").click();
+    await page.locator("#theme-option-quarto ~ .theme-switcher__author a").click();
     const spawned = await popup;
     if (spawned) {
       await spawned.close();
@@ -168,5 +208,5 @@ async function bylineLinkProbe({ browser, origin, report }) {
 export async function zg16Probes(context) {
   await bylineProbe(context);
   await bylineLinkProbe(context);
-  await noFakeBylineProbe(context);
+  await labBylineProbe(context);
 }

@@ -30,7 +30,9 @@ function titleFromId(id) {
  * A theme's portfolio link, or "" when the header has none we will render.
  * Only http(s) survives: a header is designer-supplied text that becomes an
  * href, so `javascript:` and every other scheme is dropped rather than
- * escaped.
+ * escaped. The parser's own `href` is returned, not the raw text, so what
+ * shipped is exactly what was validated — no stray tab, newline or unencoded
+ * byte rides along inside an accepted scheme.
  */
 export function safeThemeUrl(raw) {
   const value = (raw ?? "").trim();
@@ -39,7 +41,7 @@ export function safeThemeUrl(raw) {
   }
   try {
     const parsed = new URL(value);
-    return parsed.protocol === "http:" || parsed.protocol === "https:" ? value : "";
+    return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.href : "";
   } catch {
     return "";
   }
@@ -57,6 +59,8 @@ export function parseTheme(fileName, source) {
   const name = (nameMatch?.[1] ?? "").trim() || titleFromId(id);
   // No Author: line means no byline at all — never a fabricated one.
   const author = (authorMatch?.[1] ?? "").trim();
+  const rawUrl = (urlMatch?.[1] ?? "").trim();
+  const url = safeThemeUrl(rawUrl);
 
   return {
     id,
@@ -64,7 +68,11 @@ export function parseTheme(fileName, source) {
     href: `themes/${fileName}`,
     target,
     author,
-    url: safeThemeUrl(urlMatch?.[1]),
+    url,
+    // A designer who typed `URL: mika.example` should hear about it rather
+    // than wonder why their byline is not a link. Reported by main(), so
+    // parseTheme stays a calculation.
+    droppedUrl: rawUrl && !url ? rawUrl : "",
   };
 }
 
@@ -207,6 +215,14 @@ function main() {
     return parseTheme(fileName, source);
   });
 
+  for (const theme of themes) {
+    if (theme.droppedUrl) {
+      console.warn(
+        `themes/${theme.id}.css: URL: ${theme.droppedUrl} is not an http(s) link — the byline ships unlinked`,
+      );
+    }
+  }
+
   const defaultTheme = themes.find((theme) => theme.id === "nightgarden") ?? themes[0];
 
   writeThemesElm(themes);
@@ -218,7 +234,27 @@ function main() {
   );
 }
 
-// Importing this module (the parseTheme unit test) must not run the generator.
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+/**
+ * True only when this module is the process entry point.
+ *
+ * Importing it (the parseTheme unit test) must not run the generator, and the
+ * two failure modes both make `npm run gen` a silent no-op: `process.argv[1]`
+ * is undefined under `node --eval`, where `pathToFileURL` throws, and the ESM
+ * loader resolves the entry through symlinks, so a symlinked invocation only
+ * matches after `realpathSync`.
+ */
+export function isEntryPoint(moduleUrl) {
+  const entry = process.argv[1];
+  if (!entry) {
+    return false;
+  }
+  try {
+    return moduleUrl === pathToFileURL(fs.realpathSync(entry)).href;
+  } catch {
+    return false;
+  }
+}
+
+if (isEntryPoint(import.meta.url)) {
   main();
 }

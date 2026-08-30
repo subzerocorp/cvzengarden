@@ -19,7 +19,7 @@ import CopyLink
 import Generated.Themes as Themes exposing (Target(..), Theme)
 import Html exposing (Html, a, button, div, h1, h2, iframe, li, p, span, ul)
 import Html.Attributes as Attr exposing (attribute, class, classList, href, id, rel, src, target, title, type_)
-import Html.Events exposing (onClick, stopPropagationOn)
+import Html.Events exposing (onClick)
 import Html.Keyed as Keyed
 import Json.Decode as Decode
 import Paste
@@ -216,8 +216,6 @@ type Msg
     | CloseSidebar
     | PageEstimateReceived PageEstimate
     | Rendered (Result String String)
-      -- Carries a byline-link click that must not also select the theme.
-    | NoOp
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -280,9 +278,6 @@ update msg model =
         Rendered result ->
             Paste.rendered result model.paste
                 |> applyPaste model
-
-        NoOp ->
-            ( model, Cmd.none )
 
 
 applyPaste : Model -> ( Paste.Model, List Paste.Effect ) -> ( Model, Cmd Msg )
@@ -617,14 +612,22 @@ visibleThemes filter =
             )
 
 
+{-| The card is the `li`: it carries the border, background and selected
+state, while the option button inside it stays the single control that
+selects the theme. The byline is the button's sibling, not its child —
+`button` forbids interactive descendants, and a link nested inside one is
+never exposed as a link by assistive tech.
+-}
 viewThemeItem : String -> Theme -> Html Msg
 viewThemeItem selectedId theme =
-    li [ class "theme-switcher__item" ]
+    li
+        [ class "theme-switcher__item"
+        , classList [ ( "theme-switcher__item--selected", theme.id == selectedId ) ]
+        ]
         [ button
             [ type_ "button"
             , id ("theme-option-" ++ theme.id)
             , class "theme-switcher__option"
-            , classList [ ( "theme-switcher__option--selected", theme.id == selectedId ) ]
             , attribute "aria-pressed"
                 (if theme.id == selectedId then
                     "true"
@@ -635,7 +638,6 @@ viewThemeItem selectedId theme =
             , onClick (SelectTheme theme.id)
             ]
             [ span [ class "theme-switcher__name" ] [ Html.text theme.name ]
-            , viewByline theme
             , span
                 [ class "badge"
                 , classList
@@ -646,13 +648,14 @@ viewThemeItem selectedId theme =
                 ]
                 [ Html.text (targetLabel theme.target) ]
             ]
+        , viewByline theme
         ]
 
 
 {-| The designer's credit. No `Author:` header means no byline at all, rather
 than a fabricated one. When the theme carries an http(s) `URL:` the name
-becomes a link; its click is stopped so crediting the designer never also
-swaps the theme out from under the reader.
+becomes a link. Sitting outside the option button, the link needs no click
+guard: crediting the designer cannot reach the theme-selection handler.
 -}
 viewByline : Theme -> Html Msg
 viewByline theme =
@@ -669,7 +672,6 @@ viewByline theme =
                         , rel "noopener"
                         , target "_blank"
                         , class "theme-switcher__author-link"
-                        , stopPropagationOn "click" (Decode.succeed ( NoOp, True ))
                         ]
                         [ Html.text theme.author ]
 

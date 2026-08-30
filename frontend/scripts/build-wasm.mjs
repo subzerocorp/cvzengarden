@@ -5,6 +5,7 @@
  * build stops with a one-line install hint instead of a stack trace.
  */
 import { spawnSync } from "node:child_process";
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -40,6 +41,20 @@ function main() {
   }
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+// Same entry-point guard as generate.mjs: argv[1] is undefined under
+// `node --eval` and the ESM loader resolves the entry through symlinks.
+function isEntryPoint(moduleUrl) {
+  const entry = process.argv[1];
+  if (!entry) {
+    return false;
+  }
+  try {
+    return moduleUrl === pathToFileURL(fs.realpathSync(entry)).href;
+  } catch {
+    return false;
+  }
+}
+
+if (isEntryPoint(import.meta.url)) {
   main();
 }
