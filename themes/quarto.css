@@ -376,17 +376,25 @@ body {
     grid-column: 1 / -1;
   }
 
+  /* These three gaps are what keeps `long-resume.html` inside three leaves
+     (ZG-11 `page-count`, MAX_LONG_PAGES = 3). Quarto has the shortest
+     printable height of the three themes (952px vs 1009 / 995), so it runs
+     out of page first and the whitespace here is load-bearing, not taste.
+     Loosening any of them pushes the long fixture onto a fourth page; the
+     .rz-entry gap also feeds `#rz-experience` (995.4px), which must stay
+     above 952px for `fixture-trips-e1`. Re-run the ZG-11 probes after
+     touching them. */
   .rz-header {
-    margin-bottom: 0.8rem;
-    padding-bottom: 0.5rem;
+    margin-bottom: 0.55rem;
+    padding-bottom: 0.4rem;
   }
 
   .rz-section {
-    margin-bottom: 0.35rem;
+    margin-bottom: 0.16rem;
   }
 
   .rz-entry {
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.18rem;
   }
 
   .rz-location {

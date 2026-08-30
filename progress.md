@@ -183,3 +183,11 @@ Architecture holds: first-party faces are Theme-layer Font Library seed data (`t
 ## 2026-08-28 — Pinto is the only planning SoT
 
 `features.json` retired. Every commit it tracked already had a ZG card (`pinto list --json`: 23 items, 14 done / 9 todo). Shared DoD and open cards ZG-19/20/21 now say board I/O is the `pinto` CLI only — never hand-edit `.pinto/tasks/*.md`. `just status` / `scripts/status-dashboard` / `.opencode` preflight count from `pinto list --json` only. No new ZGs. No Garden / walk-in / host / DNS change.
+
+## 2026-08-30 — ZG-11 quarto page-count fixed; `just verify` green
+
+`ZG-11/page-count quarto` (long-resume 4 pages, `LONG_PRINT_PAGES` 3, `MAX_LONG_PAGES` 3) was carried as "pre-existing" through ZG-13 execution, Tester and Architect. It was not a regression: quarto renders the long fixture at 4 pages with the ZG-11-era sheet (`9164681`), with the pre-ZG-3 fixture (`79cc260`), and with `**/themes/fonts/**` aborted — the constant was never satisfiable on the pinned browser. Chromium rev 1194 is what `playwright-core` 1.56.1 pins, so the reading is authoritative; `printToPdf` sends its own CDP params (`preferCSSPageSize`), so the driver version does not enter into it.
+
+Fixed in `themes/quarto.css` `@media print` — whitespace only, no type change: `.rz-header` 0.8→0.55rem / 0.5→0.4rem, `.rz-section` 0.35→0.16rem, `.rz-entry` 0.25→0.18rem. Quarto has the shortest printable height (952px vs 1009 / 995), so it runs out of page first; the gaps are commented as load-bearing. long-resume quarto 4→3; `U3_PRINT_PAGES` untouched (Jordan still 2/2/2); `page1-fill` 0.91→0.90 (≥0.85); `#rz-experience` 999.9→995.4px, still above 952 for `fixture-trips-e1`. Print-scale headroom now matches switchyard exactly (3 pages at 1.01, 4 at 1.02).
+
+`just verify` exits 0 — fmt, clippy pedantic, cargo test, 165 probes, no failures. First green run on record. `LONG_PRINT_PAGES` and `MAX_LONG_PAGES` left at 3; no board move, no fixture change.
