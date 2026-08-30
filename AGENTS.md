@@ -6,17 +6,27 @@ ResumeZen (`cvzengarden.com` / `resumezengarden.com`) is a CSS Zen Garden for r�
 
 - Make every plan extremely concise. Sacrifice grammar for scannability.
 - At the end of each plan, give a bulleted list of unresolved questions.
-- Always follow the Plan → Execute → Test → Commit loop defined in the crossr-skills `HARNESS-SPEC.md`.
+- Always follow the Plan → Execute → Test → Commit loop defined in [`crossr-harness`](https://github.com/sycamore-hq/crossr-harness)'s `HARNESS-SPEC.md`.
 
-## Skills (crossr-skills, `/Users/nathansculli/src/crossr-skills/.agents/skills/`)
+## Upstream harness
 
-- `code-writer` — always on.
-- `avril` — planning GAN (Architect → PO → QA → CTO, explicit `BLESS`). Planning only.
-- `axel` — execution loop (blessed PBI → PETC + code GAN). Conductor never writes code.
-- Rust (`renderer/`, `backend/`): `rust-code-writer`, `rust-errors`, `rust-axum-backend`; adversaries `rust-code-reviewer` → `rust-code-tester` → `rust-architect`.
+Three repositories under [`sycamore-hq`](https://github.com/sycamore-hq) supply the harness. Clone them beside this repo; nothing here vendors them.
+
+| Repository | Supplies | Path inside it |
+| --- | --- | --- |
+| [`crossr-harness`](https://github.com/sycamore-hq/crossr-harness) | `HARNESS-SPEC.md` — the PETC loop and §3.5 session ritual | repo root |
+| [`crossr-skills`](https://github.com/sycamore-hq/crossr-skills) | craft skills: `code-writer`, `rust-*` | `.agents/skills/` |
+| [`crossr-loops`](https://github.com/sycamore-hq/crossr-loops) | the `avril` / `axel` loops **and every adversary persona** | `.agents/skills/`, `.agents/agents/` |
+
+## Skills
+
+- `code-writer` — always on. (`crossr-skills`)
+- `avril` — planning GAN (Architect → PO → QA → CTO, explicit `BLESS`). Planning only. (`crossr-loops`)
+- `axel` — execution loop (blessed PBI → PETC + code GAN). Conductor never writes code. (`crossr-loops`)
+- Rust (`renderer/`, `backend/`): `rust-code-writer`, `rust-errors`, `rust-axum-backend`; adversaries `rust-code-reviewer` → `rust-code-tester` → `rust-architect`. (`crossr-skills`)
 - Elm chrome (`frontend/`), theme CSS (`themes/`), probes: `code-writer` Generator; adversaries are the same three personas applied to Elm/CSS/JS (reviewer → tester → architect).
 
-Personas: `/Users/nathansculli/src/crossr-skills/.agents/agents/`.
+Personas live in `crossr-loops/.agents/agents/` — `rust-reviewer-agent`, `rust-tester-agent`, `rust-architect-agent`, `qa-architect-agent`, `planning-architect-agent`, `product-owner-agent`, `visionary-cto-agent`, `axel-conductor-agent`. `crossr-skills/.agents/agents/` holds only the skill-authoring personas.
 
 ## Stack (locked — see README "Stack")
 
