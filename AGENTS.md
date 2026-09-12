@@ -8,14 +8,14 @@ ResumeZen (`cvzengarden.com` / `resumezengarden.com`) is a CSS Zen Garden for r�
 - At the end of each plan, give a bulleted list of unresolved questions.
 - Always follow the Plan → Execute → Test → Commit loop defined in the crossr-skills `HARNESS-SPEC.md`.
 
-## Skills (crossr-skills, `/Users/nathansculli/src/crossr-skills/.agents/skills/`)
+## Skills (crossr-skills, vendored in `.agents/skills/`)
 
 - `code-writer` — always on.
 - `avril` — planning GAN (Architect → PO → QA → CTO, explicit `BLESS`). Planning only.
 - `axel` — execution loop (blessed PBI → PETC + code GAN). Conductor never writes code.
 - Rust (`renderer/`, `backend/`): `rust-code-writer`, `rust-errors`, `rust-axum-backend`; adversaries `rust-code-reviewer` → `rust-code-tester` → `rust-architect`.
 - Elm chrome (`frontend/`), theme CSS (`themes/`), probes: `code-writer` Generator; adversaries are the same three personas applied to Elm/CSS/JS (reviewer → tester → architect).
-- Catalog (vendored from [sycamore-hq/crossr-skills](https://github.com/sycamore-hq/crossr-skills) into `.agents/skills/`): `code-review`, `github-pr-fix`, `github-pr-review`, `ocaml`, `show-me`, `testing`, `unslop`, `voice-dna`.
+- Catalog (vendored from [sycamore-hq/crossr-skills](https://github.com/sycamore-hq/crossr-skills) into `.agents/skills/`): `code-review`, `gan-verdict`, `github-pr-fix`, `github-pr-review`, `ocaml`, `show-me`, `testing`, `unslop`, `voice-dna`.
 
 Personas: `/Users/nathansculli/src/crossr-skills/.agents/agents/`.
 

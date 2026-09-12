@@ -195,3 +195,7 @@ Fixed in `themes/quarto.css` `@media print` — whitespace only, no type change:
 ## 2026-09-12 — CrossR catalog skills installed
 
 Vendored nine skills from [sycamore-hq/crossr-skills](https://github.com/sycamore-hq/crossr-skills) into `.agents/skills/` via `npx skills add --copy`: `code-writer`, `github-pr-fix`, `github-pr-review`, `code-review`, `ocaml`, `show-me`, `testing`, `unslop`, `voice-dna`. `code-writer` / `unslop` / `voice-dna` were already identical to upstream. Pin: `skills-lock.json`. No product code change.
+
+## 2026-09-12 — PR #32 review fixes
+
+`gan-verdict` vendored (`SKILL.md` + `references/batch-verdict.md` + `references/handoff-packet.md`) so `code-review` and `testing` can load the verdict/envelope protocol they cite; `skills-lock.json` pinned, catalog bullet updated. `AGENTS.md` Skills heading now names `.agents/skills/` instead of a laptop path; every skill under it resolves on the branch. Personas line left as-is (agents not vendored).
