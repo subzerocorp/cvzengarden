@@ -11,7 +11,7 @@ type console_message
 type page_error
 type dialog
 
-external chromium : browser_type = "chromium" [@@mel.module "playwright"]
+external chromium : browser_type = "chromium" [@@mel.module "@playwright/test"]
 external launch : browser_type -> browser Js.Promise.t = "launch" [@@mel.send]
 external close : browser -> unit Js.Promise.t = "close" [@@mel.send]
 
@@ -21,6 +21,9 @@ type page_options = { viewport : viewport }
 external new_page : browser -> page_options -> page Js.Promise.t = "newPage" [@@mel.send]
 
 type goto_options = { waitUntil : string }
+type response
+
+external response_status : response -> int = "status" [@@mel.send]
 
 external goto : page -> string -> goto_options -> 'response Js.nullable Js.Promise.t = "goto"
 [@@mel.send]
@@ -35,6 +38,17 @@ external press : page -> string -> unit Js.Promise.t = "press" [@@mel.send] [@@m
 type screenshot_options = { path : string; fullPage : bool }
 
 external screenshot : page -> screenshot_options -> 'buffer Js.Promise.t = "screenshot" [@@mel.send]
+
+type media_options = { media : string }
+
+external emulate_media : page -> media_options -> unit Js.Promise.t = "emulateMedia" [@@mel.send]
+
+type pdf_options = { format : string }
+type buffer
+
+external pdf : page -> pdf_options -> buffer Js.Promise.t = "pdf" [@@mel.send]
+external buffer_to_string : buffer -> string -> string = "toString" [@@mel.send]
+external go_back : page -> response Js.nullable Js.Promise.t = "goBack" [@@mel.send]
 
 (* ── Locators ─────────────────────────────────────────────────────────── *)
 
@@ -57,6 +71,50 @@ type box = { x : float; y : float; width : float; height : float }
 
 external bounding_box : locator -> box Js.nullable Js.Promise.t = "boundingBox" [@@mel.send]
 
+(* ── Expectations (computed style without evaluate) ───────────────────── *)
+
+type expectation
+type expect_options = { timeout : int }
+
+external expect : locator -> expectation = "expect" [@@mel.module "@playwright/test"]
+
+external to_have_css : expectation -> string -> Js.Re.t -> expect_options -> unit Js.Promise.t
+  = "toHaveCSS"
+[@@mel.send]
+
+external to_have_css_text : expectation -> string -> string -> expect_options -> unit Js.Promise.t
+  = "toHaveCSS"
+[@@mel.send]
+
+(** [true] when the computed style matches now, without waiting. *)
+let has_css loc name pattern =
+  to_have_css (expect loc) name pattern { timeout = 1 }
+  |> Js.Promise.then_ (fun () -> Js.Promise.resolve true)
+  |> Js.Promise.catch (fun _ -> Js.Promise.resolve false)
+
+(** Wait up to [ms] for the computed style to match. *)
+let eventually_css ?(ms = 3000) loc name pattern =
+  to_have_css (expect loc) name pattern { timeout = ms }
+  |> Js.Promise.then_ (fun () -> Js.Promise.resolve true)
+  |> Js.Promise.catch (fun _ -> Js.Promise.resolve false)
+
+(* ── Requests ─────────────────────────────────────────────────────────── *)
+
+type request
+type frame
+
+external on_request : page -> (_[@mel.as "request"]) -> (request -> unit) -> unit = "on"
+[@@mel.send]
+
+external request_url : request -> string = "url" [@@mel.send]
+external request_frame : request -> frame = "frame" [@@mel.send]
+external main_frame : page -> frame = "mainFrame" [@@mel.send]
+
+external on_response : page -> (_[@mel.as "response"]) -> (response -> unit) -> unit = "on"
+[@@mel.send]
+
+external response_url : response -> string = "url" [@@mel.send]
+
 (* ── Events ───────────────────────────────────────────────────────────── *)
 
 external on_console : page -> (_[@mel.as "console"]) -> (console_message -> unit) -> unit = "on"
@@ -68,6 +126,10 @@ external on_page_error : page -> (_[@mel.as "pageerror"]) -> (page_error -> unit
 external on_dialog : page -> (_[@mel.as "dialog"]) -> (dialog -> unit) -> unit = "on" [@@mel.send]
 external message_type : console_message -> string = "type" [@@mel.send]
 external message_text : console_message -> string = "text" [@@mel.send]
+
+type console_location = { url : string }
+
+external message_location : console_message -> console_location = "location" [@@mel.send]
 external error_message : page_error -> string = "message" [@@mel.get]
 external dialog_accept : dialog -> string -> unit Js.Promise.t = "accept" [@@mel.send]
 

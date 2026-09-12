@@ -53,7 +53,7 @@ If the HTML is rich enough, and we never fork it per theme, the garden compounds
 - Public repo: https://github.com/subzerocorp/cvzengarden
 - HTML class contract and sample résumé (Jordan Hale) are drafted.
 - Preview of the unthemed skeleton: https://cvzengarden.netlify.app
-- Stack is locked: OCaml (Melange) everywhere — shared renderer, Hono API on Bun, SolidJS chrome — SQLite/libSQL on Turso, pure CSS themes. Zero hand-written JavaScript.
+- Stack is locked by `docs/decisions/2026-09-12-stack-unlock.md`: OCaml (Melange) everywhere — shared renderer, Hono API on Bun, SolidJS chrome — SQLite/libSQL on Turso, pure CSS themes. Zero hand-written JavaScript.
 - Renderer, live gallery, hosted pages, submissions, and payments are **not** built yet.
 
 ## Roadmap

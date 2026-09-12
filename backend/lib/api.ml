@@ -36,18 +36,38 @@ let bad_request ctx (e : Decode.error) =
   Hono.json ctx (error_json ?path e.message) 400
 
 let not_found ctx what = Hono.json ctx (error_json (what ^ " not found")) 404
+
+(** [Authorization: Bearer <token>] must match the configured token. *)
+let authorized config ctx =
+  match config.admin_token with
+  | None -> Error (503, "Moderation is not configured on this Garden (set RZ_ADMIN_TOKEN)")
+  | Some token -> (
+      match Hono.header ctx "authorization" with
+      | Some value when value = "Bearer " ^ token -> Ok ()
+      | _ -> Error (401, "A reviewer token is required"))
+
 let handler f : Hono.handler = fun ctx -> f ctx
 
 (* ── Theme CSS: first-party from disk, Submissions from the store ─────── *)
 
-let official_css config id =
-  match Theme_meta.find_official id with
-  | None -> return None
-  | Some _ -> Bun.read_text (Printf.sprintf "%s/%s.css" config.themes_dir id)
+let theme_id_shape = Js.Re.fromString "^[a-z0-9_-]+$"
+let well_formed_id id = Js.Re.test ~str:id theme_id_shape
 
-let theme_css config db id =
-  let> disk = official_css config id in
-  match disk with Some css -> return (Some css) | None -> Db.stored_css db id
+(** A stylesheet on disk under [themes/]: first-party Themes and the starter [_blank.css]. Ids are
+    restricted to a safe alphabet first. *)
+let disk_css config id =
+  if well_formed_id id then Bun.read_text (Printf.sprintf "%s/%s.css" config.themes_dir id)
+  else return None
+
+(** The stylesheet the public may fetch: first-party from disk, Submissions from the store unless
+    rejected (a reviewer may still fetch those). *)
+let theme_css config db ~reviewer id =
+  let> stored = Db.find db id in
+  match stored with
+  | Some t when t.status = Theme_meta.Rejected && not reviewer -> return None
+  | Some t when t.status = Theme_meta.Official -> disk_css config id
+  | Some _ -> Db.stored_css db id
+  | None -> disk_css config id
 
 (* ── Routes ───────────────────────────────────────────────────────────── *)
 
@@ -95,7 +115,8 @@ let route_themes app db config =
   let css_handler =
     handler (fun ctx ->
         let id = Js.String.replace ~search:".css" ~replacement:"" (Hono.param ctx "id") in
-        let> css = theme_css config db id in
+        let reviewer = Result.is_ok (authorized config ctx) in
+        let> css = theme_css config db ~reviewer id in
         match css with
         | Some css -> return (Hono.css ctx css)
         | None -> return (not_found ctx "stylesheet"))
@@ -138,7 +159,7 @@ let route_render app db config =
          | Ok resume ->
              let> theme_css =
                match Hono.query_opt ctx "theme" with
-               | Some id -> theme_css config db id
+               | Some id -> theme_css config db ~reviewer:false id
                | None -> return None
              in
              let document =
@@ -160,6 +181,25 @@ let sample_path config = function
   | "junior" -> Some (config.skeleton_dir ^ "/samples/junior.json")
   | "jordan" | "long" -> Some (config.skeleton_dir ^ "/resume.json")
   | _ -> None
+
+(** [/preview/:id.html?sample=jordan|junior] — the sample résumé in one Theme as a standalone
+    document, printable as the browser would. *)
+let route_preview app db config =
+  Hono.get app "/preview/:id{.+\\.html}"
+    (handler (fun ctx ->
+         let id = Js.String.replace ~search:".html" ~replacement:"" (Hono.param ctx "id") in
+         let sample = Option.value (Hono.query_opt ctx "sample") ~default:"jordan" in
+         let> css = theme_css config db ~reviewer:false id in
+         let> json =
+           match sample_path config sample with
+           | Some path -> Bun.read_text path
+           | None -> return None
+         in
+         match (css, Option.bind json (fun j -> Result.to_option (Resume.of_string j))) with
+         | Some css, Some resume ->
+             return (Hono.html ctx (Sandbox_doc.standalone ~theme_css:css resume))
+         | None, _ -> return (not_found ctx "stylesheet")
+         | _, None -> return (not_found ctx "sample")))
 
 let route_samples app config =
   Hono.get app "/api/samples/:name"
@@ -187,6 +227,11 @@ let route_submissions app db =
          | Error e -> return (bad_request ctx e)
          | Ok submission ->
              let checks = Theme_lint.run submission.css in
+             let checks =
+               match submission.measured_pages with
+               | Some n -> Theme_lint.with_pages n checks
+               | None -> checks
+             in
              if Theme_lint.blocking checks then
                return
                  (Hono.json ctx
@@ -218,15 +263,6 @@ let route_submissions app db =
                     201)))
 
 (* ── Moderation ───────────────────────────────────────────────────────── *)
-
-(** [Authorization: Bearer <token>] must match the configured token. *)
-let authorized config ctx =
-  match config.admin_token with
-  | None -> Error (503, "Moderation is not configured on this Garden (set RZ_ADMIN_TOKEN)")
-  | Some token -> (
-      match Hono.header ctx "authorization" with
-      | Some value when value = "Bearer " ^ token -> Ok ()
-      | _ -> Error (401, "A reviewer token is required"))
 
 let review_json (t : Theme_meta.t) (review : Db.review option) =
   let checks =
@@ -299,6 +335,9 @@ let spa_routes = [ "/"; "/gallery"; "/about"; "/studio"; "/workbench"; "/admin" 
 
 let route_static app config =
   Hono.mount_static app ~prefix:"/assets" ~dir:(config.static_dir ^ "/assets");
+  (* BAR-T2: preview.css is a local readability aid, never a served asset. *)
+  Hono.get app "/skeleton/preview.css" (handler (fun ctx -> return (not_found ctx "preview.css")));
+  Hono.mount_static app ~prefix:"/skeleton" ~dir:config.skeleton_dir;
   Hono.mount_static app ~prefix:"/fonts" ~dir:(config.themes_dir ^ "/fonts");
   Hono.mount_static app ~prefix:"/themes/fonts" ~dir:(config.themes_dir ^ "/fonts");
   let index =
@@ -325,6 +364,7 @@ let build ?(config = default_config) db =
   route_lint app;
   route_render app db config;
   route_samples app config;
+  route_preview app db config;
   route_submissions app db;
   route_admin app db config;
   route_static app config;

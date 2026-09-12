@@ -4,6 +4,9 @@ external exit : int -> unit = "exit" [@@mel.scope "process"]
 external log : string -> unit = "log" [@@mel.scope "console"]
 external error : string -> unit = "error" [@@mel.scope "console"]
 
+(** Set while a probe fetches a URL that must 404 (BAR-T2). *)
+let expecting_404 = ref false
+
 let failures = ref 0
 let passes = ref 0
 

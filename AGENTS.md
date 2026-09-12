@@ -8,7 +8,7 @@ ResumeZen (`cvzengarden.com` / `resumezengarden.com`) is a CSS Zen Garden for r�
 - Break work into small, independently reviewable chunks.
 - End each plan with a bulleted list of unresolved questions.
 
-## Stack (locked — see README "Stack")
+## Stack (locked by [`docs/decisions/2026-09-12-stack-unlock.md`](docs/decisions/2026-09-12-stack-unlock.md) — see README "Stack")
 
 | Layer | Choice |
 | --- | --- |
@@ -31,6 +31,7 @@ No Tailwind, no CSS-in-JS, no JS in themes, no second Skeleton, no new npm depen
 - A Solid signal holds data, never a closure (the setter would treat it as an updater).
 - Reactive reads belong inside getters (`H.dyn`, `H.show`); the page switch reads only `Store.page`.
 - Non-ASCII string literals use `{js|…|js}`.
+- Chrome never restyles an `rz-*` node, not even in a preview overlay: Paper view is print-media emulation (`Print_media`), and chrome-owned ids and storage keys use the `resumezen` prefix.
 - Browser probes use Playwright's locator API only; `page.evaluate` would smuggle JavaScript source into the repository.
 
 ## Verification matrix

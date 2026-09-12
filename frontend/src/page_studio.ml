@@ -118,7 +118,7 @@ let make () =
                       [
                         ("class", str "btn btn-secondary btn-sm");
                         ("type", str "button");
-                        on_click (fun () -> Store.set_resume_text (Store.sample_junior ()));
+                        on_click (fun () -> Store.set_resume_text (Store.sample_long ()));
                       ]
                     [ text "Load sample" ];
                   button

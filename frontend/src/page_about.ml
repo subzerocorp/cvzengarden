@@ -4,15 +4,11 @@ open Rz_shared
 open H
 open Ui
 
-let contract_url = "https://github.com/subzerocorp/cvzengarden/blob/main/skeleton/CLASS-CONTRACT.md"
-let example_url = "https://github.com/subzerocorp/cvzengarden/blob/main/skeleton/example.html"
-let blank_url = "https://github.com/subzerocorp/cvzengarden/blob/main/themes/_blank.css"
-
-let download_html () =
-  match Store.resume () with
-  | Ok resume -> Web.download ~filename:"resume.html" ~mime:"text/html" (Skeleton.render resume)
-  | Error _ -> ()
-
+(* The designer path stays on the Garden (BAR-D1): sample HTML, the starter
+   stylesheet and the contract are served by this origin. *)
+let contract_url = "/skeleton/CLASS-CONTRACT.md"
+let example_url = "/skeleton/example.html"
+let blank_url = "/themes/_blank.css"
 let view_stylesheet () = Web.open_ Web.window ("/themes/" ^ Store.theme_id () ^ ".css") "_blank"
 
 let staged_card () =
@@ -64,14 +60,6 @@ let staged_card () =
                 on_click view_stylesheet;
               ]
             [ text "View stylesheet" ];
-          button
-            ~a:
-              [
-                ("class", str "btn btn-ghost btn-sm");
-                ("type", str "button");
-                on_click download_html;
-              ]
-            [ text "Download HTML" ];
         ];
     ]
 

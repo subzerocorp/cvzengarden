@@ -11,10 +11,13 @@ let matches filter (t : Theme_meta.t) =
 
 let download_bundle () =
   match Store.resume () with
-  | Ok resume ->
+  | Ok resume -> (
       let id = Store.theme_id () in
-      Web.download ~filename:(id ^ "-resume.html") ~mime:"text/html"
-        (Sandbox_doc.standalone ~theme_css:(Theme_css.get id) resume)
+      match Theme_css.get id with
+      | Some theme_css ->
+          Web.download ~filename:(id ^ "-resume.html") ~mime:"text/html"
+            (Sandbox_doc.standalone ~theme_css resume)
+      | None -> ())
   | Error _ -> ()
 
 let thumbnail (t : Theme_meta.t) =

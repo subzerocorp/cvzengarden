@@ -6,14 +6,11 @@ let render_file path =
   | Error e -> failwith ("fixture did not decode: " ^ Decode.error_to_string e)
 
 let run () =
-  (* example.html carries a designer-facing head comment, a preview.css link
-     and blank lines between header blocks; the body's elements are the
-     contract. *)
+  (* example.html carries a designer-facing head comment and preview.css link;
+     from <body> onward it is byte for byte the renderer's output. *)
   let from_body html =
     let i = Js.String.indexOf ~search:"<body>" html in
-    Js.String.slice ~start:i html |> Js.String.split ~sep:"\n" |> Array.to_list
-    |> List.filter (fun line -> Js.String.trim line <> "")
-    |> String.concat "\n"
+    Js.String.slice ~start:i html
   in
   Check.document "skeleton/resume.json renders skeleton/example.html body byte for byte"
     (from_body (Check.read "skeleton/example.html"))
@@ -27,6 +24,15 @@ let run () =
     | Error e -> failwith (Decode.error_to_string e)
   in
   let has needle html = Js.String.includes ~search:needle html in
+  (* BAR-R1: a name-only Resume renders that name and nothing borrowed. *)
+  let ada = render {|{ "basics": { "name": "Ada" } }|} in
+  Check.is_true "BAR-R1 renders Ada" (has {|<h1 class="rz-name" itemprop="name">Ada</h1>|} ada);
+  List.iter
+    (fun needle -> Check.is_false ("BAR-R1 omits " ^ needle) (has needle ada))
+    [ "Jordan Hale"; "rz-experience"; "rz-contacts"; "rz-photo"; "rz-section" ];
+  let portrait = render {|{"basics":{"name":"Ada","image":"https://img.example/ada.png"}}|} in
+  Check.is_true "photo renders a figure with alt text"
+    (has {|<figure class="rz-photo">|} portrait && has {|alt="Portrait of Ada"|} portrait);
   let a =
     render
       {|{"basics":{"name":"A","url":"javascript:alert(1)","profiles":[{"network":"Twitter","username":"a","url":"https://"}]}}|}

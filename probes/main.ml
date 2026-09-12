@@ -12,11 +12,32 @@ let shot page name =
     (fun _ -> return ())
     (screenshot page { path = shots_dir ^ "/" ^ name ^ ".png"; fullPage = false })
 
+(* A small but complete Theme: styled on screen, compact on paper so the long
+   fixture stays within the three-page limit. *)
 let good_css =
-  "/* rz-target: web */\n\
-   .rz-resume { padding: 2rem; background: #204050; color: #f0f4f8; font-family: system-ui }\n\
-   .rz-name { color: #ffd166 }\n\
-   @media (prefers-reduced-motion: reduce) { .rz-resume { transition: none } }\n"
+  String.concat "\n"
+    [
+      "/* rz-target: both */";
+      ".rz-resume { padding: 2rem; background: #204050; color: #f0f4f8; font-family: system-ui; \
+       line-height: 1.4 }";
+      ".rz-name { color: #ffd166; margin: 0 }";
+      ".rz-section { margin: 0 0 .8rem } .rz-entry { margin: 0 0 .5rem } .rz-entries, .rz-bullets, \
+       .rz-tags, .rz-skill-groups, .rz-skill-list, .rz-meta-list, .rz-contact-list, .rz-link-list \
+       { margin: 0; padding: 0; list-style: none }";
+      ".rz-section-title, .rz-entry-primary, .rz-skill-group-name { margin: 0 0 .2rem } \
+       .rz-entry-secondary, .rz-dates, .rz-location, .rz-score, .rz-skill-level, .rz-prose p { \
+       margin: 0 }";
+      "@media (prefers-reduced-motion: reduce) { .rz-resume { transition: none } }";
+      "@media print { @page { size: letter; margin: 0.4in 0.5in } .rz-resume { padding: 0; \
+       background: #fff; color: #111; font-size: 9pt; line-height: 1.2 } .rz-name { font-size: \
+       16pt } .rz-section-title { font-size: 9pt } .rz-section { margin: 0 0 4pt } .rz-entry { \
+       margin: 0 0 3pt } .rz-entry-header { display: grid; grid-template-columns: minmax(0, 1fr) \
+       max-content; column-gap: 8pt } .rz-entry-primary, .rz-entry-secondary, .rz-location, \
+       .rz-score { grid-column: 1 } .rz-dates { grid-column: 2; grid-row: 1 } .rz-contact-list, \
+       .rz-link-list, .rz-tags, .rz-skill-list { display: flex; flex-wrap: wrap; gap: 0 8pt } \
+       .rz-skill-groups { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2pt 8pt } \
+       .rz-bullet { margin: 0 } }";
+    ]
 
 let errors : string list ref = ref []
 
@@ -27,9 +48,17 @@ let watch page =
       let expected =
         Js.String.includes ~search:"ERR_FAILED" text
         || Js.String.includes ~search:"status of 401" text
+        (* BAR-T2: preview.css must 404; example.html links it and the browser
+           reports that late, after the probe has moved on. *)
+        || Js.String.endsWith ~suffix:"/skeleton/preview.css" (message_location m).url
       in
-      if message_type m = "error" && not expected then errors := text :: !errors);
-  on_page_error page (fun e -> errors := ("pageerror: " ^ error_message e) :: !errors)
+      if message_type m = "error" && not expected then
+        errors := (text ^ " @ " ^ (message_location m).url) :: !errors);
+  on_page_error page (fun e -> errors := ("pageerror: " ^ error_message e) :: !errors);
+  (* Name the URL behind any unexpected 404, which the console message omits. *)
+  on_response page (fun r ->
+      if response_status r = 404 && not !Report.expecting_404 then
+        errors := ("404: " ^ response_url r) :: !errors)
 
 let sheet page selector = in_frame (frame_locator page "iframe.sheet-frame") selector
 
@@ -39,7 +68,7 @@ let garden page base =
   let> n = count (sheet page ".rz-resume") in
   Report.equal_int "the sheet holds one skeleton" 1 n;
   let> name = text (sheet page ".rz-name") in
-  Report.equal_string {js|the sample résumé is drawn|js} "Sam Okoro" name;
+  Report.equal_string {js|the sample résumé is drawn|js} "Jordan Hale" name;
   let> pages = text (locator page ".pages") in
   Report.contains "page estimate for Letter" "page" pages;
   let> () = click (locator page "button.pill:has-text('Nightgarden')") in
@@ -120,14 +149,27 @@ let workbench page base =
       "/* rz-target: web */\n.btn { color: red }\n.rz-resume { transition: color .2s }"
   in
   let> () = wait_for_timeout page 600 in
-  let> fails = count (locator page ".check-icon.fail") in
-  Report.equal_int "a chrome selector fails the scope check" 1 fails;
-  let> warns = count (locator page ".check-icon.warn") in
-  Report.equal_int "motion without reduced-motion warns" 1 warns;
+  let> scope_fail = count (locator page ".check:has-text('Targets rz-*') .check-icon.fail") in
+  Report.equal_int "a chrome selector fails the scope check" 1 scope_fail;
+  let> motion_fail = count (locator page ".check:has-text('Reduced motion') .check-icon.fail") in
+  Report.equal_int "unguarded motion fails" 1 motion_fail;
   let> () = fill (locator page "textarea.wb-editor") good_css in
-  let> () = wait_for_timeout page 900 in
+  let> () = wait_for_timeout page 1500 in
   let> fails = count (locator page ".check-icon.fail") in
+  let> rows = count (locator page ".check") in
+  let rec dump i =
+    if i >= rows then return ()
+    else
+      let> title = text (nth (locator page ".check-title") i) in
+      let> note = text (nth (locator page ".check-note") i) in
+      let> icon = attribute (nth (locator page ".check-icon") i) "class" in
+      Report.pass (Printf.sprintf "  [%s] %s: %s" (Option.value icon ~default:"") title note);
+      dump (i + 1)
+  in
+  let> () = if fails > 0 then dump 0 else return () in
   Report.equal_int "a clean stylesheet has no failing check" 0 fails;
+  let> submit_tag = text (locator page ".wb-checks .tag") in
+  Report.pass ("contract summary: " ^ submit_tag);
   let> pages_ok = count (locator page ".check:has-text('prints in') .check-icon.ok") in
   Report.equal_int "page count is measured on the long fixture" 1 pages_ok;
   let> () = fill (locator page ".wb-meta input[placeholder='Tidepool']") "Probe Theme" in
@@ -208,6 +250,7 @@ let run () =
   let> () = workbench page base in
   let> () = admin page base in
   let> () = narrow page base in
+  let> () = Bar.run page base in
   Report.suite "console";
   Report.expect "no console errors or page errors" (!errors = []) (String.concat "\n    " !errors);
   let> () = close browser in

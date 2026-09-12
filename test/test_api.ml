@@ -176,6 +176,45 @@ let run () =
     (List.exists
        (fun (t : Theme_meta.t) -> t.id = "tidepool" && t.status = Theme_meta.Approved)
        public_list);
+  let> hidden = get "/themes/orchard.css" in
+  Check.int "a rejected stylesheet is not public" 404 (Hono.response_status hidden);
+  let> staged = Hono.request_with_headers auth "/themes/orchard.css" app in
+  Check.int "a reviewer can still fetch a rejected stylesheet" 200 (Hono.response_status staged);
+  let> blank = get "/themes/_blank.css" in
+  Check.int "the starter stylesheet is served" 200 (Hono.response_status blank);
+  let> traversal = get "/themes/..%2F..%2Fpackage.css" in
+  Check.int "ids outside the safe alphabet are refused" 404 (Hono.response_status traversal);
+  let> example = get "/skeleton/example.html" in
+  Check.int "BAR-D1: sample HTML is reachable" 200 (Hono.response_status example);
+  let> contract = get "/skeleton/CLASS-CONTRACT.md" in
+  Check.int "the contract is reachable" 200 (Hono.response_status contract);
+  let> preview_css = get "/skeleton/preview.css" in
+  Check.int "BAR-T2: preview.css is not served" 404 (Hono.response_status preview_css);
+  let> preview = get "/preview/quarto.html" in
+  Check.int "preview document 200" 200 (Hono.response_status preview);
+  let> preview_body = Hono.response_text preview in
+  Check.is_true "preview inlines the theme and the long fixture"
+    (Js.String.includes ~search:"rz-target: print" preview_body
+    && Js.String.includes ~search:"Jordan Hale" preview_body);
+  let> preview_junior = get "/preview/switchyard.html?sample=junior" in
+  let> preview_junior_body = Hono.response_text preview_junior in
+  Check.is_true "preview accepts the junior sample"
+    (Js.String.includes ~search:"Sam Okoro" preview_junior_body);
+  let> long_print =
+    post "/api/submissions"
+      (Js.Json.object_
+         (Js.Dict.fromList
+            [
+              ("name", Js.Json.string "Sprawl");
+              ("author", Js.Json.string "A");
+              ("target", Js.Json.string "print");
+              ("fonts", Js.Json.string "library");
+              ("css", Js.Json.string good_css);
+              ("measuredPages", Js.Json.number 5.);
+            ]))
+      app
+  in
+  Check.int "a measured page count over the limit is rejected" 422 (Hono.response_status long_print);
   let no_token = Api.build db in
   let> disabled = Hono.request_with_headers auth "/api/admin/queue" no_token in
   Check.int "moderation off without a configured token" 503 (Hono.response_status disabled);

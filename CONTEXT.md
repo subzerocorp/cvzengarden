@@ -68,7 +68,7 @@ Garden-hosted fonts Designers may submit. Inbound license is CC BY 4.0. First-pa
 _Avoid_: Calling a CDN the Library, relicensing OFL faces as CC BY 4.0, a JS webfont loader
 
 **Preview CSS**:
-A local readability aid in `skeleton/preview.css`. Not a Theme. Themes must not depend on it.
+A local readability aid in `skeleton/preview.css`. Not a Theme. Themes must not depend on it. Production does not serve it (BAR-T2).
 _Avoid_: Calling preview.css a Theme, shipping it as a Garden entry
 
 ### Chrome

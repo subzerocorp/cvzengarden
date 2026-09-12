@@ -11,6 +11,7 @@ type t = {
   fonts : Theme_meta.fonts;
   css : string;
   swatches : (string * string * string) option;
+  measured_pages : int option;  (** the Workbench's Letter page count on the long fixture *)
 }
 
 let ( let* ) = Result.bind
@@ -43,7 +44,9 @@ let decode : t Decode.t =
       in
       let* swatches = Decode.field_list "swatches" Decode.string ~path o in
       let swatches = match swatches with [ g; i; a ] -> Some (g, i, a) | _ -> None in
-      Ok { name; author; author_url; target; fonts; css; swatches })
+      let* measured_pages = Decode.field "measuredPages" Decode.number ~path o in
+      let measured_pages = Option.map int_of_float measured_pages in
+      Ok { name; author; author_url; target; fonts; css; swatches; measured_pages })
 
 (* ── Swatches: the first three distinct colours a stylesheet paints ────── *)
 

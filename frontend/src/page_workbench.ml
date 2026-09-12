@@ -18,7 +18,9 @@ let make () =
   let picker, set_picker = Solid.signal (None : Web.element option) in
   (* The stylesheet under test: the dropped file, or the staged first-party Theme. *)
   let css () =
-    match Store.custom_css () with Some css -> css | None -> Theme_css.get (Store.theme_id ())
+    match Store.custom_css () with
+    | Some css -> css
+    | None -> Option.value (Theme_css.get (Store.theme_id ())) ~default:""
   in
   let checks =
     Solid.create_memo (fun () ->
@@ -49,6 +51,8 @@ let make () =
         if Js.String.trim (name ()) = "" then set_outcome (Rejected "Give the theme a name.")
         else if Js.String.trim (author ()) = "" then
           set_outcome (Rejected "Add your name so the theme is credited.")
+        else if Theme_lint.blocking (checks ()) then
+          set_outcome (Rejected "Fix the failing contract checks first.")
         else (
           set_outcome Sending;
           let body =
@@ -61,6 +65,10 @@ let make () =
                       ("target", Js.Json.string (Theme_meta.target_key (target ())));
                       ("fonts", Js.Json.string (Theme_meta.fonts_key (fonts ())));
                       ("css", Js.Json.string css);
+                      ( "measuredPages",
+                        Option.fold ~none:Js.Json.null
+                          ~some:(fun n -> Js.Json.number (float_of_int n))
+                          (measured ()) );
                     ]))
           in
           (let> status, text = Web.post_json "/api/submissions" body in
@@ -163,7 +171,7 @@ let make () =
         text label;
       ]
   in
-  let preview_css () = css () in
+  let preview_css () = Some (css ()) in
   section
     ~a:[ ("class", str "page workbench"); ("aria-label", str "Workbench") ]
     [
@@ -306,7 +314,7 @@ let make () =
                   | None -> nothing);
               span ~a:[ ("class", str "spacer") ] [];
               view_seg ~small:true ();
-              tag "Fixture: junior";
+              tag "Fixture: Jordan Hale";
             ];
           div
             ~a:[ ("class", str "sheet wb-sheet"); ("style", dyn sheet_style) ]

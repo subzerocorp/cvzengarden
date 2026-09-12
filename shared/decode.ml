@@ -23,6 +23,10 @@ let string : string t =
  fun ~path json ->
   match Js.Json.decodeString json with Some s -> Ok s | None -> expected "a string" ~path json
 
+let number : float t =
+ fun ~path json ->
+  match Js.Json.decodeNumber json with Some n -> Ok n | None -> expected "a number" ~path json
+
 (** [score] arrives as ["3.7"], [3.7], or [4] in the wild; always text here. *)
 let string_or_number : string t =
  fun ~path json ->

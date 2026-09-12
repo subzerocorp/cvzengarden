@@ -4,8 +4,8 @@
 open Rz_shared
 open Solid
 
-let storage_key_resume = "rz.resume"
-let storage_key_admin = "rz.admin"
+let storage_key_resume = "resumezen.resume"
+let storage_key_admin = "resumezen.admin"
 
 (* ── Signals ─────────────────────────────────────────────────────────── *)
 
@@ -16,6 +16,8 @@ let view, set_view = signal (Option.value initial.view ~default:View_mode.Paper)
 let menu_open, set_menu_open = signal false
 let themes, set_themes = signal ([] : Theme_meta.t list)
 let sample_junior, set_sample_junior = signal ""
+
+(** The Garden's sample résumé: the Jordan Hale fixture the contract locks. *)
 let sample_long, set_sample_long = signal ""
 
 let resume_text, set_resume_text =
@@ -54,7 +56,7 @@ let selected_theme () =
 
 (** The Author's résumé: last text, decoded. Empty text falls back to the sample so the Garden
     always has something to draw. *)
-let resume_source () = match resume_text () with "" -> sample_junior () | text -> text
+let resume_source () = match resume_text () with "" -> sample_long () | text -> text
 
 let resume = global_memo (fun () -> Resume.of_string (resume_source ()))
 let last_good = ref None

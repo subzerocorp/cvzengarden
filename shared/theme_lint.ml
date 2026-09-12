@@ -82,23 +82,38 @@ let split_selectors prelude =
   !parts |> List.rev_map Js.String.trim |> List.filter (fun s -> s <> "")
 
 let combinators = re "[\\s>+~]+"
-let pseudo_tail = re "::?[a-zA-Z-]+(\\([^)]*\\))?"
+let pseudo_tail = re ~flags:"g" "::?[a-zA-Z-]+(\\([^)]*\\))?"
 
 (** A compound that is the résumé document itself, not a node in it. *)
 let is_document_compound compound =
-  let base = replace (re ~flags:"g" "::?[a-zA-Z-]+(\\([^)]*\\))?") "" compound in
+  let base = replace pseudo_tail "" compound in
   List.mem base [ ""; "html"; "body"; "*"; ":root" ]
 
+let is_contract_compound compound =
+  Js.String.includes ~search:".rz-" compound || Js.String.includes ~search:"[data-rz-" compound
+
+(** A bare element or pseudo compound ([p], [li:last-child]) carries no class or id of its own; it
+    is fine only beneath a contract node. *)
+let is_bare_compound compound =
+  not (Js.String.includes ~search:"." compound || Js.String.includes ~search:"#" compound)
+
+let compounds selector =
+  Js.String.splitByRe ~regexp:combinators selector
+  |> Array.to_list |> List.filter_map Fun.id
+  |> List.filter (fun s -> s <> "")
+
+(** Every compound must be a contract node, the document, or a bare tag scoped under a contract
+    node. [.theme-switcher .rz-name] mentions the contract but its first compound is chrome, so it
+    fails. *)
 let is_contract_selector selector =
-  Js.String.includes ~search:".rz-" selector
-  || Js.String.includes ~search:"[data-rz-" selector
-  ||
-  let compounds =
-    Js.String.splitByRe ~regexp:combinators selector
-    |> Array.to_list |> List.filter_map Fun.id
-    |> List.filter (fun s -> s <> "")
-  in
-  compounds <> [] && List.for_all is_document_compound compounds
+  match compounds selector with
+  | [] -> false
+  | parts ->
+      let scoped = List.exists is_contract_compound parts in
+      List.for_all
+        (fun c ->
+          is_contract_compound c || is_document_compound c || (scoped && is_bare_compound c))
+        parts
 
 let offending_selectors css =
   preludes css |> List.concat_map split_selectors
@@ -196,6 +211,38 @@ let check_pure_css css =
   | Some (_, what) ->
       { id = "pure"; title = "No JavaScript, no extra HTML"; note = "Found " ^ what; status = Fail }
 
+(* ── Words stay in HTML (BAR-X2) ────────────────────────────────────── *)
+
+let content_decl = re ~flags:"g" "(?:^|[;{\\s])content\\s*:\\s*([^;}]*)"
+let quoted = re ~flags:"g" "\"((?:[^\"\\\\]|\\\\.)*)\"|'((?:[^'\\\\]|\\\\.)*)'"
+let wordish = re ~flags:"u" "[\\p{L}\\p{N}]"
+
+let rec matches_of re str acc =
+  match Js.Re.exec ~str re with
+  | None -> List.rev acc
+  | Some r ->
+      let caps = Js.Re.captures r in
+      let pick i = if i < Array.length caps then Js.Nullable.toOption caps.(i) else None in
+      let v = match pick 1 with Some t -> Some t | None -> pick 2 in
+      matches_of re str (Option.fold ~none:acc ~some:(fun t -> t :: acc) v)
+
+(** Every quoted string given to a [content:] property. *)
+let content_strings css =
+  let css = strip_comments css in
+  Js.Re.setLastIndex content_decl 0;
+  matches_of content_decl css []
+  |> List.concat_map (fun value ->
+      Js.Re.setLastIndex quoted 0;
+      matches_of quoted value [])
+
+(** A generated string with a letter or digit is a résumé word that only lives in CSS; separators
+    (empty, dot, dash, comma, colon, space) pass. *)
+let check_words css =
+  let title = "Words stay in HTML" in
+  match List.filter (fun t -> test wordish t) (content_strings css) with
+  | [] -> { id = "words"; title; note = "content: strings are separators only"; status = Pass }
+  | bad -> { id = "words"; title; note = "Generated text: " ^ quote_list bad; status = Fail }
+
 (* ── Fonts ──────────────────────────────────────────────────────────────── *)
 
 let url_re = re ~flags:"g" "url\\(\\s*['\"]?([^'\")]+)['\"]?\\s*\\)|@import\\s+['\"]([^'\"]+)['\"]"
@@ -292,7 +339,7 @@ let pages_measured n =
       id = "pages";
       title = Printf.sprintf "Long fixture prints in %d pages" n;
       note = "Limit is " ^ string_of_int page_limit ^ {js| — tighten .rz-entry margins|js};
-      status = Warn;
+      status = Fail;
     }
 
 (* ── Motion ─────────────────────────────────────────────────────────────── *)
@@ -316,7 +363,7 @@ let check_motion css =
       id = "motion";
       title;
       note = "Animates without a prefers-reduced-motion block";
-      status = Warn;
+      status = Fail;
     }
 
 (* ── Report ─────────────────────────────────────────────────────────────── *)
@@ -326,6 +373,7 @@ let run css =
     check_scope css;
     check_header css;
     check_pure_css css;
+    check_words css;
     check_fonts css;
     pages_pending;
     check_motion css;

@@ -214,3 +214,18 @@ Known gaps / follow-ups: Bridge dialect conversion (SchemaResume / UniversalResu
 - Tests: 169 checks (12 new for moderation). Fix found by the probes: a GET with an empty body is rejected by `fetch`; `Web.request` now omits the body.
 
 Decision (human, 2026-09-12): the review-queue page is the channel for rejection notes; no author notification is planned.
+
+## 2026-09-12 — PR #31 review round 1 (Independent Product Experience Guardian)
+
+Nine review threads, all addressed on the branch:
+
+- **Stack lock**: the unlock is now an explicit record, `docs/decisions/2026-09-12-stack-unlock.md`, referenced from AGENTS.md and ROADMAP.md, instead of an in-tree edit of the lock. Pinto/AVRIL retirement and the Netlify → container deploy are recorded there. A `Dockerfile` (OCaml 5.3 build stage, `oven/bun` runtime) replaces `netlify.toml`.
+- **BAR-Q1 / BAR-X3**: README names the Independent Product Experience Guardian and the binding priority, states the live garden (`cvzengarden.netlify.app`) and that the custom domains are parked; a probe (`BAR-Q1`) checks both files.
+- **paper.css**: no longer a second Skeleton. Paper view is print-media emulation: `Print_media.emulate` unwraps the Theme's `@media print` rules and drops `@media screen`; the chrome draws only the `@page` box (size, margin) on `html`/`body` inside `@layer`, so Theme rules win and no `rz-*` node is restyled. `sandbox.css` no longer touches `.rz-resume` either.
+- **Theme linter**: every compound must be a contract node, the document, or a bare tag under a contract node (`.theme-switcher .rz-name` fails); new BAR-X2 check `Words stay in HTML` fails any `content:` string with a letter or digit; unguarded motion and an over-limit page count are `Fail`. The Workbench blocks submission on any Fail and sends `measuredPages`; the server applies it.
+- **BAR-D1 / BAR-T2**: `/skeleton/example.html`, `/skeleton/samples/*`, `/skeleton/CLASS-CONTRACT.md` and `/themes/_blank.css` are served; `/skeleton/preview.css` is an explicit 404. About and Workbench link to those paths. `/preview/:id.html?sample=…` serves the sample in one Theme as a printable document. A rejected stylesheet is a 404 unless the reviewer token is sent.
+- **BAR-X1 / J1**: About no longer offers "Download HTML".
+- **BAR-U1**: `Theme_css.get` is an option; a frame is not mounted until the overlays and the Theme CSS are in hand, and a failed fetch retries after 5 s.
+- **Default résumé**: the Garden, Studio sample and Workbench fixture are the Jordan Hale fixture. Storage keys are `resumezen.resume` / `resumezen.admin`; sandbox style ids are `resumezen-*`.
+- **BAR-R1**: locked as a unit test (Ada renders, nothing borrowed); the `example.html` body is now byte-identical to renderer output (blank lines removed from the golden file); photo rendering locked.
+- **Probes**: `@playwright/test` expectations give computed styles without evaluated JavaScript. New suites print BAR-Q1, U1 (first paint styled, no serif mid-swap), U2 (sheet and date boxes at 1280px on all three Themes), U3 (`page.pdf` page counts and a light print ground from `/preview/:id.html`), U4 (permalink + Back), L1 (three faces and inks, origin-only requests from the frame), T2 and D1.

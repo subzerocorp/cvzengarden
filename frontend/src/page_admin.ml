@@ -106,6 +106,7 @@ let make () =
          in
          set_busy "";
          if status = 200 then (
+           Theme_css.forget t.id;
            load ();
            Store.load_themes () |> ignore)
          else set_state (Refused (error_message text "The decision was not recorded."));
