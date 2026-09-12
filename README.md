@@ -84,7 +84,7 @@ Environment (see [`.env.example`](.env.example)): `PORT` (default 4310; never ha
 | `/about` | Manifesto, staged theme, how to contribute. |
 | `/studio` | Paste / upload / import a JSON Resume, live preview, Save as PDF. Résumé data stays in the browser. |
 | `/workbench` | Drop a `theme.css`, live preview, contract diagnostics, submit to the review queue. |
-| `/admin` | Review queue: every submission with its checks; approve or reject with a note. Unlocked by the reviewer token (`RZ_ADMIN_TOKEN`). |
+| `/admin` | Review queue: every submission with its checks; approve or reject with a note. Unlocked by the reviewer token (`RZ_ADMIN_TOKEN`). The queue page is the only channel for review notes; nothing is sent to authors (decision, 2026-09-12). |
 
 | Endpoint | Purpose |
 | --- | --- |

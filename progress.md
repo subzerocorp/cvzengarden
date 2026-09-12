@@ -212,3 +212,5 @@ Known gaps / follow-ups: Bridge dialect conversion (SchemaResume / UniversalResu
 - `/admin` page: token field (kept in this browser), queue rows with swatch, status, contract checks, note and reviewed time; Stage / Approve / Reject… (note via prompt). `just serve` defaults `RZ_ADMIN_TOKEN` to `garden-dev`.
 - Probes: `probes/` is a Melange target with Playwright bindings (locator API only, no `evaluate`), a launcher that spawns the server on a free port with an in-memory store, and 32 probes across Garden, Gallery, About, Studio, Workbench (including a real submission), the review queue (approve + reject with dialog), a 400px viewport and console errors. `just probe`; `just verify` runs it.
 - Tests: 169 checks (12 new for moderation). Fix found by the probes: a GET with an empty body is rejected by `fetch`; `Web.request` now omits the body.
+
+Decision (human, 2026-09-12): the review-queue page is the channel for rejection notes; no author notification is planned.
