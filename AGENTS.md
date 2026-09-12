@@ -13,6 +13,7 @@ ResumeZen (`cvzengarden.com` / `resumezengarden.com`) is a CSS Zen Garden for r�
 - `code-writer` — always on.
 - `avril` — planning GAN (Architect → PO → QA → CTO, explicit `BLESS`). Planning only.
 - `axel` — execution loop (blessed PBI → PETC + code GAN). Conductor never writes code.
+- `crossr-review` — slash `/crossr-review`. Review Agent (`github-pr-review`) → Fix Agent (`github-pr-fix --all`) until zero issues and questions; then APPROVE or comment `APPROVED`.
 - Rust (`renderer/`, `backend/`): `rust-code-writer`, `rust-errors`, `rust-axum-backend`; adversaries `rust-code-reviewer` → `rust-code-tester` → `rust-architect`.
 - Elm chrome (`frontend/`), theme CSS (`themes/`), probes: `code-writer` Generator; adversaries are the same three personas applied to Elm/CSS/JS (reviewer → tester → architect).
 
