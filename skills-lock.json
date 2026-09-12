@@ -13,6 +13,12 @@
       "skillPath": ".agents/skills/code-writer/SKILL.md",
       "computedHash": "1c9fbe57d92af26b98652c48735f324538527b12b0166532a1c0938d4e89e65d"
     },
+    "gan-verdict": {
+      "source": "sycamore-hq/crossr-skills",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/gan-verdict/SKILL.md",
+      "computedHash": "e5ff16330bd64426a799cada558c8071066c1bb1e6b9d94f097538577924e56c"
+    },
     "github-pr-fix": {
       "source": "sycamore-hq/crossr-skills",
       "sourceType": "github",
