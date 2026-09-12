@@ -15,6 +15,7 @@ ResumeZen (`cvzengarden.com` / `resumezengarden.com`) is a CSS Zen Garden for r�
 - `axel` — execution loop (blessed PBI → PETC + code GAN). Conductor never writes code.
 - Rust (`renderer/`, `backend/`): `rust-code-writer`, `rust-errors`, `rust-axum-backend`; adversaries `rust-code-reviewer` → `rust-code-tester` → `rust-architect`.
 - Elm chrome (`frontend/`), theme CSS (`themes/`), probes: `code-writer` Generator; adversaries are the same three personas applied to Elm/CSS/JS (reviewer → tester → architect).
+- Catalog (vendored from [sycamore-hq/crossr-skills](https://github.com/sycamore-hq/crossr-skills) into `.agents/skills/`): `code-review`, `github-pr-fix`, `github-pr-review`, `ocaml`, `show-me`, `testing`, `unslop`, `voice-dna`.
 
 Personas: `/Users/nathansculli/src/crossr-skills/.agents/agents/`.
 
