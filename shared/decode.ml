@@ -42,10 +42,8 @@ let list (item : 'a t) : 'a list t =
   | Some items ->
       let rec go i acc = function
         | [] -> Ok (List.rev acc)
-        | x :: rest -> (
-            match item ~path:(join_index path i) x with
-            | Ok v -> go (i + 1) (v :: acc) rest
-            | Error e -> Error e)
+        | x :: rest ->
+            Result.bind (item ~path:(join_index path i) x) (fun v -> go (i + 1) (v :: acc) rest)
       in
       go 0 [] (Array.to_list items)
 

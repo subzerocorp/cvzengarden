@@ -229,3 +229,13 @@ Nine review threads, all addressed on the branch:
 - **Default résumé**: the Garden, Studio sample and Workbench fixture are the Jordan Hale fixture. Storage keys are `resumezen.resume` / `resumezen.admin`; sandbox style ids are `resumezen-*`.
 - **BAR-R1**: locked as a unit test (Ada renders, nothing borrowed); the `example.html` body is now byte-identical to renderer output (blank lines removed from the golden file); photo rendering locked.
 - **Probes**: `@playwright/test` expectations give computed styles without evaluated JavaScript. New suites print BAR-Q1, U1 (first paint styled, no serif mid-swap), U2 (sheet and date boxes at 1280px on all three Themes), U3 (`page.pdf` page counts and a light print ground from `/preview/:id.html`), U4 (permalink + Back), L1 (three faces and inks, origin-only requests from the frame), T2 and D1.
+
+## 2026-09-12 — PR #31 review round 2 (ocaml/R* rules, Gallery bundle, required page count)
+
+- Gallery drops "Download HTML + CSS" (BAR-X1/J1); Save as PDF stays.
+- A submission must carry `measuredPages` (400 without it, 422 over the limit); Pending is never a pass. The Workbench refuses to send until the long-fixture measurement has landed.
+- `let*` is `Result.bind` everywhere; `let**` is `Option.bind` (`iso_date`, `db`, `page_admin`). `Decode.list` binds instead of re-matching `Error e`.
+- `Db.meta_of_row` returns `None` when any keyed column fails to decode; no invented defaults.
+- `Theme_lint.preludes` / `split_selectors` and `Print_media.emulate` are folds over the string with accumulators, no `ref`/`Buffer`. `Html.t` is abstract behind `shared/html.mli`; every `shared/` module now ships a `.mli`.
+- Catch-alls are gone: storage accessors and the probe `mkdir` match `Js.Exn.Error _` only. `Store.themes_of_body` decodes in one place and a bad payload is logged, never replaced by the first-party set; the last good article is a signal fed by an effect, not a `ref` inside a memo.
+- `page_workbench`, `page_admin` and the drawer are split into helpers under the 30-line cap (draft/view records of signals passed explicitly).

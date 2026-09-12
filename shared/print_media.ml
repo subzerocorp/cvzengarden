@@ -48,43 +48,40 @@ let media_fate prelude =
   else if includes "screen" q then Drop
   else Keep
 
-(** The stylesheet as print media would apply it. *)
+(** The stylesheet as print media would apply it: the pieces to keep, in order, joined at the end.
+*)
 let emulate css =
   let n = String.length css in
-  let out = Buffer.create n in
-  let rec go i =
-    if i < n then
-      if css.[i] = '@' then (
-        let brace = Js.String.indexOf ~search:"{" ~start:i css in
-        let semi = Js.String.indexOf ~search:";" ~start:i css in
-        if brace < 0 || (semi >= 0 && semi < brace) then (
-          (* a statement at-rule: @import, @charset *)
-          let stop = if semi < 0 then n else semi + 1 in
-          Buffer.add_string out (Js.String.slice ~start:i ~end_:stop css);
-          go stop)
-        else
-          let close = matching_close css brace in
-          let prelude = Js.String.trim (Js.String.slice ~start:i ~end_:brace css) in
-          let stop = min n (close + 1) in
+  let slice a b = Js.String.slice ~start:a ~end_:b css in
+  let rec go i acc =
+    if i >= n then List.rev acc
+    else if css.[i] = '@' then
+      let brace = Js.String.indexOf ~search:"{" ~start:i css in
+      let semi = Js.String.indexOf ~search:";" ~start:i css in
+      if brace < 0 || (semi >= 0 && semi < brace) then
+        (* a statement at-rule: @import, @charset *)
+        let stop = if semi < 0 then n else semi + 1 in
+        go stop (slice i stop :: acc)
+      else
+        let close = matching_close css brace in
+        let prelude = Js.String.trim (slice i brace) in
+        let stop = min n (close + 1) in
+        let piece =
           if Js.String.startsWith ~prefix:"@media" prelude then
             match media_fate (Js.String.slice ~start:6 prelude) with
-            | Unwrap -> Buffer.add_string out (Js.String.slice ~start:(brace + 1) ~end_:close css)
-            | Drop -> ()
-            | Keep -> Buffer.add_string out (Js.String.slice ~start:i ~end_:stop css)
-          else Buffer.add_string out (Js.String.slice ~start:i ~end_:stop css);
-          go stop)
-      else if css.[i] = '{' then (
-        (* a plain rule: copy it whole so an inner '@' is never re-read *)
-        let close = matching_close css i in
-        let stop = min n (close + 1) in
-        Buffer.add_string out (Js.String.slice ~start:i ~end_:stop css);
-        go stop)
-      else (
-        Buffer.add_char out css.[i];
-        go (i + 1))
+            | Unwrap -> slice (brace + 1) close
+            | Drop -> ""
+            | Keep -> slice i stop
+          else slice i stop
+        in
+        go stop (piece :: acc)
+    else if css.[i] = '{' then
+      (* a plain rule: copy it whole so an inner '@' is never re-read *)
+      let stop = min n (matching_close css i + 1) in
+      go stop (slice i stop :: acc)
+    else go (i + 1) (String.make 1 css.[i] :: acc)
   in
-  go 0;
-  Buffer.contents out
+  String.concat "" (go 0 [])
 
 (* ── The page box ───────────────────────────────────────────────────── *)
 

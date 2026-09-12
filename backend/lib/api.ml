@@ -83,46 +83,50 @@ let route_health app db =
               (obj [ ("ok", Js.Json.boolean true); ("themes", Js.Json.number (float_of_int n)) ])
               200)))
 
+let list_themes db =
+  handler (fun ctx ->
+      let> themes = Db.list db in
+      let listed = List.filter Theme_meta.is_listed themes in
+      let themes =
+        match Hono.query_opt ctx "status" with
+        | Some status ->
+            List.filter (fun (t : Theme_meta.t) -> Theme_meta.status_key t.status = status) listed
+        | None -> listed
+      in
+      return (Hono.json ctx (themes_json themes) 200))
+
+let checks_json = function
+  | Some text -> (
+      match Decode.parse_json text with Ok json -> json | Error _ -> Js.Json.array [||])
+  | None -> Js.Json.array [||]
+
+let theme_detail db =
+  handler (fun ctx ->
+      let id = Hono.param ctx "id" in
+      let> theme = Db.find db id in
+      match theme with
+      | None -> return (not_found ctx "theme")
+      | Some t ->
+          let> checks = Db.stored_checks db id in
+          return
+            (Hono.json ctx
+               (obj [ ("theme", Theme_meta.to_json t); ("checks", checks_json checks) ])
+               200))
+
+let theme_stylesheet db config =
+  handler (fun ctx ->
+      let id = Js.String.replace ~search:".css" ~replacement:"" (Hono.param ctx "id") in
+      let reviewer = Result.is_ok (authorized config ctx) in
+      let> css = theme_css config db ~reviewer id in
+      match css with
+      | Some css -> return (Hono.css ctx css)
+      | None -> return (not_found ctx "stylesheet"))
+
 let route_themes app db config =
-  Hono.get app "/api/themes"
-    (handler (fun ctx ->
-         let> themes = Db.list db in
-         let themes = List.filter Theme_meta.is_listed themes in
-         let themes =
-           match Hono.query_opt ctx "status" with
-           | Some status ->
-               List.filter
-                 (fun (t : Theme_meta.t) -> Theme_meta.status_key t.status = status)
-                 themes
-           | None -> themes
-         in
-         return (Hono.json ctx (themes_json themes) 200)));
-  Hono.get app "/api/themes/:id"
-    (handler (fun ctx ->
-         let id = Hono.param ctx "id" in
-         let> theme = Db.find db id in
-         match theme with
-         | None -> return (not_found ctx "theme")
-         | Some t ->
-             let> checks = Db.stored_checks db id in
-             let checks =
-               match Option.bind checks (fun c -> Result.to_option (Decode.parse_json c)) with
-               | Some json -> json
-               | None -> Js.Json.array [||]
-             in
-             return
-               (Hono.json ctx (obj [ ("theme", Theme_meta.to_json t); ("checks", checks) ]) 200)));
-  let css_handler =
-    handler (fun ctx ->
-        let id = Js.String.replace ~search:".css" ~replacement:"" (Hono.param ctx "id") in
-        let reviewer = Result.is_ok (authorized config ctx) in
-        let> css = theme_css config db ~reviewer id in
-        match css with
-        | Some css -> return (Hono.css ctx css)
-        | None -> return (not_found ctx "stylesheet"))
-  in
-  Hono.get app "/api/themes/:id/css" css_handler;
-  Hono.get app "/themes/:id{.+\\.css}" css_handler
+  Hono.get app "/api/themes" (list_themes db);
+  Hono.get app "/api/themes/:id" (theme_detail db);
+  Hono.get app "/api/themes/:id/css" (theme_stylesheet db config);
+  Hono.get app "/themes/:id{.+\\.css}" (theme_stylesheet db config)
 
 let route_lint app =
   Hono.post app "/api/lint"
@@ -211,56 +215,46 @@ let route_samples app config =
              return
                (match text with Some t -> Hono.json_text ctx t | None -> not_found ctx "sample")))
 
+let review_queue db =
+  handler (fun ctx ->
+      let> themes = Db.list db in
+      let queue = List.filter (fun (t : Theme_meta.t) -> t.status = Theme_meta.In_review) themes in
+      return (Hono.json ctx (themes_json queue) 200))
+
+let rejected_json checks =
+  obj
+    [
+      ("error", obj [ ("message", Js.Json.string "The stylesheet fails a contract check") ]);
+      ("checks", Theme_lint.list_to_json checks);
+    ]
+
+(** Store a linted Submission under a fresh id and answer with its card. *)
+let accept db (submission : Submission.t) checks ctx =
+  let> existing = Db.list db in
+  let taken = List.map (fun (t : Theme_meta.t) -> t.id) existing in
+  let meta = Submission.to_meta ~id:(Submission.fresh_id ~taken submission.name) submission in
+  let checks_json = Js.Json.stringify (Theme_lint.list_to_json checks) in
+  let> _ = Db.insert db meta ~css:(Some submission.css) ~checks_json:(Some checks_json) in
+  return
+    (Hono.json ctx
+       (obj [ ("theme", Theme_meta.to_json meta); ("checks", Theme_lint.list_to_json checks) ])
+       201)
+
+let submit db =
+  handler (fun ctx ->
+      let> body = Hono.req_text ctx in
+      match Result.bind (Decode.parse_json body) (Submission.decode ~path:"") with
+      | Error e -> return (bad_request ctx e)
+      | Ok submission ->
+          let checks =
+            Theme_lint.with_pages submission.measured_pages (Theme_lint.run submission.css)
+          in
+          if Theme_lint.blocking checks then return (Hono.json ctx (rejected_json checks) 422)
+          else accept db submission checks ctx)
+
 let route_submissions app db =
-  Hono.get app "/api/submissions"
-    (handler (fun ctx ->
-         let> themes = Db.list db in
-         let queue =
-           List.filter (fun (t : Theme_meta.t) -> t.status = Theme_meta.In_review) themes
-         in
-         return (Hono.json ctx (themes_json queue) 200)));
-  Hono.post app "/api/submissions"
-    (handler (fun ctx ->
-         let> body = Hono.req_text ctx in
-         let decoded = Result.bind (Decode.parse_json body) (Submission.decode ~path:"") in
-         match decoded with
-         | Error e -> return (bad_request ctx e)
-         | Ok submission ->
-             let checks = Theme_lint.run submission.css in
-             let checks =
-               match submission.measured_pages with
-               | Some n -> Theme_lint.with_pages n checks
-               | None -> checks
-             in
-             if Theme_lint.blocking checks then
-               return
-                 (Hono.json ctx
-                    (obj
-                       [
-                         ( "error",
-                           obj
-                             [ ("message", Js.Json.string "The stylesheet fails a contract check") ]
-                         );
-                         ("checks", Theme_lint.list_to_json checks);
-                       ])
-                    422)
-             else
-               let> existing = Db.list db in
-               let taken = List.map (fun (t : Theme_meta.t) -> t.id) existing in
-               let id = Submission.fresh_id ~taken submission.name in
-               let meta = Submission.to_meta ~id submission in
-               let checks_json = Js.Json.stringify (Theme_lint.list_to_json checks) in
-               let> _ =
-                 Db.insert db meta ~css:(Some submission.css) ~checks_json:(Some checks_json)
-               in
-               return
-                 (Hono.json ctx
-                    (obj
-                       [
-                         ("theme", Theme_meta.to_json meta);
-                         ("checks", Theme_lint.list_to_json checks);
-                       ])
-                    201)))
+  Hono.get app "/api/submissions" (review_queue db);
+  Hono.post app "/api/submissions" (submit db)
 
 (* ── Moderation ───────────────────────────────────────────────────────── *)
 

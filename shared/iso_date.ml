@@ -66,23 +66,23 @@ let date_part raw =
     let tail = Js.String.slice ~start:(cut + 1) raw in
     if Js.Re.test ~str:tail time_tail then Js.String.slice ~start:0 ~end_:cut raw else raw
 
-let ( let* ) = Option.bind
+let ( let** ) = Option.bind
 
 let parse raw =
   let parts = Js.String.split ~sep:"-" (date_part (Js.String.trim raw)) in
   let candidate =
     match Array.to_list parts with
     | [ year ] ->
-        let* year = digits 4 year in
+        let** year = digits 4 year in
         Some { year; month = None; day = None }
     | [ year; month ] ->
-        let* year = digits 4 year in
-        let* month = digits 2 month in
+        let** year = digits 4 year in
+        let** month = digits 2 month in
         Some { year; month = Some month; day = None }
     | [ year; month; day ] ->
-        let* year = digits 4 year in
-        let* month = digits 2 month in
-        let* day = digits 2 day in
+        let** year = digits 4 year in
+        let** month = digits 2 month in
+        let** day = digits 2 day in
         Some { year; month = Some month; day = Some day }
     | _ -> None
   in

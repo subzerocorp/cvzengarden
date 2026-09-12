@@ -59,18 +59,10 @@ let selected_theme () =
 let resume_source () = match resume_text () with "" -> sample_long () | text -> text
 
 let resume = global_memo (fun () -> Resume.of_string (resume_source ()))
-let last_good = ref None
 
-(** The Skeleton for the current résumé; when the text is mid-edit and invalid, the last valid
-    render stays on the sheet. *)
-let article =
-  global_memo (fun () ->
-      match resume () with
-      | Ok r ->
-          let html = Skeleton.render_article r in
-          last_good := Some html;
-          html
-      | Error _ -> Option.value !last_good ~default:"")
+(* The Skeleton for the current résumé. Fed by an effect in [start]: when the
+   text is mid-edit and invalid, the last valid render stays. *)
+let article, set_article = signal ""
 
 let long_article =
   global_memo (fun () ->
@@ -114,17 +106,24 @@ let print_sheet () = Option.iter Web.print (print_target ())
 let copy_link () = Web.clipboard_write (Web.href Web.location) |> ignore
 let ( let> ) = Web.( let> )
 
+(** The Theme cards in a [/api/themes] body, or [None] when it is not one. *)
+let themes_of_body body =
+  match Decode.parse_json body with
+  | Error _ -> None
+  | Ok json ->
+      Option.bind (Js.Json.decodeObject json) (fun o ->
+          Option.bind (Js.Dict.get o "themes") (fun list ->
+              Result.to_option (Theme_meta.list_of_json list)))
+
+external log_error : string -> unit = "error" [@@mel.scope "console"]
+
+(** A bad payload leaves the list empty and says so; it never becomes the first-party set by
+    default. *)
 let load_themes () =
   let> body = Web.get_text "/api/themes" in
-  (match Option.bind body (fun b -> Result.to_option (Decode.parse_json b)) with
-  | Some json -> (
-      match Js.Json.decodeObject json with
-      | Some o -> (
-          match Option.map Theme_meta.list_of_json (Js.Dict.get o "themes") with
-          | Some (Ok list) -> set_themes list
-          | _ -> set_themes Theme_meta.officials)
-      | None -> set_themes Theme_meta.officials)
-  | None -> set_themes Theme_meta.officials);
+  (match Option.bind body themes_of_body with
+  | Some list -> set_themes list
+  | None -> log_error "/api/themes did not answer with a theme list");
   Js.Promise.resolve ()
 
 let load_samples () =
@@ -160,6 +159,8 @@ let start () =
   Web.window_listener Web.window "keydown" (fun e ->
       if Web.key e = "Escape" then set_menu_open false);
   create_effect (fun () -> remember_resume (resume_text ()));
+  create_effect (fun () ->
+      match resume () with Ok r -> set_article (Skeleton.render_article r) | Error _ -> ());
   load_themes () |> ignore;
   load_samples () |> ignore;
   sync_url ~push:false

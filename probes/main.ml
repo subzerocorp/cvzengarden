@@ -258,7 +258,8 @@ let run () =
   return ()
 
 let () =
-  (try mkdir shots_dir with _ -> ());
+  (* EEXIST on a second run is the only expected failure. *)
+  (try mkdir shots_dir with Js.Exn.Error _ -> ());
   run ()
   |> Js.Promise.then_ (fun () ->
       Report.finish ();

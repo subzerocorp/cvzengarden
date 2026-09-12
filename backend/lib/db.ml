@@ -47,31 +47,34 @@ let migrate (db : t) =
 
 (* ── Row ↔ Theme_meta ─────────────────────────────────────────────────── *)
 
+let ( let** ) = Option.bind
+
+(** A stored row as a card, or [None] when any keyed column does not decode: a corrupt row must not
+    be presented as a valid Theme. *)
 let meta_of_row row : Theme_meta.t option =
   let open Libsql in
-  let ( let* ) = Option.bind in
-  let* id = text row "id" in
-  let* target = Option.bind (text row "target") Theme_meta.target_of_key in
-  let* status = Option.bind (text row "status") Theme_meta.status_of_key in
-  let fonts =
-    Option.value
-      (Option.bind (text row "fonts") Theme_meta.fonts_of_key)
-      ~default:Theme_meta.Library
-  in
+  let** id = text row "id" in
+  let** name = text row "name" in
+  let** author = text row "author" in
+  let** target = Option.bind (text row "target") Theme_meta.target_of_key in
+  let** fonts = Option.bind (text row "fonts") Theme_meta.fonts_of_key in
+  let** ground = text row "swatch_ground" in
+  let** ink = text row "swatch_ink" in
+  let** accent = text row "swatch_accent" in
+  let** badge = text row "badge" in
+  let** bg = text row "bg" in
+  let** status = Option.bind (text row "status") Theme_meta.status_of_key in
   Some
     {
       Theme_meta.id;
-      name = text_or row "name" id;
-      author = text_or row "author" "";
+      name;
+      author;
       author_url = text row "author_url";
       target;
       fonts;
-      swatches =
-        ( text_or row "swatch_ground" "#ffffff",
-          text_or row "swatch_ink" "#000000",
-          text_or row "swatch_accent" "#888888" );
-      badge = text_or row "badge" "#2563eb";
-      bg = text_or row "bg" "#ffffff";
+      swatches = (ground, ink, accent);
+      badge;
+      bg;
       status;
     }
 

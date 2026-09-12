@@ -38,48 +38,39 @@ let classify_prelude stack prelude =
     if starts_with_any conditional_at_rules prelude then (Conditional, None) else (Opaque, None)
   else match stack with Opaque :: _ -> (Opaque, None) | _ -> (Rule, Some prelude)
 
+type scan = { pending : string; stack : context list; found : string list }
+(** The scanner's state between characters: the prelude text gathered so far, the open blocks, and
+    the selector lists found (newest first). *)
+
+let scan_char scan c =
+  match c with
+  | '{' ->
+      let prelude = Js.String.trim scan.pending in
+      let context, selector = classify_prelude scan.stack prelude in
+      let found = Option.fold ~none:scan.found ~some:(fun s -> s :: scan.found) selector in
+      { pending = ""; stack = context :: scan.stack; found }
+  | '}' ->
+      { scan with pending = ""; stack = (match scan.stack with _ :: rest -> rest | [] -> []) }
+  | ';' -> { scan with pending = "" }
+  | c -> { scan with pending = scan.pending ^ String.make 1 c }
+
 (** Every selector list ("prelude") of a style rule, in source order. *)
 let preludes css =
   let css = strip_strings (strip_comments css) in
-  let buf = Buffer.create 128 in
-  let found = ref [] in
-  let stack = ref [] in
-  String.iter
-    (fun c ->
-      match c with
-      | '{' ->
-          let prelude = Js.String.trim (Buffer.contents buf) in
-          Buffer.clear buf;
-          let context, selector = classify_prelude !stack prelude in
-          Option.iter (fun s -> found := s :: !found) selector;
-          stack := context :: !stack
-      | '}' -> (
-          Buffer.clear buf;
-          stack := match !stack with _ :: rest -> rest | [] -> [])
-      | ';' -> Buffer.clear buf
-      | c -> Buffer.add_char buf c)
-    css;
-  List.rev !found
+  let final = String.fold_left scan_char { pending = ""; stack = []; found = [] } css in
+  List.rev final.found
 
 (** Split a selector list on top-level commas (not the ones inside [:is()]). *)
 let split_selectors prelude =
-  let parts = ref [] and buf = Buffer.create 64 and depth = ref 0 in
-  String.iter
-    (fun c ->
-      match c with
-      | '(' | '[' ->
-          incr depth;
-          Buffer.add_char buf c
-      | ')' | ']' ->
-          decr depth;
-          Buffer.add_char buf c
-      | ',' when !depth = 0 ->
-          parts := Buffer.contents buf :: !parts;
-          Buffer.clear buf
-      | c -> Buffer.add_char buf c)
-    prelude;
-  parts := Buffer.contents buf :: !parts;
-  !parts |> List.rev_map Js.String.trim |> List.filter (fun s -> s <> "")
+  let step (parts, current, depth) c =
+    match c with
+    | '(' | '[' -> (parts, current ^ String.make 1 c, depth + 1)
+    | ')' | ']' -> (parts, current ^ String.make 1 c, depth - 1)
+    | ',' when depth = 0 -> (current :: parts, "", depth)
+    | c -> (parts, current ^ String.make 1 c, depth)
+  in
+  let parts, last, _ = String.fold_left step ([], "", 0) prelude in
+  last :: parts |> List.rev_map Js.String.trim |> List.filter (fun s -> s <> "")
 
 let combinators = re "[\\s>+~]+"
 let pseudo_tail = re ~flags:"g" "::?[a-zA-Z-]+(\\([^)]*\\))?"

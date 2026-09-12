@@ -98,9 +98,13 @@ external get_item : storage -> string -> string Js.nullable = "getItem" [@@mel.s
 external set_item : storage -> string -> string -> unit = "setItem" [@@mel.send]
 external remove_item : storage -> string -> unit = "removeItem" [@@mel.send]
 
-let storage_get key = try Js.Nullable.toOption (get_item local_storage key) with _ -> None
-let storage_set key value = try set_item local_storage key value with _ -> ()
-let storage_remove key = try remove_item local_storage key with _ -> ()
+(* A private window or blocked site data makes the storage accessor throw a
+   DOMException; that is the only failure these swallow. *)
+let storage_get key =
+  try Js.Nullable.toOption (get_item local_storage key) with Js.Exn.Error _ -> None
+
+let storage_set key value = try set_item local_storage key value with Js.Exn.Error _ -> ()
+let storage_remove key = try remove_item local_storage key with Js.Exn.Error _ -> ()
 
 (* ── Fetch ────────────────────────────────────────────────────────────── *)
 

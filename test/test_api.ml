@@ -25,6 +25,7 @@ let submission ?(css = good_css) name =
          ("target", Js.Json.string "web");
          ("fonts", Js.Json.string "library");
          ("css", Js.Json.string css);
+         ("measuredPages", Js.Json.number 2.);
        ])
 
 let run () =
@@ -215,6 +216,21 @@ let run () =
       app
   in
   Check.int "a measured page count over the limit is rejected" 422 (Hono.response_status long_print);
+  let> unmeasured =
+    post "/api/submissions"
+      (Js.Json.object_
+         (Js.Dict.fromList
+            [
+              ("name", Js.Json.string "Unmeasured");
+              ("author", Js.Json.string "A");
+              ("target", Js.Json.string "web");
+              ("fonts", Js.Json.string "library");
+              ("css", Js.Json.string good_css);
+            ]))
+      app
+  in
+  Check.int "a submission without a measured page count is refused" 400
+    (Hono.response_status unmeasured);
   let no_token = Api.build db in
   let> disabled = Hono.request_with_headers auth "/api/admin/queue" no_token in
   Check.int "moderation off without a configured token" 503 (Hono.response_status disabled);
