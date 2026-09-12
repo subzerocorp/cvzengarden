@@ -42,7 +42,7 @@ let demo_css ~name ~target ~ground ~ink ~accent ~font =
         ".rz-skill, .rz-tag { padding: .1rem .5rem; border: 1px solid %s; border-radius: 999px; \
          font-size: .8rem; }"
         accent;
-      Printf.sprintf "a { color: %s; }" accent;
+      Printf.sprintf ".rz-resume a { color: %s; }" accent;
       "@media print { .rz-resume { padding: 0; background: #fff; color: #000; } }";
     ]
 

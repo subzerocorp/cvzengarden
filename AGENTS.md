@@ -31,6 +31,7 @@ No Tailwind, no CSS-in-JS, no JS in themes, no second Skeleton, no new npm depen
 - A Solid signal holds data, never a closure (the setter would treat it as an updater).
 - Reactive reads belong inside getters (`H.dyn`, `H.show`); the page switch reads only `Store.page`.
 - Non-ASCII string literals use `{js|…|js}`.
+- Browser probes use Playwright's locator API only; `page.evaluate` would smuggle JavaScript source into the repository.
 
 ## Verification matrix
 
@@ -39,6 +40,7 @@ just fmt-check   # ocamlformat (dune fmt)
 just lint        # warnings-as-errors compile + zero-JavaScript check
 just test        # Melange test suite under Bun (renderer parity, calculations, linter, HTTP API)
 just build       # dune build + bun build → frontend/dist
+just probe       # Playwright probes (OCaml bindings in probes/) against a server the runner starts
 just verify      # all of the above
 ```
 

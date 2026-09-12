@@ -128,6 +128,23 @@ let get_text url : string option Js.Promise.t =
       else Js.Promise.resolve None)
   |> Js.Promise.catch (fun _ -> Js.Promise.resolve None)
 
+type bodiless_init = { method_ : string; [@mel.as "method"] headers : string Js.Dict.t }
+
+external fetch_bodiless : string -> bodiless_init -> response Js.Promise.t = "fetch"
+
+let status_and_text r =
+  Js.Promise.then_ (fun t -> Js.Promise.resolve (status r, t)) (response_text r)
+
+(** A request with explicit method and headers, and a body only when one is given (a GET with a body
+    is rejected by [fetch]); resolves to the status and the response text, [(0, "")] on a network
+    failure. *)
+let request ~method_ ~headers ?body url : (int * string) Js.Promise.t =
+  (match body with
+    | Some body -> fetch_with url { method_; headers = Js.Dict.fromList headers; body }
+    | None -> fetch_bodiless url { method_; headers = Js.Dict.fromList headers })
+  |> Js.Promise.then_ status_and_text
+  |> Js.Promise.catch (fun _ -> Js.Promise.resolve (0, ""))
+
 (** POST a JSON body; resolves to the status and the response text. *)
 let post_json url body : (int * string) Js.Promise.t =
   fetch_with url

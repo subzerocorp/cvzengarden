@@ -205,3 +205,10 @@ Complete rewrite from the approved mockups (`ResumeZen Site.dc.html`, `Skeleton.
 Verified in Chromium (Playwright, scratch script outside the repo): all five routes render, theme/view changes update the URL, drawer opens/closes, Studio surfaces `work[0].highlights[0] — expected a string, found a number`, Workbench diagnostics flag `.btn` and missing reduced-motion, no horizontal overflow at 400px, no console errors.
 
 Known gaps / follow-ups: Bridge dialect conversion (SchemaResume / UniversalResume) is still documentation only; Appearance (Light/Dark) in the drawer is a static placeholder because the Organic system ships light-only; no browser-level probe suite is committed (it would need Playwright bindings in OCaml); moderation of the review queue (approve/reject) has no UI or endpoint yet.
+
+## 2026-09-12 — Review queue moderation + browser probes in OCaml
+
+- Moderation: `Theme_meta.status` gains `Rejected`; the store keeps `review_note` / `reviewed_at` (idempotent ALTERs for older files). `GET /api/admin/queue`, `POST /api/admin/themes/:id/approve|reject` behind `Authorization: Bearer $RZ_ADMIN_TOKEN` (`401` wrong token, `503` when unset, `404` for first-party ids). `/api/themes` hides rejected themes; approved submissions are public and get Gallery cards and picker pills.
+- `/admin` page: token field (kept in this browser), queue rows with swatch, status, contract checks, note and reviewed time; Stage / Approve / Reject… (note via prompt). `just serve` defaults `RZ_ADMIN_TOKEN` to `garden-dev`.
+- Probes: `probes/` is a Melange target with Playwright bindings (locator API only, no `evaluate`), a launcher that spawns the server on a free port with an in-memory store, and 32 probes across Garden, Gallery, About, Studio, Workbench (including a real submission), the review queue (approve + reject with dialog), a 400px viewport and console errors. `just probe`; `just verify` runs it.
+- Tests: 169 checks (12 new for moderation). Fix found by the probes: a GET with an empty body is rejected by `fetch`; `Web.request` now omits the body.

@@ -72,7 +72,7 @@ let theme_pills ?swatch ?small ?(with_target = false) () =
                      [ text (Theme_meta.target_label t.target) ];
                  ]
              else theme_pill ?swatch ?small ~extra t)
-           (Store.officials ())))
+           (Store.public_themes ())))
 
 let view_seg ?(small = false) () =
   let opt v label =

@@ -23,6 +23,8 @@ CREATE TABLE IF NOT EXISTS themes (
   status        TEXT NOT NULL,
   css           TEXT,
   checks_json   TEXT,
+  review_note   TEXT,
+  reviewed_at   TEXT,
   created_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
   updated_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
@@ -30,7 +32,18 @@ CREATE INDEX IF NOT EXISTS themes_status ON themes (status, created_at);
 |}
 
 let connect ~url ?auth_token () = Libsql.connect ~url ?auth_token ()
-let migrate (db : t) = Libsql.execute_multiple db schema
+
+(* Stores created before the review columns existed gain them here; the
+   ALTERs fail harmlessly once the columns are present. *)
+let add_column db column =
+  Libsql.run db (Printf.sprintf "ALTER TABLE themes ADD COLUMN %s TEXT" column) [||]
+  |> Promise.map ignore
+  |> Js.Promise.catch (fun _ -> return ())
+
+let migrate (db : t) =
+  let> () = Libsql.execute_multiple db schema in
+  let> () = add_column db "review_note" in
+  add_column db "reviewed_at"
 
 (* ── Row ↔ Theme_meta ─────────────────────────────────────────────────── *)
 
@@ -119,6 +132,41 @@ let stored_css db id =
 let stored_checks db id =
   let> rows = Libsql.query db "SELECT checks_json FROM themes WHERE id = ?" [| Libsql.s id |] in
   return (if Array.length rows = 0 then None else Libsql.text rows.(0) "checks_json")
+
+type review = {
+  checks_json : string option;
+  review_note : string option;
+  reviewed_at : string option;
+}
+(** What a reviewer sees beyond the card: the checks and the last note. *)
+
+let review db id =
+  let> rows =
+    Libsql.query db "SELECT checks_json, review_note, reviewed_at FROM themes WHERE id = ?"
+      [| Libsql.s id |]
+  in
+  return
+    (if Array.length rows = 0 then None
+     else
+       let row = rows.(0) in
+       Some
+         {
+           checks_json = Libsql.text row "checks_json";
+           review_note = Libsql.text row "review_note";
+           reviewed_at = Libsql.text row "reviewed_at";
+         })
+
+(** Move a Submission through review. Only rows that are not first-party can change status; returns
+    whether a row changed. *)
+let set_status db id (status : Theme_meta.status) ~note =
+  let> n =
+    Libsql.run db
+      "UPDATE themes SET status = ?, review_note = ?, reviewed_at = strftime('%Y-%m-%dT%H:%M:%fZ', \
+       'now'), updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND status <> \
+       'official'"
+      [| Libsql.s (Theme_meta.status_key status); Libsql.opt note; Libsql.s id |]
+  in
+  return (n > 0)
 
 let exists db id = Promise.map Option.is_some (find db id)
 

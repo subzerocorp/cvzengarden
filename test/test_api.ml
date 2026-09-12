@@ -32,7 +32,9 @@ let run () =
   let db = Db.connect ~url:":memory:" () in
   let> () = Db.migrate db in
   let> () = Seed.run ~demo:true db in
-  let app = Api.build db in
+  let token = "probe-token" in
+  let app = Api.build ~config:{ Api.default_config with admin_token = Some token } db in
+  let auth = [ ("Authorization", "Bearer " ^ token) ] in
   let get path = Hono.request app path in
   let> r = get "/api/health" in
   Check.int "health 200" 200 (Hono.response_status r);
@@ -128,4 +130,53 @@ let run () =
   Check.is_true "spa route answers" (List.mem (Hono.response_status spa) [ 200; 503 ]);
   let> nf = get "/api/nothing" in
   Check.int "unknown api route 404" 404 (Hono.response_status nf);
+  (* moderation *)
+  let> anon = get "/api/admin/queue" in
+  Check.int "queue needs a token" 401 (Hono.response_status anon);
+  let> wrong =
+    Hono.request_with_headers [ ("Authorization", "Bearer nope") ] "/api/admin/queue" app
+  in
+  Check.int "wrong token is refused" 401 (Hono.response_status wrong);
+  let> queue = Hono.request_with_headers auth "/api/admin/queue" app in
+  Check.int "queue with token 200" 200 (Hono.response_status queue);
+  let> queue_body = Hono.response_text queue in
+  let entries =
+    Option.value (Option.bind (field (obj queue_body) "queue") Js.Json.decodeArray) ~default:[||]
+  in
+  Check.int "queue lists every submission" 4 (Array.length entries);
+  let> approved =
+    Hono.request_raw_init ~headers:auth "/api/admin/themes/tidepool/approve" "{}" app
+  in
+  Check.int "approve 200" 200 (Hono.response_status approved);
+  let> approved_body = Hono.response_text approved in
+  Check.string "approved status" "approved"
+    (Option.value
+       (Option.bind
+          (Option.bind (field (obj approved_body) "theme") Js.Json.decodeObject)
+          (fun t -> str t "status"))
+       ~default:"");
+  let> rejected =
+    Hono.request_raw_init ~headers:auth "/api/admin/themes/orchard/reject"
+      {|{"note":"Contrast on tags is under 3:1"}|} app
+  in
+  Check.int "reject 200" 200 (Hono.response_status rejected);
+  let> rejected_body = Hono.response_text rejected in
+  Check.string "reject keeps the note" "Contrast on tags is under 3:1"
+    (Option.value (str (obj rejected_body) "reviewNote") ~default:"");
+  let> official = Hono.request_raw_init ~headers:auth "/api/admin/themes/quarto/reject" "{}" app in
+  Check.int "first-party themes cannot be moderated" 404 (Hono.response_status official);
+  let> public = get "/api/themes" in
+  let> public_body = Hono.response_text public in
+  let public_list =
+    Result.get_ok (Theme_meta.list_of_json (Option.get (field (obj public_body) "themes")))
+  in
+  Check.is_false "rejected theme leaves the public list"
+    (List.exists (fun (t : Theme_meta.t) -> t.id = "orchard") public_list);
+  Check.is_true "approved theme is public"
+    (List.exists
+       (fun (t : Theme_meta.t) -> t.id = "tidepool" && t.status = Theme_meta.Approved)
+       public_list);
+  let no_token = Api.build db in
+  let> disabled = Hono.request_with_headers auth "/api/admin/queue" no_token in
+  Check.int "moderation off without a configured token" 503 (Hono.response_status disabled);
   return ()

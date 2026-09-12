@@ -27,14 +27,19 @@ type request_init = {
 }
 
 (** A JSON POST through [app.request], for tests. *)
-let request_raw_init path body app : Bun.response Js.Promise.t =
+let request_raw_init ?(headers = []) path body app : Bun.response Js.Promise.t =
   Promise.flatten
     (request_raw app path
        {
          method_ = "POST";
-         headers = Js.Dict.fromList [ ("Content-Type", "application/json") ];
+         headers = Js.Dict.fromList (("Content-Type", "application/json") :: headers);
          body;
        })
+
+(** A GET with extra headers through [app.request], for tests. *)
+let request_with_headers headers path app : Bun.response Js.Promise.t =
+  Promise.flatten
+    (request_raw app path { method_ = "GET"; headers = Js.Dict.fromList headers; body = "" })
 
 (* ── Context ─────────────────────────────────────────────────────────── *)
 
@@ -47,7 +52,11 @@ external query : ctx -> string -> string Js.nullable = "query" [@@mel.send] [@@m
 external path : ctx -> string = "path" [@@mel.get] [@@mel.scope "req"]
 external req_text : ctx -> string Js.Promise.t = "text" [@@mel.send] [@@mel.scope "req"]
 
+external header_raw : ctx -> string -> string Js.nullable = "header"
+[@@mel.send] [@@mel.scope "req"]
+
 let query_opt ctx name = Js.Nullable.toOption (query ctx name)
+let header ctx name = Js.Nullable.toOption (header_raw ctx name)
 let with_type content_type = Js.Dict.fromList [ ("Content-Type", content_type) ]
 let css ctx text = body ctx text 200 (with_type "text/css; charset=utf-8")
 let json_text ctx text = body ctx text 200 (with_type "application/json; charset=utf-8")

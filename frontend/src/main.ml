@@ -14,6 +14,7 @@ let page () =
   | Route.About -> Page_about.make ()
   | Route.Studio -> Page_studio.make ()
   | Route.Workbench -> Page_workbench.make ()
+  | Route.Admin -> Page_admin.make ()
 
 let app () =
   Store.start ();

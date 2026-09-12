@@ -5,6 +5,7 @@ open Rz_shared
 open Solid
 
 let storage_key_resume = "rz.resume"
+let storage_key_admin = "rz.admin"
 
 (* ── Signals ─────────────────────────────────────────────────────────── *)
 
@@ -25,14 +26,22 @@ let pages, set_pages = signal 1
 (** The Workbench's stylesheet under test, when one is loaded. *)
 let custom_css, set_custom_css = signal (None : string option)
 
+(** The reviewer token for the moderation API, remembered in this browser. *)
+let admin_token, set_admin_token =
+  signal (Option.value (Web.storage_get storage_key_admin) ~default:"")
+
 (** The main preview frame's window, so "Save as PDF" prints the right sheet. *)
 let print_target, set_print_target = signal (None : Web.window option)
 
 (* ── Derived ─────────────────────────────────────────────────────────── *)
 
-let officials () =
-  List.filter (fun (t : Theme_meta.t) -> t.status = Theme_meta.Official) (themes ())
+(** Themes anyone can stage: first-party and approved Submissions. *)
+let public_themes () = List.filter Theme_meta.is_public (themes ())
 
+(** The review queue as the Gallery shows it. *)
+let queue () = List.filter (fun (t : Theme_meta.t) -> t.status = Theme_meta.In_review) (themes ())
+
+(** Everything that is not first-party: approved and in review. *)
 let community () =
   List.filter (fun (t : Theme_meta.t) -> t.status <> Theme_meta.Official) (themes ())
 
@@ -126,6 +135,11 @@ let load_samples () =
 let remember_resume text =
   if text = "" then Web.storage_remove storage_key_resume
   else Web.storage_set storage_key_resume text
+
+let remember_admin_token token =
+  set_admin_token token;
+  if token = "" then Web.storage_remove storage_key_admin
+  else Web.storage_set storage_key_admin token
 
 let forget_resume () =
   Web.storage_remove storage_key_resume;

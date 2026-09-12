@@ -44,6 +44,7 @@ Paste · upload · URL (Studio)
 | Store | SQLite via [libSQL](https://github.com/tursodatabase/libsql) (`@libsql/client`): a local file in development, [Turso](https://turso.tech/) in production | `DATABASE_URL` |
 | Themes | Pure `.css` against `rz-*` only | First-party: Nightgarden (web), Quarto (print), Switchyard (both) in [`themes/`](themes/) |
 | Tests | Melange test executables run by Bun (renderer parity, calculations, linter, HTTP API) | [`test/`](test/) |
+| Browser probes | Melange → Playwright bindings; Chromium drives every route against a server the runner starts | [`probes/`](probes/) |
 
 Do not introduce Tailwind, CSS-in-JS, JSON Resume theme templates, a second HTML skeleton, or a `.js` file.
 
@@ -65,11 +66,12 @@ just serve       # build everything and serve on http://localhost:4310
 | `just serve` | Build, then run the Hono server with Bun (`PORT`, `DATABASE_URL`) |
 | `just watch` | Recompile on change (pair with `just serve` in another terminal) |
 | `just test` | Run the Melange test suite under Bun |
+| `just probe` | Build, then run the Playwright probes (needs a Chromium: `bunx playwright install chromium` once) |
 | `just fmt` / `just fmt-check` | ocamlformat via dune |
 | `just lint` | Warnings-as-errors compile + the zero-JavaScript check |
-| `just verify` | `fmt-check` + `lint` + `test` + `build` |
+| `just verify` | `fmt-check` + `lint` + `test` + `build` + `probe` |
 
-Environment (see [`.env.example`](.env.example)): `PORT` (default 4310; never hard-code 4173), `DATABASE_URL` (`file:data/cvzengarden.sqlite` or a `libsql://` Turso URL), `DATABASE_AUTH_TOKEN` (Turso), `RZ_SEED_DEMO` (seed three review-queue examples when the store has no submissions).
+Environment (see [`.env.example`](.env.example)): `PORT` (default 4310; never hard-code 4173), `DATABASE_URL` (`file:data/cvzengarden.sqlite` or a `libsql://` Turso URL), `DATABASE_AUTH_TOKEN` (Turso), `RZ_SEED_DEMO` (seed three review-queue examples when the store has no submissions), `RZ_ADMIN_TOKEN` (reviewer token; `just serve` defaults it to `garden-dev`, moderation is off when unset).
 
 ---
 
@@ -82,6 +84,7 @@ Environment (see [`.env.example`](.env.example)): `PORT` (default 4310; never ha
 | `/about` | Manifesto, staged theme, how to contribute. |
 | `/studio` | Paste / upload / import a JSON Resume, live preview, Save as PDF. Résumé data stays in the browser. |
 | `/workbench` | Drop a `theme.css`, live preview, contract diagnostics, submit to the review queue. |
+| `/admin` | Review queue: every submission with its checks; approve or reject with a note. Unlocked by the reviewer token (`RZ_ADMIN_TOKEN`). |
 
 | Endpoint | Purpose |
 | --- | --- |
@@ -91,6 +94,7 @@ Environment (see [`.env.example`](.env.example)): `PORT` (default 4310; never ha
 | `POST /api/lint` | Contract diagnostics for a stylesheet |
 | `GET/POST /api/submissions` | The review queue; a submission is linted and rejected with `422` if a check fails |
 | `GET /api/samples/:name` | `junior` (Sam Okoro) and `jordan` (the long fixture) |
+| `GET /api/admin/queue`, `POST /api/admin/themes/:id/approve`, `POST /api/admin/themes/:id/reject` | Moderation. `Authorization: Bearer $RZ_ADMIN_TOKEN`; `401` without it, `503` when no token is configured. Approved themes join the Gallery; rejected ones leave it with a note. |
 
 ---
 
@@ -101,6 +105,7 @@ shared/      OCaml domain library shared by chrome, API and tests
 frontend/    Melange → SolidJS chrome; static/ holds index.html and the CSS
 backend/     Melange → Hono API and server entry (main.ml); lib/ has bindings, store, routes
 test/        Melange tests (run with `just test`)
+probes/      Playwright browser probes in OCaml (run with `just probe`)
 skeleton/    HTML class contract, golden output, JSON Resume fixtures
 themes/      Designer-submitted .css files (one file = one theme) and the Font Library seed
 converter/   Bridge dialect notes and fixtures (SchemaResume, UniversalResume)

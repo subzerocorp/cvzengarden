@@ -211,3 +211,17 @@ a:hover { color: var(--color-accent-700); }
   .garden-sheet, .about-sheet, .gallery-sheet { width: min(100% - 32px, var(--sheet-w)); }
   .pillbar { border-radius: 24px; gap: 8px; }
 }
+
+/* — Review queue (/admin) — */
+.admin { padding: 0 0 40px; }
+.queue { display: flex; flex-direction: column; gap: 12px; padding: 24px 24px 0; }
+.queue-empty { margin: 0; padding: 18px 20px; border-radius: 20px; background: var(--color-surface); color: var(--color-neutral-700); }
+.queue-row { display: flex; gap: 16px; align-items: flex-start; padding: 14px 18px 14px 14px; background: var(--color-surface); border-radius: 28px; flex-wrap: wrap; }
+.queue-row[data-status="rejected"] { opacity: .7; }
+.queue-main { flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 8px; }
+.queue-checks { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.queue-check { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--color-neutral-800); }
+.queue-check .check-icon { width: 18px; height: 18px; }
+.queue-note { margin: 0; font-size: 13px; padding: 6px 10px; border-radius: 12px; background: var(--color-accent-100); color: var(--color-accent-800); }
+.queue-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.queue-token-input { width: 220px; }

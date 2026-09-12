@@ -129,10 +129,11 @@ let make () =
         ~a:[ ("class", str "gallery-grid") ]
         [
           show (fun () ->
-              list (List.map official_card (List.filter (matches (filter ())) (Store.officials ()))));
-          show (fun () ->
               list
-                (List.map community_card (List.filter (matches (filter ())) (Store.community ()))));
+                (List.map official_card
+                   (List.filter (matches (filter ())) (Store.public_themes ()))));
+          show (fun () ->
+              list (List.map community_card (List.filter (matches (filter ())) (Store.queue ()))));
         ];
       div
         ~a:[ ("class", str "gallery-selected") ]

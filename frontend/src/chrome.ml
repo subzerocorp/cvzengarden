@@ -165,7 +165,7 @@ let drawer () =
                                      ]
                                    [ text (Theme_meta.target_label t.target) ];
                                ])
-                           (Store.officials ())));
+                           (Store.public_themes ())));
                 ];
             ];
           div

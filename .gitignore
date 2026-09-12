@@ -28,3 +28,6 @@
 *.swp
 .idea/
 .vscode/
+
+# Probe screenshots
+/probes/shots

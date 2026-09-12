@@ -7,10 +7,16 @@ type config = {
   themes_dir : string;  (** first-party CSS and the Font Library *)
   skeleton_dir : string;  (** fixtures served as samples *)
   static_dir : string;  (** the built chrome *)
+  admin_token : string option;  (** bearer token for moderation; [None] disables it *)
 }
 
 let default_config =
-  { themes_dir = "themes"; skeleton_dir = "skeleton"; static_dir = "frontend/dist" }
+  {
+    themes_dir = "themes";
+    skeleton_dir = "skeleton";
+    static_dir = "frontend/dist";
+    admin_token = None;
+  }
 
 (* ── Response helpers ─────────────────────────────────────────────────── *)
 
@@ -61,6 +67,7 @@ let route_themes app db config =
   Hono.get app "/api/themes"
     (handler (fun ctx ->
          let> themes = Db.list db in
+         let themes = List.filter Theme_meta.is_listed themes in
          let themes =
            match Hono.query_opt ctx "status" with
            | Some status ->
@@ -210,9 +217,85 @@ let route_submissions app db =
                        ])
                     201)))
 
+(* ── Moderation ───────────────────────────────────────────────────────── *)
+
+(** [Authorization: Bearer <token>] must match the configured token. *)
+let authorized config ctx =
+  match config.admin_token with
+  | None -> Error (503, "Moderation is not configured on this Garden (set RZ_ADMIN_TOKEN)")
+  | Some token -> (
+      match Hono.header ctx "authorization" with
+      | Some value when value = "Bearer " ^ token -> Ok ()
+      | _ -> Error (401, "A reviewer token is required"))
+
+let review_json (t : Theme_meta.t) (review : Db.review option) =
+  let checks =
+    match
+      Option.bind review (fun r ->
+          Option.bind r.checks_json (fun c -> Result.to_option (Decode.parse_json c)))
+    with
+    | Some json -> json
+    | None -> Js.Json.array [||]
+  in
+  let text = function Some s -> Js.Json.string s | None -> Js.Json.null in
+  obj
+    [
+      ("theme", Theme_meta.to_json t);
+      ("checks", checks);
+      ("reviewNote", text (Option.bind review (fun r -> r.review_note)));
+      ("reviewedAt", text (Option.bind review (fun r -> r.reviewed_at)));
+    ]
+
+let guarded config f : Hono.handler =
+  handler (fun ctx ->
+      match authorized config ctx with
+      | Error (status, message) -> return (Hono.json ctx (error_json message) status)
+      | Ok () -> f ctx)
+
+let note_of_body body =
+  match Decode.parse_json body with
+  | Ok json ->
+      Option.bind (Js.Json.decodeObject json) (fun o ->
+          Option.bind (Js.Dict.get o "note") Js.Json.decodeString)
+  | Error _ -> None
+
+let decide db config status =
+  guarded config (fun ctx ->
+      let id = Hono.param ctx "id" in
+      let> body = Hono.req_text ctx in
+      let note = Option.map Js.String.trim (note_of_body body) in
+      let note = match note with Some "" -> None | other -> other in
+      let> changed = Db.set_status db id status ~note in
+      if not changed then return (not_found ctx "submission")
+      else
+        let> theme = Db.find db id in
+        let> review = Db.review db id in
+        match theme with
+        | Some t -> return (Hono.json ctx (review_json t review) 200)
+        | None -> return (not_found ctx "submission"))
+
+let route_admin app db config =
+  Hono.get app "/api/admin/queue"
+    (guarded config (fun ctx ->
+         let> themes = Db.list db in
+         let queue =
+           List.filter (fun (t : Theme_meta.t) -> t.status <> Theme_meta.Official) themes
+         in
+         let> entries =
+           Js.Promise.all
+             (Array.of_list
+                (List.map
+                   (fun (t : Theme_meta.t) ->
+                     Promise.map (fun r -> review_json t r) (Db.review db t.id))
+                   queue))
+         in
+         return (Hono.json ctx (obj [ ("queue", Js.Json.array entries) ]) 200)));
+  Hono.post app "/api/admin/themes/:id/approve" (decide db config Theme_meta.Approved);
+  Hono.post app "/api/admin/themes/:id/reject" (decide db config Theme_meta.Rejected)
+
 (* ── Static chrome ────────────────────────────────────────────────────── *)
 
-let spa_routes = [ "/"; "/gallery"; "/about"; "/studio"; "/workbench" ]
+let spa_routes = [ "/"; "/gallery"; "/about"; "/studio"; "/workbench"; "/admin" ]
 
 let route_static app config =
   Hono.mount_static app ~prefix:"/assets" ~dir:(config.static_dir ^ "/assets");
@@ -243,6 +326,7 @@ let build ?(config = default_config) db =
   route_render app db config;
   route_samples app config;
   route_submissions app db;
+  route_admin app db config;
   route_static app config;
   Hono.not_found app (handler (fun ctx -> return (not_found ctx "route")));
   app

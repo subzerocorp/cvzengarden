@@ -3,9 +3,9 @@
 
 open Rz_shared
 
-type page = Garden | Gallery | About | Studio | Workbench
+type page = Garden | Gallery | About | Studio | Workbench | Admin
 
-let all = [ Garden; Gallery; About; Studio; Workbench ]
+let all = [ Garden; Gallery; About; Studio; Workbench; Admin ]
 
 let path = function
   | Garden -> "/"
@@ -13,6 +13,7 @@ let path = function
   | About -> "/about"
   | Studio -> "/studio"
   | Workbench -> "/workbench"
+  | Admin -> "/admin"
 
 let label = function
   | Garden -> "Garden"
@@ -20,6 +21,7 @@ let label = function
   | About -> "About"
   | Studio -> "Studio"
   | Workbench -> "Workbench"
+  | Admin -> "Review queue"
 
 let of_path pathname =
   let trimmed =
@@ -30,7 +32,7 @@ let of_path pathname =
   List.find_opt (fun page -> path page = trimmed) all
 
 (** Fixed-height routes never scroll the page; the others do. *)
-let is_fixed = function Garden | Studio | Workbench -> true | Gallery | About -> false
+let is_fixed = function Garden | Studio | Workbench -> true | Gallery | About | Admin -> false
 
 let is_authoring = function Studio | Workbench -> true | _ -> false
 

@@ -18,18 +18,26 @@ let target_supports target (view : View_mode.t) =
   | Both, _ | Screen, View_mode.Screen | Paper, View_mode.Paper -> true
   | _ -> false
 
-type status = Official | Approved | In_review
+type status = Official | Approved | In_review | Rejected
 
 let status_key = function
   | Official -> "official"
   | Approved -> "approved"
   | In_review -> "in_review"
+  | Rejected -> "rejected"
 
 let status_of_key = function
   | "official" -> Some Official
   | "approved" -> Some Approved
   | "in_review" -> Some In_review
+  | "rejected" -> Some Rejected
   | _ -> None
+
+let status_label = function
+  | Official -> "First-party"
+  | Approved -> "Approved"
+  | In_review -> "In review"
+  | Rejected -> "Rejected"
 
 type fonts = Library | Https_cdn
 
@@ -54,7 +62,10 @@ type t = {
 }
 
 let file t = t.id ^ ".css"
-let is_public t = match t.status with Official | Approved -> true | In_review -> false
+let is_public t = match t.status with Official | Approved -> true | In_review | Rejected -> false
+
+(** Listed in the Gallery: public Themes plus the review queue. *)
+let is_listed t = t.status <> Rejected
 
 let officials =
   [
