@@ -1,0 +1,6 @@
+(library
+ (name rz_backend)
+ (modes melange)
+ (libraries rz_shared)
+ (preprocess
+  (pps melange.ppx)))

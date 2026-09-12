@@ -1,0 +1,10 @@
+(include_subdirs unqualified)
+
+(melange.emit
+ (target output)
+ (alias frontend)
+ (libraries rz_shared)
+ (module_systems
+  (es6 mjs))
+ (preprocess
+  (pps melange.ppx)))

@@ -53,7 +53,7 @@ If the HTML is rich enough, and we never fork it per theme, the garden compounds
 - Public repo: https://github.com/subzerocorp/cvzengarden
 - HTML class contract and sample résumé (Jordan Hale) are drafted.
 - Preview of the unthemed skeleton: https://cvzengarden.netlify.app
-- Stack is locked: Rust renderer and API, SQLite on Turso, Elm chrome, pure CSS themes.
+- Stack is locked: OCaml (Melange) everywhere — shared renderer, Hono API on Bun, SolidJS chrome — SQLite/libSQL on Turso, pure CSS themes. Zero hand-written JavaScript.
 - Renderer, live gallery, hosted pages, submissions, and payments are **not** built yet.
 
 ## Roadmap
@@ -66,7 +66,7 @@ Foundation → Wear it → Publish → Open the gate → Business
 **Outcome:** The garden is real on a sample résumé.
 
 - Finish the class contract, including web / print / both targets and motion rules.
-- Ship a Rust renderer: any valid JSON Resume becomes that HTML, stably.
+- Ship the shared OCaml renderer: any valid JSON Resume becomes that HTML, stably.
 - Ship three first-party themes that are actually different — not three color tweaks. Across the set, web and print both have to be taken seriously.
 - Ship a live theme switcher on the sample résumé, with a screen view and a print preview.
 
@@ -139,11 +139,11 @@ PDF-as-a-service, custom domains, and foreign-format bridges are later options, 
 | --- | --- | --- |
 | Résumé data | JSON Resume | Wild files are valid. Existing ecosystem. |
 | Design API | Fixed `rz-*` HTML | Themes are CSS. Live switch and print both work. |
-| Renderer | Rust crate | Deterministic HTML. Can run on the server or in the browser via Wasm. |
+| Renderer | Shared Melange library | Deterministic HTML. Runs on the server (`/api/render`) and in the browser (Studio). |
 | Themes | One `.css` file | Designers do not need our repo, Tailwind, or a build. |
-| Product chrome | Elm + vanilla CSS | Gallery, switcher, paste, account. Never uses `rz-*`. |
+| Product chrome | Melange → SolidJS + vanilla CSS | Garden, Gallery, Studio, Workbench. Never uses `rz-*`. |
 | Store | SQLite on Turso | Theme metadata, accounts, published résumés. CSS files stay files. |
-| Preview today | Netlify | Static skeleton until the API exists. |
+| Runtime | Bun | Serves the API and the built chrome; bundles and tests. |
 
 ## How to read the internal tickets
 

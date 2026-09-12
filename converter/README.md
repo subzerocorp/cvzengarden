@@ -11,7 +11,7 @@ Do not adopt UniversalResume's html-renderer or pdf-generator.
 | Import | SchemaResume JSON-LD **or** UniversalResume | JSON Resume (stored) |
 | Export | JSON Resume (stored) | SchemaResume JSON-LD **or** UniversalResume (strict) |
 
-**Status:** mapping + fixture pairs. No Rust/Elm implementation yet. Detection rules: [`DETECT.md`](DETECT.md).
+**Status:** mapping + fixture pairs. No implementation yet. Detection rules: [`DETECT.md`](DETECT.md).
 
 | File | What it is |
 | --- | --- |

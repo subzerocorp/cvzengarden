@@ -1,23 +1,22 @@
-# Rust
-/target
-renderer/target
-renderer-wasm/target
-**/*.rs.bk
+# Melange / dune build output (compiled JavaScript lives only here)
+/_build
+*.install
 
-# Elm
-elm-stuff
-frontend/elm-stuff
-frontend/dist
-frontend/node_modules
+# Bundled chrome
+/frontend/dist
 
-# Wasm build output (just wasm); never committed
-frontend/static/wasm/
+# Bun
+/node_modules
 
-# Netlify
-.netlify
+# Local store
+/data
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
 
-# Node (if a future tooling package appears)
-node_modules
+# opam local switch (if `opam switch create .` is used)
+/_opam
 
 # Local env
 .env
