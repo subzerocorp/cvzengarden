@@ -191,3 +191,7 @@ Architecture holds: first-party faces are Theme-layer Font Library seed data (`t
 Fixed in `themes/quarto.css` `@media print` — whitespace only, no type change: `.rz-header` 0.8→0.55rem / 0.5→0.4rem, `.rz-section` 0.35→0.16rem, `.rz-entry` 0.25→0.18rem. Quarto has the shortest printable height (952px vs 1009 / 995), so it runs out of page first; the gaps are commented as load-bearing. long-resume quarto 4→3; `U3_PRINT_PAGES` untouched (Jordan still 2/2/2); `page1-fill` 0.91→0.90 (≥0.85); `#rz-experience` 999.9→995.4px, still above 952 for `fixture-trips-e1`. Print-scale headroom now matches switchyard exactly (3 pages at 1.01, 4 at 1.02).
 
 `just verify` exits 0 — fmt, clippy pedantic, cargo test, 165 probes, no failures. First green run on record. `LONG_PRINT_PAGES` and `MAX_LONG_PAGES` left at 3; no board move, no fixture change.
+
+## 2026-09-12 — `/code-review-loop` skill
+
+Project skill `.agents/skills/code-review-loop/` (`disable-model-invocation: true`). Conductor dispatches `github-pr-review` (Claude Fable 5.1) then `github-pr-fix --all` (Kimi K3 Max) until the review has zero findings including questions. Command: `/code-review-loop <PR>`. No product code change.
