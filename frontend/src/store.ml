@@ -103,7 +103,11 @@ let choose_view v =
 
 let toggle_menu () = set_menu_open (not (menu_open ()))
 let print_sheet () = Option.iter Web.print (print_target ())
-let copy_link () = Web.clipboard_write (Web.href Web.location) |> ignore
+
+let copy_link () =
+  (* Permission denial is the browser's; the chrome does not wait on it. *)
+  ignore (Web.clipboard_write (Web.href Web.location) : unit Js.Promise.t)
+
 let ( let> ) = Web.( let> )
 
 (** The Theme cards in a [/api/themes] body, or [None] when it is not one. *)
@@ -161,6 +165,6 @@ let start () =
   create_effect (fun () -> remember_resume (resume_text ()));
   create_effect (fun () ->
       match resume () with Ok r -> set_article (Skeleton.render_article r) | Error _ -> ());
-  load_themes () |> ignore;
-  load_samples () |> ignore;
+  ignore (load_themes () : unit Js.Promise.t);
+  ignore (load_samples () : unit Js.Promise.t);
   sync_url ~push:false

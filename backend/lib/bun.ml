@@ -10,7 +10,6 @@ external cwd : unit -> string = "cwd" [@@mel.scope "process"]
 external log : string -> unit = "log" [@@mel.scope "console"]
 external error : string -> unit = "error" [@@mel.scope "console"]
 external exit : int -> unit = "exit" [@@mel.scope "process"]
-external random_uuid : unit -> string = "randomUUID" [@@mel.scope "crypto"]
 
 type request
 type response

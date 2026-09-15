@@ -27,13 +27,14 @@ let ensure id =
        ignore
          (Js.Global.setTimeout
             ~f:(fun () -> (Js.Dict.unsafeDeleteKey in_flight id [@u]))
-            retry_after_ms);
+            retry_after_ms
+           : Js.Global.timeoutId);
      Js.Promise.resolve ())
-    |> ignore)
+    |> fun p -> ignore (p : unit Js.Promise.t))
 
 (** Reactive: [None] until the stylesheet arrives, then the CSS. *)
 let get id =
-  ignore (version ());
+  ignore (version () : int);
   ensure id;
   Js.Dict.get cache id
 

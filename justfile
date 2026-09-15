@@ -1,7 +1,7 @@
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
 port := env_var_or_default("PORT", "4310")
-admin_token := env_var_or_default("RZ_ADMIN_TOKEN", "garden-dev")
+admin_token := env_var_or_default("RZ_ADMIN_TOKEN", "")
 dist := "frontend/dist"
 
 default:
@@ -28,7 +28,7 @@ bundle: compile
 build: bundle
 
 # Run the API + chrome on $PORT (default 4310); DATABASE_URL defaults to file:data/cvzengarden.sqlite.
-# RZ_ADMIN_TOKEN (default garden-dev here) unlocks the review queue at /admin.
+# RZ_ADMIN_TOKEN unlocks the review queue at /admin; unset leaves moderation off.
 serve: build
     mkdir -p data
     PORT={{port}} RZ_ADMIN_TOKEN={{admin_token}} bun _build/default/backend/output/backend/main.mjs
@@ -52,8 +52,8 @@ no-js:
     @if git ls-files | grep -E '\.(js|mjs|cjs|jsx|ts|tsx)$' ; then echo "hand-written JavaScript found"; exit 1; else echo "no-js: OK"; fi
     @if git ls-files '*.html' | xargs grep -l '<script' 2>/dev/null | grep -v '^frontend/static/index.html$' ; then echo "inline <script> found"; exit 1; else echo "no-inline-script: OK"; fi
 
-test: compile
-    bun _build/default/test/output/test/main.mjs
+test:
+    dune build @check @fmt @runtest
 
 # Browser probes: Playwright (OCaml bindings) drives Chromium against a server the runner starts itself.
 # One-time: `bunx playwright install chromium` (the web container already has a browser).

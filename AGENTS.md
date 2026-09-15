@@ -39,7 +39,7 @@ No Tailwind, no CSS-in-JS, no JS in themes, no second Skeleton, no new npm depen
 ```bash
 just fmt-check   # ocamlformat (dune fmt)
 just lint        # warnings-as-errors compile + zero-JavaScript check
-just test        # Melange test suite under Bun (renderer parity, calculations, linter, HTTP API)
+just test        # dune build @check @fmt @runtest
 just build       # dune build + bun build → frontend/dist
 just probe       # Playwright probes (OCaml bindings in probes/) against a server the runner starts
 just verify      # all of the above

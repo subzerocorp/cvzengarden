@@ -37,7 +37,7 @@ let connect ~url ?auth_token () = Libsql.connect ~url ?auth_token ()
    ALTERs fail harmlessly once the columns are present. *)
 let add_column db column =
   Libsql.run db (Printf.sprintf "ALTER TABLE themes ADD COLUMN %s TEXT" column) [||]
-  |> Promise.map ignore
+  |> Promise.map (fun (_ : int) -> ())
   |> Js.Promise.catch (fun _ -> return ())
 
 let migrate (db : t) =
@@ -82,11 +82,19 @@ let columns =
   "id, name, author, author_url, target, fonts, swatch_ground, swatch_ink, swatch_accent, badge, \
    bg, status"
 
-let insert_sql ~or_ignore =
-  Printf.sprintf
-    "INSERT %s INTO themes (%s, css, checks_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-    (if or_ignore then "OR IGNORE" else "")
-    columns
+type insert_conflict = Fail | Ignore
+
+let insert_sql = function
+  | Fail ->
+      Printf.sprintf
+        "INSERT INTO themes (%s, css, checks_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, \
+         ?)"
+        columns
+  | Ignore ->
+      Printf.sprintf
+        "INSERT OR IGNORE INTO themes (%s, css, checks_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, \
+         ?, ?, ?, ?)"
+        columns
 
 let insert_args (t : Theme_meta.t) ~css ~checks_json =
   let ground, ink, accent = t.swatches in
@@ -108,8 +116,8 @@ let insert_args (t : Theme_meta.t) ~css ~checks_json =
       opt checks_json;
     |]
 
-let insert ?(or_ignore = false) db (t : Theme_meta.t) ~css ~checks_json =
-  Libsql.run db (insert_sql ~or_ignore) (insert_args t ~css ~checks_json)
+let insert ~conflict db (t : Theme_meta.t) ~css ~checks_json =
+  Libsql.run db (insert_sql conflict) (insert_args t ~css ~checks_json)
 
 let list db =
   let> rows =

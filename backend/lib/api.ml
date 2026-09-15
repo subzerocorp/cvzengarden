@@ -39,12 +39,10 @@ let not_found ctx what = Hono.json ctx (error_json (what ^ " not found")) 404
 
 (** [Authorization: Bearer <token>] must match the configured token. *)
 let authorized config ctx =
-  match config.admin_token with
-  | None -> Error (503, "Moderation is not configured on this Garden (set RZ_ADMIN_TOKEN)")
-  | Some token -> (
-      match Hono.header ctx "authorization" with
-      | Some value when value = "Bearer " ^ token -> Ok ()
-      | _ -> Error (401, "A reviewer token is required"))
+  match (config.admin_token, Hono.header ctx "authorization") with
+  | None, _ -> Error (503, "Moderation is not configured on this Garden (set RZ_ADMIN_TOKEN)")
+  | Some token, Some value when value = "Bearer " ^ token -> Ok ()
+  | Some _, _ -> Error (401, "A reviewer token is required")
 
 let handler f : Hono.handler = fun ctx -> f ctx
 
@@ -128,19 +126,18 @@ let route_themes app db config =
   Hono.get app "/api/themes/:id/css" (theme_stylesheet db config);
   Hono.get app "/themes/:id{.+\\.css}" (theme_stylesheet db config)
 
+let css_of_body body =
+  Option.bind
+    (Result.to_option (Decode.parse_json body))
+    (fun json ->
+      Option.bind (Js.Json.decodeObject json) (fun o ->
+          Option.bind (Js.Dict.get o "css") Js.Json.decodeString))
+
 let route_lint app =
   Hono.post app "/api/lint"
     (handler (fun ctx ->
          let> body = Hono.req_text ctx in
-         let css =
-           match Decode.parse_json body with
-           | Ok json -> (
-               match Js.Json.decodeObject json with
-               | Some o -> Option.bind (Js.Dict.get o "css") Js.Json.decodeString
-               | None -> None)
-           | Error _ -> None
-         in
-         match css with
+         match css_of_body body with
          | None -> return (bad_request ctx { path = "css"; message = "is required" })
          | Some css ->
              let checks = Theme_lint.run css in
@@ -234,7 +231,9 @@ let accept db (submission : Submission.t) checks ctx =
   let taken = List.map (fun (t : Theme_meta.t) -> t.id) existing in
   let meta = Submission.to_meta ~id:(Submission.fresh_id ~taken submission.name) submission in
   let checks_json = Js.Json.stringify (Theme_lint.list_to_json checks) in
-  let> _ = Db.insert db meta ~css:(Some submission.css) ~checks_json:(Some checks_json) in
+  let> _ =
+    Db.insert ~conflict:Fail db meta ~css:(Some submission.css) ~checks_json:(Some checks_json)
+  in
   return
     (Hono.json ctx
        (obj [ ("theme", Theme_meta.to_json meta); ("checks", Theme_lint.list_to_json checks) ])
@@ -293,8 +292,10 @@ let decide db config status =
   guarded config (fun ctx ->
       let id = Hono.param ctx "id" in
       let> body = Hono.req_text ctx in
-      let note = Option.map Js.String.trim (note_of_body body) in
-      let note = match note with Some "" -> None | other -> other in
+      let note =
+        Option.bind (note_of_body body) (fun raw ->
+            match Js.String.trim raw with "" -> None | trimmed -> Some trimmed)
+      in
       let> changed = Db.set_status db id status ~note in
       if not changed then return (not_found ctx "submission")
       else

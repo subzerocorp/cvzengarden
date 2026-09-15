@@ -26,7 +26,7 @@ let app () =
     ]
 
 let () =
-  Sheet.load_overlays () |> ignore;
+  ignore (Sheet.load_overlays () : unit Js.Promise.t);
   match Js.Nullable.toOption (Web.get_element_by_id Web.document "app") with
-  | Some root -> ignore (render app root)
+  | Some root -> ignore (render app root : dispose)
   | None -> ()

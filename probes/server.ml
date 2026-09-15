@@ -26,7 +26,7 @@ let ( let> ) promise f = Js.Promise.then_ f promise
    call, so the timer resolves with a token that is dropped right after. *)
 let sleep ms : unit Js.Promise.t =
   Js.Promise.make (fun ~resolve ~reject:_ ->
-      ignore (Js.Global.setTimeout ~f:(fun () -> (resolve 0 [@u])) ms))
+      ignore (Js.Global.setTimeout ~f:(fun () -> (resolve 0 [@u])) ms : Js.Global.timeoutId))
   |> Js.Promise.then_ (fun (_ : int) -> Js.Promise.resolve ())
 
 let rec wait_ready base attempts =

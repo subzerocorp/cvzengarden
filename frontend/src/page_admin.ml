@@ -84,7 +84,7 @@ let load view () =
     (let> response = Web.request ~method_:"GET" ~headers:(auth_headers ()) "/api/admin/queue" in
      snd view.state (state_of_queue response);
      Js.Promise.resolve ())
-    |> ignore)
+    |> fun p -> ignore (p : unit Js.Promise.t))
 
 let ask_note (t : Theme_meta.t) verb =
   if verb = "reject" then
@@ -107,10 +107,10 @@ let post_decision view (t : Theme_meta.t) verb note =
    if status = 200 then (
      Theme_css.forget t.id;
      load view ();
-     Store.load_themes () |> ignore)
+     ignore (Store.load_themes () : unit Js.Promise.t))
    else snd view.state (Refused (error_message text "The decision was not recorded."));
    Js.Promise.resolve ())
-  |> ignore
+  |> fun p -> ignore (p : unit Js.Promise.t)
 
 let decide view t verb = Option.iter (post_decision view t verb) (ask_note t verb)
 

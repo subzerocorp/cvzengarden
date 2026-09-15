@@ -13,7 +13,9 @@ let () =
     let> () = Db.migrate db in
     let> () = Seed.run ~demo db in
     let admin_token =
-      match Js.Dict.get Bun.env "RZ_ADMIN_TOKEN" with Some "" | None -> None | Some t -> Some t
+      Option.bind (Js.Dict.get Bun.env "RZ_ADMIN_TOKEN") (function
+        | "" -> None
+        | token -> Some token)
     in
     let app = Api.build ~config:{ Api.default_config with admin_token } db in
     let server = Bun.serve { port; hostname = "0.0.0.0"; fetch = Hono.fetch app } in
@@ -22,10 +24,12 @@ let () =
          (Bun.server_port server) url);
     return ()
   in
-  start
-  |> Js.Promise.catch (fun err ->
-      Bun.error
-        ("failed to start: " ^ Option.value (Js.Json.stringifyAny err) ~default:"unknown error");
-      Bun.exit 1;
-      return ())
-  |> ignore
+  let caught =
+    start
+    |> Js.Promise.catch (fun err ->
+        Bun.error
+          ("failed to start: " ^ Option.value (Js.Json.stringifyAny err) ~default:"unknown error");
+        Bun.exit 1;
+        return ())
+  in
+  ignore (caught : unit Js.Promise.t)

@@ -67,13 +67,13 @@ just serve       # build everything and serve on http://localhost:4310
 | `just bundle` | `bun build` the chrome into `frontend/dist/` (with the static CSS) |
 | `just serve` | Build, then run the Hono server with Bun (`PORT`, `DATABASE_URL`) |
 | `just watch` | Recompile on change (pair with `just serve` in another terminal) |
-| `just test` | Run the Melange test suite under Bun |
+| `just test` | `dune build @check @fmt @runtest` |
 | `just probe` | Build, then run the Playwright probes (needs a Chromium: `bunx playwright install chromium` once) |
 | `just fmt` / `just fmt-check` | ocamlformat via dune |
 | `just lint` | Warnings-as-errors compile + the zero-JavaScript check |
 | `just verify` | `fmt-check` + `lint` + `test` + `build` + `probe` |
 
-Environment (see [`.env.example`](.env.example)): `PORT` (default 4310; never hard-code 4173), `DATABASE_URL` (`file:data/cvzengarden.sqlite` or a `libsql://` Turso URL), `DATABASE_AUTH_TOKEN` (Turso), `RZ_SEED_DEMO` (seed three review-queue examples when the store has no submissions), `RZ_ADMIN_TOKEN` (reviewer token; `just serve` defaults it to `garden-dev`, moderation is off when unset).
+Environment (see [`.env.example`](.env.example)): `PORT` (default 4310; never hard-code 4173), `DATABASE_URL` (`file:data/cvzengarden.sqlite` or a `libsql://` Turso URL), `DATABASE_AUTH_TOKEN` (Turso), `RZ_SEED_DEMO` (seed three review-queue examples when the store has no submissions), `RZ_ADMIN_TOKEN` (reviewer token; unset leaves moderation off — copy the example from `.env.example` for local review).
 
 ### Deploy
 

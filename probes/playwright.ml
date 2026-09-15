@@ -65,7 +65,6 @@ external get_attribute : locator -> string -> string Js.nullable Js.Promise.t = 
 
 external click : locator -> unit Js.Promise.t = "click" [@@mel.send]
 external fill : locator -> string -> unit Js.Promise.t = "fill" [@@mel.send]
-external is_visible : locator -> bool Js.Promise.t = "isVisible" [@@mel.send]
 
 type box = { x : float; y : float; width : float; height : float }
 
@@ -79,10 +78,6 @@ type expect_options = { timeout : int }
 external expect : locator -> expectation = "expect" [@@mel.module "@playwright/test"]
 
 external to_have_css : expectation -> string -> Js.Re.t -> expect_options -> unit Js.Promise.t
-  = "toHaveCSS"
-[@@mel.send]
-
-external to_have_css_text : expectation -> string -> string -> expect_options -> unit Js.Promise.t
   = "toHaveCSS"
 [@@mel.send]
 

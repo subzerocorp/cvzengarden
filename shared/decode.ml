@@ -72,3 +72,16 @@ let parse_json text =
       Error { path = ""; message = Option.value (Js.Exn.message e) ~default:"Invalid JSON" }
 
 let error_to_string { path; message } = if path = "" then message else path ^ ": " ^ message
+let ( let* ) = Result.bind
+
+let required name (dec : 'a t) ~path o =
+  let* v = field name dec ~path o in
+  match v with
+  | Some value -> Ok value
+  | None -> Error { path = join_field path name; message = "is required" }
+
+let keyed name of_key ~path o =
+  let* raw = required name string ~path o in
+  match of_key raw with
+  | Some value -> Ok value
+  | None -> Error { path = join_field path name; message = "unknown value " ^ raw }

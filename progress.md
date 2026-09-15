@@ -239,3 +239,10 @@ Nine review threads, all addressed on the branch:
 - `Theme_lint.preludes` / `split_selectors` and `Print_media.emulate` are folds over the string with accumulators, no `ref`/`Buffer`. `Html.t` is abstract behind `shared/html.mli`; every `shared/` module now ships a `.mli`.
 - Catch-alls are gone: storage accessors and the probe `mkdir` match `Js.Exn.Error _` only. `Store.themes_of_body` decodes in one place and a bad payload is logged, never replaced by the first-party set; the last good article is a signal fed by an effect, not a `ref` inside a memo.
 - `page_workbench`, `page_admin` and the drawer are split into helpers under the 30-line cap (draft/view records of signals passed explicitly).
+
+## 2026-09-15 — PR #31 review: OCaml RULES leftovers
+
+- Every compilation unit has a documented `.mli` (shared trimmed; backend, frontend, probes, tests added). Nested Resume decoders and unused FFI stay out of the public surface.
+- `just test` is `dune build @check @fmt @runtest`; a root `dune` alias runs the Melange tests via Bun. Calculation tests split per module (`test_iso_date`, `test_slug`, `test_safe_url`, `test_decode`).
+- Typed `ignore`; `Db.insert ~conflict`; `RZ_ADMIN_TOKEN` defaults empty (no `garden-dev` in the justfile). Nested `match` flattened in `authorized`, `route_lint`/`css_of_body`, and sheet `srcdoc`.
+- `dune build @check @fmt @runtest`: 217 passed, 0 failed.
