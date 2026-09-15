@@ -7,10 +7,10 @@ A CSS Zen Garden for résumés. One Skeleton. Infinite Themes. The audience is t
 AVRIL turns this into PBIs. Do not invent a second product.
 
 1. **Contract** — lock Skeleton HTML (`rz-*`) and this glossary. JSON Resume is the only stored Resume.
-2. **Renderer** — Rust crate: Resume → Skeleton. Byte-stable against fixtures.
-3. **Chrome** — Elm gallery: paste a Resume, live Theme switcher, download HTML/CSS. GPUI Component design guides.
+2. **Renderer** — shared OCaml (Melange) library: Resume → Skeleton. Byte-stable against fixtures. Runs in the browser and on the server.
+3. **Chrome** — Melange → SolidJS: Garden, Gallery, About, Studio, Workbench. Organic design system.
 4. **Themes** — three to four dramatically different Themes so the Garden is real.
-5. **Store** — Axum + Turso: Theme metadata, submissions, featured flags.
+5. **Store** — Hono on Bun + libSQL (Turso in production): Theme metadata, Submissions, review queue.
 6. **Bridge** — SchemaResume and UniversalResume import and export (lossless where possible).
 7. **Generate** — Grok emits a Theme against the Class Contract.
 8. **Later** — PDF, Auth, Payments, custom subdomains. Not this product yet.
@@ -56,7 +56,7 @@ The public `rz-*` class and `data-rz-*` attribute list on the Skeleton. Versione
 _Avoid_: CSS framework, utility classes, Tailwind, chrome class names on the Skeleton
 
 **Renderer**:
-The Rust crate that turns a Resume into a Skeleton. Drop empty nodes. ATS-honest markup: real headings, lists, `mailto:` / `tel:` / `https:`, `<time datetime>`.
+The shared OCaml (Melange) library that turns a Resume into a Skeleton. Drop empty nodes. ATS-honest markup: real headings, lists, `mailto:` / `tel:` / `https:`, `<time datetime>`.
 _Avoid_: Client-side HTML assembly as the source of truth, markdown-in-JSON in v1
 
 **Theme**:
@@ -68,13 +68,13 @@ Garden-hosted fonts Designers may submit. Inbound license is CC BY 4.0. First-pa
 _Avoid_: Calling a CDN the Library, relicensing OFL faces as CC BY 4.0, a JS webfont loader
 
 **Preview CSS**:
-A local readability aid in `skeleton/preview.css`. Not a Theme. Themes must not depend on it.
+A local readability aid in `skeleton/preview.css`. Not a Theme. Themes must not depend on it. Production does not serve it (BAR-T2).
 _Avoid_: Calling preview.css a Theme, shipping it as a Garden entry
 
 ### Chrome
 
 **Chrome**:
-The product UI around the Garden: gallery, Theme switcher, Resume paste, forms, nav. Elm + vanilla CSS. Follows GPUI Component design guides (tokens, sizes, variants, radius, state precedence, reduced motion). Never uses `rz-*`.
+The product UI around the Garden: gallery, Theme switcher, Resume paste, forms, nav. Melange → SolidJS + vanilla CSS. Follows the Organic design system (tokens, pills, over-rounded containers, themed focus, reduced motion); the drawer keeps the GPUI panel look. Never uses `rz-*`.
 _Avoid_: Styling Chrome with a Theme, leaking Theme CSS into Chrome (sandbox the Skeleton)
 
 **Gallery**:
@@ -97,7 +97,7 @@ _Avoid_: Pull request as the only submission path (that may exist; it is not the
 
 **Turso**:
 Hosted SQLite (libSQL) for Theme metadata, Submissions, and later Author Resumes. Org `scull7`, group `cvzengarden`, database `cvzengarden`.
-_Avoid_: Postgres, a second database, local SQLite as the production store
+_Avoid_: Postgres, a second database, local SQLite as the production store (a local `file:` URL is for development and tests only)
 
 **Generate**:
 An external Grok call that emits a Theme targeting the Class Contract. Result is just another Theme file.

@@ -1,65 +1,63 @@
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
-probe_port := env_var_or_default("PROBE_PORT", "4310")
+port := env_var_or_default("PORT", "4310")
+admin_token := env_var_or_default("RZ_ADMIN_TOKEN", "")
+dist := "frontend/dist"
 
 default:
     @just --list
 
-# Environment bootstrap
+# One-time toolchain: opam switch with OCaml 5.3 + Melange, and Bun packages
 init:
-    cd frontend && npm install --no-audit --no-fund
-    just check
+    opam switch list --short | grep -qx cvz || opam switch create cvz ocaml-base-compiler.5.3.0 --yes
+    opam install --switch cvz --yes dune melange ocamlformat
+    bun install
 
-# Session ritual (HARNESS-SPEC §3.5)
-ritual:
-    git status --short
-    git log --oneline -10
-    tail -n 30 progress.md
-    pinto list
+# Compile every Melange target (shared, backend, frontend, tests) to _build/
+compile:
+    dune build @backend @frontend @test @probes
+
+# Bundle the chrome: compiled ESM → one app.js, plus the static assets
+bundle: compile
+    rm -rf {{dist}}
+    mkdir -p {{dist}}/assets
+    cp frontend/static/index.html {{dist}}/index.html
+    cp frontend/static/assets/*.css {{dist}}/assets/
+    bun build _build/default/frontend/output/frontend/src/main.mjs --outfile {{dist}}/assets/app.js --format esm --target browser --minify
+
+build: bundle
+
+# Run the API + chrome on $PORT (default 4310); DATABASE_URL defaults to file:data/cvzengarden.sqlite.
+# RZ_ADMIN_TOKEN unlocks the review queue at /admin; unset leaves moderation off.
+serve: build
+    mkdir -p data
+    PORT={{port}} RZ_ADMIN_TOKEN={{admin_token}} bun _build/default/backend/output/backend/main.mjs
+
+# Recompile on change and serve (two terminals: `just watch` and `just serve`)
+watch:
+    dune build @backend @frontend @test --watch
 
 # Quality gates
-check:
-    cd renderer && cargo check --all-targets
-    cd renderer-wasm && cargo check --all-targets
-    @if [ -f backend/Cargo.toml ]; then cd backend && cargo check --all-targets; fi
-
 fmt:
-    cd renderer && cargo fmt --all -- --check
-    cd renderer-wasm && cargo fmt --all -- --check
-    @if [ -f backend/Cargo.toml ]; then cd backend && cargo fmt --all -- --check; fi
+    dune fmt 2>/dev/null || dune build @fmt --auto-promote
 
-clippy:
-    cd renderer && cargo clippy --all-targets -- -D warnings -D clippy::pedantic
-    cd renderer-wasm && cargo clippy --all-targets -- -D warnings -D clippy::pedantic
-    @if [ -f backend/Cargo.toml ]; then cd backend && cargo clippy --all-targets -- -D warnings -D clippy::pedantic; fi
+fmt-check:
+    dune build @fmt
 
-test-rust:
-    cd renderer && cargo test
-    cd renderer-wasm && cargo test
-    @if [ -f backend/Cargo.toml ]; then cd backend && cargo test; fi
+# Warnings are errors under dune's dev profile; this is the lint gate
+lint: compile no-js
 
-test-frontend:
-    cd frontend && PROBE_PORT={{probe_port}} npm test
+# The repository contract: zero hand-written JavaScript
+no-js:
+    @if git ls-files | grep -E '\.(js|mjs|cjs|jsx|ts|tsx)$' ; then echo "hand-written JavaScript found"; exit 1; else echo "no-js: OK"; fi
+    @if git ls-files '*.html' | xargs grep -l '<script' 2>/dev/null | grep -v '^frontend/static/index.html$' ; then echo "inline <script> found"; exit 1; else echo "no-inline-script: OK"; fi
 
-test: test-rust test-frontend
+test:
+    dune build @check @fmt @runtest
 
-# Build the renderer as a web Wasm module into frontend/static/wasm (gitignored)
-wasm:
-    wasm-pack build --target web renderer-wasm --out-dir ../frontend/static/wasm
+# Browser probes: Playwright (OCaml bindings) drives Chromium against a server the runner starts itself.
+# One-time: `bunx playwright install chromium` (the web container already has a browser).
+probe: build
+    bun _build/default/probes/output/probes/main.mjs
 
-# Full matrix
-verify: fmt clippy test
-
-# Run the Garden locally (static chrome)
-serve port="4310":
-    cd frontend && npm run build && PORT={{port}} node scripts/serve.mjs
-
-harness-validate:
-    pinto list --json | jq -e 'type == "array"' > /dev/null && echo "pinto board: OK"
-
-# Orchestration status dashboard (in-harness UI)
-status:
-    @./scripts/status-dashboard
-
-status-html:
-    @./scripts/status-dashboard --html
+verify: fmt-check lint test build probe

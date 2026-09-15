@@ -162,5 +162,5 @@ Best effort, not a guarantee:
 
 - Validate inbound JSON Resume with resume-schema before store.
 - Validate inbound schema-resume with `https://schema-resume.org/schema.json` before import.
-- Do not implement conversion inside the Elm chrome or the HTML renderer.
-- Fixture pair in `fixtures/` is the first test the Rust crate should lock.
+- Do not implement conversion inside the chrome or the HTML renderer.
+- Fixture pair in `fixtures/` is the first test a converter module should lock.

@@ -1,0 +1,8 @@
+(melange.emit
+ (target output)
+ (alias probes)
+ (libraries rz_shared)
+ (module_systems
+  (es6 mjs))
+ (preprocess
+  (pps melange.ppx)))

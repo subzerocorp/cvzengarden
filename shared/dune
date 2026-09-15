@@ -1,0 +1,5 @@
+(library
+ (name rz_shared)
+ (modes melange)
+ (preprocess
+  (pps melange.ppx)))

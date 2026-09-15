@@ -71,6 +71,6 @@ Export to UniversalResume is lossy when the Resume has data that has no UR slot 
 
 ## Implementation notes (later)
 
-- Detection and conversion live in the converter crate, not Elm and not the HTML renderer.
+- Detection and conversion live in a converter module, not the chrome and not the HTML renderer.
 - Chrome calls detect → import, then hands JSON Resume to the Renderer.
 - Lock the fixture pairs in `fixtures/` as the first tests. Do not implement that crate in this PR.

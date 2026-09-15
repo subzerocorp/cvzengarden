@@ -1,0 +1,27 @@
+/* Paper view: print-media emulation. The Theme's own @media print rules are
+   applied by the chrome (Print_media.emulate); this sheet only draws the page
+   box the Theme's @page declares — size and margin — on the document's html
+   and body. It is layered so any Theme rule on body wins, and it never
+   targets an rz-* node. Not part of the contract. */
+@layer resumezen-paper {
+  html[data-view="paper"] {
+    --resumezen-sheet-w: 8.5in;
+    --resumezen-sheet-h: 11in;
+    --resumezen-page-margin: 0.5in;
+    background: transparent;
+  }
+  html[data-view="paper"] body {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: var(--resumezen-sheet-w);
+    min-height: var(--resumezen-sheet-h);
+    margin: 12px auto 24px;
+    padding: var(--resumezen-page-margin);
+    background-color: #fff;
+    background-image: repeating-linear-gradient(to bottom, transparent 0 calc(var(--resumezen-sheet-h) - 2px), #c0b6a5 calc(var(--resumezen-sheet-h) - 2px) var(--resumezen-sheet-h));
+    box-shadow: 0 12px 32px rgba(46, 43, 37, .22);
+  }
+}
+@media print {
+  html[data-view="paper"] body { margin: 0; padding: 0; max-width: none; min-height: 0; box-shadow: none; background-image: none; }
+}

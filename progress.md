@@ -192,6 +192,61 @@ Fixed in `themes/quarto.css` `@media print` — whitespace only, no type change:
 
 `just verify` exits 0 — fmt, clippy pedantic, cargo test, 165 probes, no failures. First green run on record. `LONG_PRINT_PAGES` and `MAX_LONG_PAGES` left at 3; no board move, no fixture change.
 
+## 2026-09-12 — Greenfield rewrite: Melange (OCaml) everywhere, SolidJS + Hono on Bun, libSQL
+
+Complete rewrite from the approved mockups (`ResumeZen Site.dc.html`, `Skeleton.dc.html`, orchestrator brief). The Rust renderer, the Elm chrome, the JS probes, the AVRIL/Pinto planning artefacts and the Rust/Elm agent skills are gone. **Every line of code is now OCaml compiled by Melange; the repository contains zero hand-written JavaScript** (`just no-js` enforces it).
+
+- `shared/`: Resume decoder with JSON-path errors, Skeleton renderer (byte-locked against `skeleton/example.html` body and `skeleton/samples/junior.html`), ISO dates, slugs, safe hrefs, theme-contract linter (scope, header, pure CSS, fonts, page count, reduced motion), theme metadata, sandbox document builder.
+- `backend/`: Hono on Bun. `/api/themes`, `/themes/:id.css`, `/api/render`, `/api/lint`, `/api/submissions` (linted, `422` on a failing check, stored in review), `/api/samples/:name`, static chrome + SPA routes. Store is `@libsql/client` — `file:` locally, `:memory:` in tests, Turso in production via `DATABASE_URL`/`DATABASE_AUTH_TOKEN`. First-party themes are seeded from `themes/`; three review-queue examples are seeded when the store has no submissions (`RZ_SEED_DEMO`).
+- `frontend/`: SolidJS via hyperscript bindings (no JSX). Routes `/`, `/gallery`, `/about`, `/studio`, `/workbench` with theme + view in the URL; top bar, GPUI-style drawer (Escape closes), theme pills, Screen/Paper toggle, page estimate, Save as PDF (prints the sandboxed sheet), copy link. Studio: paste/upload/URL import, inline schema errors, section counts, browser-only persistence. Workbench: drop or type a stylesheet, live preview, six contract checks (page count measured on the long fixture in a hidden Letter frame), submission to the review queue. Organic design system tokens (`organic.css`) + `chrome.css`; résumé previews are same-origin `srcdoc` iframes mutated in place so theme swaps cross-fade.
+- `test/`: 157 checks (renderer parity, dates, slugs, urls, decode errors, linter rules, HTTP API through `app.request`) — `just test`.
+- Tooling: `dune-project` + per-target `melange.emit`, `bun build` bundling, `justfile` (`init`, `compile`, `bundle`, `serve`, `watch`, `fmt`, `lint`, `no-js`, `test`, `verify`), `.ocamlformat`, session-start hook installs opam/OCaml 5.3/melange.
+
+Verified in Chromium (Playwright, scratch script outside the repo): all five routes render, theme/view changes update the URL, drawer opens/closes, Studio surfaces `work[0].highlights[0] — expected a string, found a number`, Workbench diagnostics flag `.btn` and missing reduced-motion, no horizontal overflow at 400px, no console errors.
+
+Known gaps / follow-ups: Bridge dialect conversion (SchemaResume / UniversalResume) is still documentation only; Appearance (Light/Dark) in the drawer is a static placeholder because the Organic system ships light-only; no browser-level probe suite is committed (it would need Playwright bindings in OCaml); moderation of the review queue (approve/reject) has no UI or endpoint yet.
+
+## 2026-09-12 — Review queue moderation + browser probes in OCaml
+
+- Moderation: `Theme_meta.status` gains `Rejected`; the store keeps `review_note` / `reviewed_at` (idempotent ALTERs for older files). `GET /api/admin/queue`, `POST /api/admin/themes/:id/approve|reject` behind `Authorization: Bearer $RZ_ADMIN_TOKEN` (`401` wrong token, `503` when unset, `404` for first-party ids). `/api/themes` hides rejected themes; approved submissions are public and get Gallery cards and picker pills.
+- `/admin` page: token field (kept in this browser), queue rows with swatch, status, contract checks, note and reviewed time; Stage / Approve / Reject… (note via prompt). `just serve` defaults `RZ_ADMIN_TOKEN` to `garden-dev`.
+- Probes: `probes/` is a Melange target with Playwright bindings (locator API only, no `evaluate`), a launcher that spawns the server on a free port with an in-memory store, and 32 probes across Garden, Gallery, About, Studio, Workbench (including a real submission), the review queue (approve + reject with dialog), a 400px viewport and console errors. `just probe`; `just verify` runs it.
+- Tests: 169 checks (12 new for moderation). Fix found by the probes: a GET with an empty body is rejected by `fetch`; `Web.request` now omits the body.
+
+Decision (human, 2026-09-12): the review-queue page is the channel for rejection notes; no author notification is planned.
+
+## 2026-09-12 — PR #31 review round 1 (Independent Product Experience Guardian)
+
+Nine review threads, all addressed on the branch:
+
+- **Stack lock**: the unlock is now an explicit record, `docs/decisions/2026-09-12-stack-unlock.md`, referenced from AGENTS.md and ROADMAP.md, instead of an in-tree edit of the lock. Pinto/AVRIL retirement and the Netlify → container deploy are recorded there. A `Dockerfile` (OCaml 5.3 build stage, `oven/bun` runtime) replaces `netlify.toml`.
+- **BAR-Q1 / BAR-X3**: README names the Independent Product Experience Guardian and the binding priority, states the live garden (`cvzengarden.netlify.app`) and that the custom domains are parked; a probe (`BAR-Q1`) checks both files.
+- **paper.css**: no longer a second Skeleton. Paper view is print-media emulation: `Print_media.emulate` unwraps the Theme's `@media print` rules and drops `@media screen`; the chrome draws only the `@page` box (size, margin) on `html`/`body` inside `@layer`, so Theme rules win and no `rz-*` node is restyled. `sandbox.css` no longer touches `.rz-resume` either.
+- **Theme linter**: every compound must be a contract node, the document, or a bare tag under a contract node (`.theme-switcher .rz-name` fails); new BAR-X2 check `Words stay in HTML` fails any `content:` string with a letter or digit; unguarded motion and an over-limit page count are `Fail`. The Workbench blocks submission on any Fail and sends `measuredPages`; the server applies it.
+- **BAR-D1 / BAR-T2**: `/skeleton/example.html`, `/skeleton/samples/*`, `/skeleton/CLASS-CONTRACT.md` and `/themes/_blank.css` are served; `/skeleton/preview.css` is an explicit 404. About and Workbench link to those paths. `/preview/:id.html?sample=…` serves the sample in one Theme as a printable document. A rejected stylesheet is a 404 unless the reviewer token is sent.
+- **BAR-X1 / J1**: About no longer offers "Download HTML".
+- **BAR-U1**: `Theme_css.get` is an option; a frame is not mounted until the overlays and the Theme CSS are in hand, and a failed fetch retries after 5 s.
+- **Default résumé**: the Garden, Studio sample and Workbench fixture are the Jordan Hale fixture. Storage keys are `resumezen.resume` / `resumezen.admin`; sandbox style ids are `resumezen-*`.
+- **BAR-R1**: locked as a unit test (Ada renders, nothing borrowed); the `example.html` body is now byte-identical to renderer output (blank lines removed from the golden file); photo rendering locked.
+- **Probes**: `@playwright/test` expectations give computed styles without evaluated JavaScript. New suites print BAR-Q1, U1 (first paint styled, no serif mid-swap), U2 (sheet and date boxes at 1280px on all three Themes), U3 (`page.pdf` page counts and a light print ground from `/preview/:id.html`), U4 (permalink + Back), L1 (three faces and inks, origin-only requests from the frame), T2 and D1.
+
+## 2026-09-12 — PR #31 review round 2 (ocaml/R* rules, Gallery bundle, required page count)
+
+- Gallery drops "Download HTML + CSS" (BAR-X1/J1); Save as PDF stays.
+- A submission must carry `measuredPages` (400 without it, 422 over the limit); Pending is never a pass. The Workbench refuses to send until the long-fixture measurement has landed.
+- `let*` is `Result.bind` everywhere; `let**` is `Option.bind` (`iso_date`, `db`, `page_admin`). `Decode.list` binds instead of re-matching `Error e`.
+- `Db.meta_of_row` returns `None` when any keyed column fails to decode; no invented defaults.
+- `Theme_lint.preludes` / `split_selectors` and `Print_media.emulate` are folds over the string with accumulators, no `ref`/`Buffer`. `Html.t` is abstract behind `shared/html.mli`; every `shared/` module now ships a `.mli`.
+- Catch-alls are gone: storage accessors and the probe `mkdir` match `Js.Exn.Error _` only. `Store.themes_of_body` decodes in one place and a bad payload is logged, never replaced by the first-party set; the last good article is a signal fed by an effect, not a `ref` inside a memo.
+- `page_workbench`, `page_admin` and the drawer are split into helpers under the 30-line cap (draft/view records of signals passed explicitly).
+
+## 2026-09-15 — PR #31 review: OCaml RULES leftovers
+
+- Every compilation unit has a documented `.mli` (shared trimmed; backend, frontend, probes, tests added). Nested Resume decoders and unused FFI stay out of the public surface.
+- `just test` is `dune build @check @fmt @runtest`; a root `dune` alias runs the Melange tests via Bun. Calculation tests split per module (`test_iso_date`, `test_slug`, `test_safe_url`, `test_decode`).
+- Typed `ignore`; `Db.insert ~conflict`; `RZ_ADMIN_TOKEN` defaults empty (no `garden-dev` in the justfile). Nested `match` flattened in `authorized`, `route_lint`/`css_of_body`, and sheet `srcdoc`.
+- `dune build @check @fmt @runtest`: 217 passed, 0 failed.
+
 ## 2026-09-12 — CrossR catalog skills installed
 
 Vendored nine skills from [sycamore-hq/crossr-skills](https://github.com/sycamore-hq/crossr-skills) into `.agents/skills/` via `npx skills add --copy`: `code-writer`, `github-pr-fix`, `github-pr-review`, `code-review`, `ocaml`, `show-me`, `testing`, `unslop`, `voice-dna`. `code-writer` / `unslop` / `voice-dna` were already identical to upstream. Pin: `skills-lock.json`. No product code change.
