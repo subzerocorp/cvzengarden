@@ -5,7 +5,7 @@ A [CSS Zen Garden](https://www.csszengarden.com/) for résumés.
 One **fixed semantic HTML skeleton**. Infinite **designer-submitted CSS themes**. Paste a [JSON Resume](https://jsonresume.org/schema), pick a theme, ship a résumé that still parses as a document — not a pile of absolutely-positioned `div`s.
 
 - Product: **ResumeZen**
-- Live garden: **https://cvzengarden.netlify.app** (BAR-X3). cvzengarden.com and resumezengarden.com are parked Epik pages, not the product, until DNS moves to the container deploy below.
+- Live garden: **https://cvzengarden.resumezen.workers.dev** (BAR-X3), the Cloudflare Worker described under Deploy. cvzengarden.com and resumezengarden.com are parked Epik pages, not the product, until DNS moves to the Worker (Linear NAT-351). The old Netlify preview at cvzengarden.netlify.app is superseded.
 - Quality: judged by the **Independent Product Experience Guardian** against [`qa/MARKET-QUALITY-BAR.md`](qa/MARKET-QUALITY-BAR.md). Binding priority (BAR-Q1): (1) ease of use, (2) UI look and feel, (3) consistency, (4) category-leading vs CSS Zen Garden + Teal / Rezi / Enhancv.
 - Stack decision: [`docs/decisions/2026-09-12-stack-unlock.md`](docs/decisions/2026-09-12-stack-unlock.md)
 - Tracking: all work lives in the Linear project **ResumeZen** (team NAT): https://linear.app/scull7/project/resumezen-9ac99e308ed9. `progress.md` is a changelog, not a board.
@@ -89,7 +89,7 @@ bunx wrangler secret put RZ_ADMIN_TOKEN
 just deploy                                  # wrangler deploy
 ```
 
-`just worker` runs it locally under wrangler (put the three values in `.dev.vars`). Bun remains the local runtime for `just serve`, the tests and the probes. The Netlify preview stays the live garden until the Worker is fronted by the domains (tracked in Linear).
+`just worker` runs it locally under wrangler (put the three values in `.dev.vars`). Bun remains the local runtime for `just serve`, the tests and the probes. The Worker at `cvzengarden.resumezen.workers.dev` is the live garden; the domains follow in Linear NAT-351.
 
 **CI** (`.github/workflows/ci.yml`): every push and pull request runs `just verify` and uploads the Worker bundle; a push to `main` (or a manual run with *deploy* ticked) then runs `wrangler deploy`. Deploy needs two repository secrets, `CLOUDFLARE_API_TOKEN` (Workers Scripts: Edit) and `CLOUDFLARE_ACCOUNT_ID`; the Worker's own secrets are set once with `wrangler secret put`.
 
