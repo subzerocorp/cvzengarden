@@ -91,6 +91,8 @@ just deploy                                  # wrangler deploy
 
 `just worker` runs it locally under wrangler (put the three values in `.dev.vars`). Bun remains the local runtime for `just serve`, the tests and the probes. The Netlify preview stays the live garden until the Worker is fronted by the domains (tracked in Linear).
 
+**CI** (`.github/workflows/ci.yml`): every push and pull request runs `just verify` and uploads the Worker bundle; a push to `main` (or a manual run with *deploy* ticked) then runs `wrangler deploy`. Deploy needs two repository secrets, `CLOUDFLARE_API_TOKEN` (Workers Scripts: Edit) and `CLOUDFLARE_ACCOUNT_ID`; the Worker's own secrets are set once with `wrangler secret put`.
+
 ---
 
 ## Routes and API

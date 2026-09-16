@@ -1,0 +1,103 @@
+# Verify on every push and pull request; deploy the Worker from main.
+#
+# Deploy needs two repository secrets (Settings → Secrets and variables → Actions):
+#   CLOUDFLARE_API_TOKEN   — a token with "Workers Scripts: Edit" on the account
+#   CLOUDFLARE_ACCOUNT_ID  — the account the Worker belongs to
+# Runtime secrets (DATABASE_URL, DATABASE_AUTH_TOKEN, RZ_ADMIN_TOKEN) are set once with
+# `wrangler secret put`; they live on the Worker, not in this repository.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: Deploy this ref to Cloudflare Workers after verify
+        type: boolean
+        default: false
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: OCaml 5.3 (opam cached by the action)
+        uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: 5.3.0
+          dune-cache: true
+
+      - name: dune + melange + ocamlformat
+        run: opam install --yes dune melange ocamlformat
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: extractions/setup-just@v2
+
+      - name: Packages
+        run: bun install --frozen-lockfile
+
+      - name: Playwright Chromium (probes)
+        run: bunx playwright install --with-deps chromium
+
+      - name: just verify
+        run: opam exec -- just verify
+
+      - name: Worker bundle
+        run: opam exec -- just assets
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: worker-bundle
+          path: |
+            _build/default/backend/output/backend/worker.mjs
+            dist/
+            wrangler.toml
+          retention-days: 7
+
+  deploy:
+    needs: verify
+    if: github.event_name == 'push' || inputs.deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.deployment-url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: 5.3.0
+          dune-cache: true
+
+      - run: opam install --yes dune melange ocamlformat
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: extractions/setup-just@v2
+
+      - run: bun install --frozen-lockfile
+
+      - name: Worker bundle
+        run: opam exec -- just assets
+
+      - name: wrangler deploy
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
