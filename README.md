@@ -8,6 +8,7 @@ One **fixed semantic HTML skeleton**. Infinite **designer-submitted CSS themes**
 - Live garden: **https://cvzengarden.netlify.app** (BAR-X3). cvzengarden.com and resumezengarden.com are parked Epik pages, not the product, until DNS moves to the container deploy below.
 - Quality: judged by the **Independent Product Experience Guardian** against [`qa/MARKET-QUALITY-BAR.md`](qa/MARKET-QUALITY-BAR.md). Binding priority (BAR-Q1): (1) ease of use, (2) UI look and feel, (3) consistency, (4) category-leading vs CSS Zen Garden + Teal / Rezi / Enhancv.
 - Stack decision: [`docs/decisions/2026-09-12-stack-unlock.md`](docs/decisions/2026-09-12-stack-unlock.md)
+- Tracking: all work lives in the Linear project **ResumeZen** (team NAT): https://linear.app/scull7/project/resumezen-9ac99e308ed9. `progress.md` is a changelog, not a board.
 - Repo: [subzerocorp/cvzengarden](https://github.com/subzerocorp/cvzengarden)
 - Product plan: [ROADMAP.md](ROADMAP.md) · vocabulary: [CONTEXT.md](CONTEXT.md) · agent rules: [AGENTS.md](AGENTS.md)
 
@@ -42,8 +43,8 @@ Paste · upload · URL (Studio)
 | Data | [JSON Resume](https://jsonresume.org/schema) | Fixtures in [`skeleton/`](skeleton/) |
 | Shared domain | Melange library: Resume decoder, Skeleton renderer, dates, safe hrefs, theme-contract linter, theme metadata | [`shared/`](shared/) |
 | Chrome | Melange → [SolidJS](https://www.solidjs.com/) (hyperscript, no JSX) + vanilla CSS (Organic tokens) | [`frontend/`](frontend/) |
-| API | Melange → [Hono](https://hono.dev/) on [Bun](https://bun.com/) | [`backend/`](backend/) |
-| Store | SQLite via [libSQL](https://github.com/tursodatabase/libsql) (`@libsql/client`): a local file in development, [Turso](https://turso.tech/) in production | `DATABASE_URL` |
+| API | Melange → [Hono](https://hono.dev/); Bun locally, a Cloudflare Worker in production | [`backend/`](backend/) |
+| Store | SQLite via [libSQL](https://github.com/tursodatabase/libsql): a local file in development (`@libsql/client`), [Turso](https://turso.tech/) over HTTP from the Worker (`@libsql/client/web`) | `DATABASE_URL` |
 | Themes | Pure `.css` against `rz-*` only | First-party: Nightgarden (web), Quarto (print), Switchyard (both) in [`themes/`](themes/) |
 | Tests | Melange test executables run by Bun (renderer parity, calculations, linter, HTTP API) | [`test/`](test/) |
 | Browser probes | Melange → Playwright bindings; Chromium drives every route against a server the runner starts, and prints the BAR-* rules it checks (U1 FOUC, U2 overflow, U3 print honesty, U4 permalink, L1 look and feel, T2, D1, Q1) | [`probes/`](probes/) |
@@ -72,12 +73,23 @@ just serve       # build everything and serve on http://localhost:4310
 | `just fmt` / `just fmt-check` | ocamlformat via dune |
 | `just lint` | Warnings-as-errors compile + the zero-JavaScript check |
 | `just verify` | `fmt-check` + `lint` + `test` + `build` + `probe` |
+| `just assets` / `just worker` / `just deploy` | Gather `dist/` for the Worker; run it under wrangler; publish |
 
 Environment (see [`.env.example`](.env.example)): `PORT` (default 4310; never hard-code 4173), `DATABASE_URL` (`file:data/cvzengarden.sqlite` or a `libsql://` Turso URL), `DATABASE_AUTH_TOKEN` (Turso), `RZ_SEED_DEMO` (seed three review-queue examples when the store has no submissions), `RZ_ADMIN_TOKEN` (reviewer token; `just serve` defaults it to `garden-dev`, moderation is off when unset).
 
 ### Deploy
 
-The server is a Bun process, not a static site. `Dockerfile` builds the Melange targets in an OCaml 5.3 stage and ships a `oven/bun` runtime image; run it with `PORT`, `DATABASE_URL` (a Turso `libsql://` URL), `DATABASE_AUTH_TOKEN` and `RZ_ADMIN_TOKEN`. The previous Netlify configuration is retired with the Elm chrome; the Netlify preview stays the live garden until the container is fronted by the domains.
+Production is a **Cloudflare Worker**. The Melange-compiled Worker (`backend/worker.ml` → `_build/default/backend/output/backend/worker.mjs`) runs the same Hono app as the Bun dev server; the chrome bundle, Themes, Font Library and skeleton files ship as Workers Static Assets from `dist/`. The store is Turso through `@libsql/client/web` (HTTP, no native binding).
+
+```bash
+just assets                                  # compile the Worker and gather dist/
+bunx wrangler secret put DATABASE_URL        # libsql://… (Turso)
+bunx wrangler secret put DATABASE_AUTH_TOKEN
+bunx wrangler secret put RZ_ADMIN_TOKEN
+just deploy                                  # wrangler deploy
+```
+
+`just worker` runs it locally under wrangler (put the three values in `.dev.vars`). Bun remains the local runtime for `just serve`, the tests and the probes. The Netlify preview stays the live garden until the Worker is fronted by the domains (tracked in Linear).
 
 ---
 

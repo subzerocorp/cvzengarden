@@ -2,8 +2,13 @@
 /_build
 *.install
 
-# Bundled chrome
+# Bundled chrome and the Worker's asset bundle
 /frontend/dist
+/dist
+
+# wrangler
+/.wrangler
+/.dev.vars
 
 # Bun
 /node_modules

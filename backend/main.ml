@@ -15,7 +15,8 @@ let () =
     let admin_token =
       match Js.Dict.get Bun.env "RZ_ADMIN_TOKEN" with Some "" | None -> None | Some t -> Some t
     in
-    let app = Api.build ~config:{ Api.default_config with admin_token } db in
+    let config = { Api.default_config with admin_token; files = Disk Hono_bun.mount_static } in
+    let app = Api.build ~config db in
     let server = Bun.serve { port; hostname = "0.0.0.0"; fetch = Hono.fetch app } in
     Bun.log
       (Printf.sprintf "ResumeZen listening on http://localhost:%d (store: %s)"

@@ -3,11 +3,23 @@
 open Rz_shared
 open Promise
 
+type mount = Hono.t -> prefix:string -> dir:string -> unit
+(** Where files come from and how static assets are served. The app is the same on Bun (disk, Hono's
+    static middleware) and on Cloudflare Workers (the static-assets binding). *)
+
+type files =
+  | Disk of mount
+      (** read repository paths with [Bun.file]; mount static directories with [mount] *)
+  | Assets of (string -> Bun.response Js.Promise.t)
+      (** read repository paths through an assets binding; unmatched routes fall through to it too
+      *)
+
 type config = {
   themes_dir : string;  (** first-party CSS and the Font Library *)
   skeleton_dir : string;  (** fixtures served as samples *)
   static_dir : string;  (** the built chrome *)
   admin_token : string option;  (** bearer token for moderation; [None] disables it *)
+  files : files;
 }
 
 let default_config =
@@ -16,7 +28,25 @@ let default_config =
     skeleton_dir = "skeleton";
     static_dir = "frontend/dist";
     admin_token = None;
+    files = Disk (fun _ ~prefix:_ ~dir:_ -> ());
   }
+
+(** A repository path as the URL the assets bundle serves it at: [frontend/dist/x] → [/x],
+    [themes/x] → [/themes/x], [skeleton/x] → [/skeleton/x]. *)
+let asset_url config path =
+  let prefix = config.static_dir ^ "/" in
+  if Js.String.startsWith ~prefix path then "/" ^ Js.String.slice ~start:(String.length prefix) path
+  else "/" ^ path
+
+(** Read a text file by repository-relative path, wherever the app runs. *)
+let read_text config path =
+  match config.files with
+  | Disk _ -> Bun.read_text path
+  | Assets fetch ->
+      let> response = fetch (asset_url config path) in
+      if Hono.response_status response = 200 then
+        Promise.map Option.some (Hono.response_text response)
+      else return None
 
 (* ── Response helpers ─────────────────────────────────────────────────── *)
 
@@ -56,7 +86,7 @@ let well_formed_id id = Js.Re.test ~str:id theme_id_shape
 (** A stylesheet on disk under [themes/]: first-party Themes and the starter [_blank.css]. Ids are
     restricted to a safe alphabet first. *)
 let disk_css config id =
-  if well_formed_id id then Bun.read_text (Printf.sprintf "%s/%s.css" config.themes_dir id)
+  if well_formed_id id then read_text config (Printf.sprintf "%s/%s.css" config.themes_dir id)
   else return None
 
 (** The stylesheet the public may fetch: first-party from disk, Submissions from the store unless
@@ -196,7 +226,7 @@ let route_preview app db config =
          let> css = theme_css config db ~reviewer:false id in
          let> json =
            match sample_path config sample with
-           | Some path -> Bun.read_text path
+           | Some path -> read_text config path
            | None -> return None
          in
          match (css, Option.bind json (fun j -> Result.to_option (Resume.of_string j))) with
@@ -211,7 +241,7 @@ let route_samples app config =
          match sample_path config (Hono.param ctx "name") with
          | None -> return (not_found ctx "sample")
          | Some path ->
-             let> text = Bun.read_text path in
+             let> text = read_text config path in
              return
                (match text with Some t -> Hono.json_text ctx t | None -> not_found ctx "sample")))
 
@@ -327,16 +357,19 @@ let route_admin app db config =
 
 let spa_routes = [ "/"; "/gallery"; "/about"; "/studio"; "/workbench"; "/admin" ]
 
+let mount_disk app config mount =
+  mount app ~prefix:"/assets" ~dir:(config.static_dir ^ "/assets");
+  mount app ~prefix:"/skeleton" ~dir:config.skeleton_dir;
+  mount app ~prefix:"/fonts" ~dir:(config.themes_dir ^ "/fonts");
+  mount app ~prefix:"/themes/fonts" ~dir:(config.themes_dir ^ "/fonts")
+
 let route_static app config =
-  Hono.mount_static app ~prefix:"/assets" ~dir:(config.static_dir ^ "/assets");
   (* BAR-T2: preview.css is a local readability aid, never a served asset. *)
   Hono.get app "/skeleton/preview.css" (handler (fun ctx -> return (not_found ctx "preview.css")));
-  Hono.mount_static app ~prefix:"/skeleton" ~dir:config.skeleton_dir;
-  Hono.mount_static app ~prefix:"/fonts" ~dir:(config.themes_dir ^ "/fonts");
-  Hono.mount_static app ~prefix:"/themes/fonts" ~dir:(config.themes_dir ^ "/fonts");
+  (match config.files with Disk mount -> mount_disk app config mount | Assets _ -> ());
   let index =
     handler (fun ctx ->
-        let> html = Bun.read_text (config.static_dir ^ "/index.html") in
+        let> html = read_text config (config.static_dir ^ "/index.html") in
         match html with
         | Some html -> return (Hono.html ctx html)
         | None ->
@@ -362,5 +395,9 @@ let build ?(config = default_config) db =
   route_submissions app db;
   route_admin app db config;
   route_static app config;
-  Hono.not_found app (handler (fun ctx -> return (not_found ctx "route")));
+  (match config.files with
+  | Disk _ -> Hono.not_found app (handler (fun ctx -> return (not_found ctx "route")))
+  | Assets fetch ->
+      (* Anything the API does not own is a static asset, or a 404 from it. *)
+      Hono.not_found app (handler (fun ctx -> fetch (Hono.path ctx))));
   app

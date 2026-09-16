@@ -19,7 +19,7 @@ ResumeZen (`cvzengarden.com` / `resumezengarden.com`) is a CSS Zen Garden for r�
 | API | `backend/` — Melange → Hono, run by Bun. Handlers decode → pure calculation → respond. |
 | Store | SQLite through `@libsql/client`: `file:` locally and in tests (`:memory:`), Turso in production (`DATABASE_URL` + `DATABASE_AUTH_TOKEN`). |
 | Themes | One pure `.css` file each in `themes/`, targeting `skeleton/CLASS-CONTRACT.md` only. |
-| Runtime | Bun for the server, the bundler (`bun build`) and the tests. |
+| Runtime | Bun for the local server, the bundler (`bun build`), the tests and the probes. Production is a Cloudflare Worker (`backend/worker.ml`, `wrangler.toml`, `just deploy`). |
 
 No Tailwind, no CSS-in-JS, no JS in themes, no second Skeleton, no new npm dependency without approval.
 
@@ -46,6 +46,10 @@ just verify      # all of the above
 ```
 
 Port `4173` is often held by an unrelated local process. Never hard-code it; use `PORT` (default 4310).
+
+## Board
+
+All project tracking happens in the Linear project **ResumeZen** (team NAT): https://linear.app/scull7/project/resumezen-9ac99e308ed9. Open work is a Linear issue, not a TODO or a `progress.md` bullet; reference the issue key (`NAT-n`) in commits and PRs. `progress.md` stays a changelog.
 
 ## Git
 

@@ -239,3 +239,10 @@ Nine review threads, all addressed on the branch:
 - `Theme_lint.preludes` / `split_selectors` and `Print_media.emulate` are folds over the string with accumulators, no `ref`/`Buffer`. `Html.t` is abstract behind `shared/html.mli`; every `shared/` module now ships a `.mli`.
 - Catch-alls are gone: storage accessors and the probe `mkdir` match `Js.Exn.Error _` only. `Store.themes_of_body` decodes in one place and a bad payload is logged, never replaced by the first-party set; the last good article is a signal fed by an effect, not a `ref` inside a memo.
 - `page_workbench`, `page_admin` and the drawer are split into helpers under the 30-line cap (draft/view records of signals passed explicitly).
+
+## 2026-09-16 — Cloudflare Workers deploy; Linear is the tracker (NAT-346, NAT-356)
+
+- `backend/worker.ml` is a Worker module (`export default { fetch }`) running the same Hono app: Turso over HTTP (`Libsql_web`, `@libsql/client/web`), static files through the `ASSETS` binding, app built on the first request. `Api.config.files` is the port: `Disk` on Bun, `Assets` on Workers (unmatched routes fall through to the binding; `/skeleton/preview.css` still 404s first).
+- `wrangler.toml` (`run_worker_first`, `ASSETS`), `just assets` / `just worker` / `just deploy`; Dockerfile retired. Decision record §5 and §6 amended.
+- Linear project **ResumeZen** (NAT) is the single tracker; AGENTS.md and README point at it.
+- Without a store (secrets missing or Turso unreachable) the chrome, SPA routes and static files still answer from the binding; `/api/*` and `/preview/*` return a 503 JSON error, and the build is retried on the next request. `html_handling = "none"` keeps `/skeleton/example.html` at its literal name. Smoke-tested under `wrangler dev` (workerd).

@@ -10,7 +10,7 @@ AVRIL turns this into PBIs. Do not invent a second product.
 2. **Renderer** — shared OCaml (Melange) library: Resume → Skeleton. Byte-stable against fixtures. Runs in the browser and on the server.
 3. **Chrome** — Melange → SolidJS: Garden, Gallery, About, Studio, Workbench. Organic design system.
 4. **Themes** — three to four dramatically different Themes so the Garden is real.
-5. **Store** — Hono on Bun + libSQL (Turso in production): Theme metadata, Submissions, review queue.
+5. **Store** — Hono (Bun locally, a Cloudflare Worker in production) + libSQL (Turso in production): Theme metadata, Submissions, review queue.
 6. **Bridge** — SchemaResume and UniversalResume import and export (lossless where possible).
 7. **Generate** — Grok emits a Theme against the Class Contract.
 8. **Later** — PDF, Auth, Payments, custom subdomains. Not this product yet.

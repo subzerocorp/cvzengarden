@@ -1,6 +1,0 @@
-_build
-frontend/dist
-node_modules
-data
-probes/shots
-.git
