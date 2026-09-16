@@ -5,6 +5,10 @@ name = "cvzengarden"
 main = "_build/default/backend/output/backend/worker.mjs"
 compatibility_date = "2026-09-01"
 
+# The workers.dev URL stays on as the fallback address alongside the custom domains.
+workers_dev = true
+preview_urls = true
+
 [assets]
 directory = "./dist"
 binding = "ASSETS"
