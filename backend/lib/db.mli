@@ -8,6 +8,9 @@ type t
 val connect : url:string -> ?auth_token:string -> unit -> t
 (** [connect ~url ?auth_token ()] opens the store. *)
 
+val of_client : Libsql.client -> t
+(** [of_client client] is the store over an already-open client, such as [Libsql_web.connect]. *)
+
 val migrate : t -> unit Js.Promise.t
 (** [migrate db] creates the schema and idempotent columns. *)
 

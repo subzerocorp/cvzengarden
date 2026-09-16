@@ -27,6 +27,26 @@ bundle: compile
 
 build: bundle
 
+# Gather the static assets the Worker serves: the chrome, Themes, Font Library and skeleton
+# (without preview.css, which must 404 — BAR-T2).
+assets: bundle
+    rm -rf dist
+    mkdir -p dist/themes dist/skeleton
+    cp -r {{dist}}/. dist/
+    cp themes/*.css dist/themes/
+    cp -r themes/fonts dist/themes/fonts
+    cp -r themes/fonts dist/fonts
+    cp -r skeleton/. dist/skeleton/
+    rm -f dist/skeleton/preview.css
+
+# Run the Worker locally with wrangler (needs DATABASE_URL / DATABASE_AUTH_TOKEN in .dev.vars)
+worker: assets
+    bunx wrangler dev --port {{port}}
+
+# Publish to Cloudflare Workers
+deploy: assets
+    bunx wrangler deploy
+
 # Run the API + chrome on $PORT (default 4310); DATABASE_URL defaults to file:data/cvzengarden.sqlite.
 # RZ_ADMIN_TOKEN unlocks the review queue at /admin; unset leaves moderation off.
 serve: build

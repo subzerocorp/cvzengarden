@@ -1,4 +1,4 @@
-(** Hono bindings: the app, request context, and the Bun static adapter. *)
+(** Hono bindings: the app and the request context. The Bun static adapter lives in [Hono_bun]. *)
 
 type t
 (** [t] is a Hono app. *)
@@ -33,6 +33,10 @@ val on_error : t -> (Js.Exn.t -> ctx -> Bun.response) -> unit
 val fetch : t -> Bun.fetch_fn
 (** [fetch app] is the bound fetch function for [Bun.serve]. *)
 
+val fetch_with_env : t -> Bun.request -> 'env -> 'ctx -> Bun.response Js.Promise.t
+(** [fetch_with_env app request env ctx] is [app.fetch(request, env, ctx)] as a Cloudflare Worker
+    calls it. *)
+
 val request : t -> string -> Bun.response Js.Promise.t
 (** [request app path] is an in-process GET, for tests. *)
 
@@ -65,6 +69,9 @@ val param : ctx -> string -> string
 val req_text : ctx -> string Js.Promise.t
 (** [req_text ctx] is the request body as text. *)
 
+val path : ctx -> string
+(** [path ctx] is the request path, without the query string. *)
+
 val query_opt : ctx -> string -> string option
 (** [query_opt ctx name] is a query parameter. *)
 
@@ -88,9 +95,3 @@ val response_text : Bun.response -> string Js.Promise.t
 
 val response_header : Bun.response -> string -> string Js.nullable
 (** [response_header r name] is a response header. *)
-
-type static_options = { root : string; rewriteRequestPath : string -> string }
-(** [static_options] is the Bun static-file adapter config. *)
-
-val mount_static : t -> prefix:string -> dir:string -> unit
-(** [mount_static app ~prefix ~dir] serves [dir] under [prefix]. *)

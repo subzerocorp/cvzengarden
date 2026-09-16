@@ -32,6 +32,7 @@ CREATE INDEX IF NOT EXISTS themes_status ON themes (status, created_at);
 |}
 
 let connect ~url ?auth_token () = Libsql.connect ~url ?auth_token ()
+let of_client client = client
 
 (* Stores created before the review columns existed gain them here; the
    ALTERs fail harmlessly once the columns are present. *)

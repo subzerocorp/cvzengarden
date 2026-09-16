@@ -10,6 +10,7 @@
     "solid-js": "^1.9.15"
   },
   "devDependencies": {
-    "@playwright/test": "1.56.1"
+    "@playwright/test": "1.56.1",
+    "wrangler": "^4.132.0"
   }
 }

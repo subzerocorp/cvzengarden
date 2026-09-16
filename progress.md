@@ -254,3 +254,12 @@ Vendored nine skills from [sycamore-hq/crossr-skills](https://github.com/sycamor
 ## 2026-09-12 — PR #32 review fixes
 
 `gan-verdict` vendored (`SKILL.md` + `references/batch-verdict.md` + `references/handoff-packet.md`) so `code-review` and `testing` can load the verdict/envelope protocol they cite; `skills-lock.json` pinned, catalog bullet updated. `AGENTS.md` Skills heading now names `.agents/skills/` instead of a laptop path; every skill under it resolves on the branch. Personas line left as-is (agents not vendored).
+
+## 2026-09-16 — Cloudflare Workers deploy; Linear is the tracker (NAT-346, NAT-356)
+
+- `backend/worker.ml` is a Worker module (`export default { fetch }`) running the same Hono app: Turso over HTTP (`Libsql_web`, `@libsql/client/web`), static files through the `ASSETS` binding, app built on the first request. `Api.config.files` is the port: `Disk` on Bun, `Assets` on Workers (unmatched routes fall through to the binding; `/skeleton/preview.css` still 404s first).
+- `wrangler.toml` (`run_worker_first`, `ASSETS`), `just assets` / `just worker` / `just deploy`; Dockerfile retired. Decision record §5 and §6 amended.
+- Linear project **ResumeZen** (NAT) is the single tracker; AGENTS.md and README point at it.
+- Without a store (secrets missing or Turso unreachable) the chrome, SPA routes and static files still answer from the binding; `/api/*` and `/preview/*` return a 503 JSON error, and the build is retried on the next request. `html_handling = "none"` keeps `/skeleton/example.html` at its literal name. Smoke-tested under `wrangler dev` (workerd).
+- `.github/workflows/ci.yml` (NAT-349): `just verify` on every push and pull request, Worker bundle as an artifact, `wrangler deploy` from `main` or a manual run. Deploying from a Claude session is not possible: the Cloudflare connector has no Worker-upload tool and wrangler holds no token there, so the two account secrets on the repository are the deploy path.
+- **Deployed** (NAT-346, NAT-350): `wrangler deploy` from this session put the Worker `cvzengarden` live at https://cvzengarden.resumezen.workers.dev with 34 static assets; the store is the existing, empty Turso database `cvzengarden` in the `scull7` organization (`aws-us-west-2`), reused rather than duplicated. `DATABASE_URL`, `DATABASE_AUTH_TOKEN` and `RZ_ADMIN_TOKEN` are Worker secrets, never committed. README names the Worker as the live garden (BAR-X3).

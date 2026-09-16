@@ -13,6 +13,10 @@ external not_found : t -> handler -> unit = "notFound" [@@mel.send]
 external on_error : t -> (Js.Exn.t -> ctx -> Bun.response) -> unit = "onError" [@@mel.send]
 external fetch : t -> Bun.fetch_fn = "fetch" [@@mel.get]
 
+external fetch_with_env : t -> Bun.request -> 'env -> 'ctx -> Bun.response Js.Promise.t = "fetch"
+[@@mel.send]
+(** [app.fetch(request, env, ctx)] as a Cloudflare Worker calls it. *)
+
 external request_raw : t -> string -> 'init -> 'a = "request"
 [@@mel.send]
 (** [app.request] returns a Response or a promise of one; normalise. *)
@@ -48,6 +52,7 @@ external html : ctx -> string -> Bun.response = "html" [@@mel.send]
 external body : ctx -> string -> int -> string Js.Dict.t -> Bun.response = "body" [@@mel.send]
 external param : ctx -> string -> string = "param" [@@mel.send] [@@mel.scope "req"]
 external query : ctx -> string -> string Js.nullable = "query" [@@mel.send] [@@mel.scope "req"]
+external path : ctx -> string = "path" [@@mel.get] [@@mel.scope "req"]
 external req_text : ctx -> string Js.Promise.t = "text" [@@mel.send] [@@mel.scope "req"]
 
 external header_raw : ctx -> string -> string Js.nullable = "header"
@@ -66,17 +71,3 @@ external response_text : Bun.response -> string Js.Promise.t = "text" [@@mel.sen
 
 external response_header : Bun.response -> string -> string Js.nullable = "get"
 [@@mel.send] [@@mel.scope "headers"]
-
-(* ── Static files (Bun adapter) ──────────────────────────────────────── *)
-
-type static_options = { root : string; rewriteRequestPath : string -> string }
-
-external serve_static : static_options -> middleware = "serveStatic" [@@mel.module "hono/bun"]
-
-let strip_prefix prefix path =
-  if Js.String.startsWith ~prefix path then Js.String.slice ~start:(String.length prefix) path
-  else path
-
-(** Serve [dir] under the URL [prefix]: [/assets/* → frontend/dist/assets/*]. *)
-let mount_static app ~prefix ~dir =
-  use app (prefix ^ "/*") (serve_static { root = dir; rewriteRequestPath = strip_prefix prefix })

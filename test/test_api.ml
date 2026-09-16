@@ -34,7 +34,12 @@ let run () =
   let> () = Db.migrate db in
   let> () = Seed.run ~demo:true db in
   let token = "probe-token" in
-  let app = Api.build ~config:{ Api.default_config with admin_token = Some token } db in
+  let app =
+    Api.build
+      ~config:
+        { Api.default_config with admin_token = Some token; files = Disk Hono_bun.mount_static }
+      db
+  in
   let auth = [ ("Authorization", "Bearer " ^ token) ] in
   let get path = Hono.request app path in
   let> r = get "/api/health" in
