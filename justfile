@@ -47,6 +47,62 @@ worker: assets
 deploy: assets
     bunx wrangler deploy
 
+# ── Branch previews ──────────────────────────────────────────────────────────
+# One Worker + one Turso database per pull request, named cvzengarden-pr-<n>.
+# Needs CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID and TURSO_API_TOKEN in the environment.
+turso_org := "scull7"
+turso_group := "cvzengarden"
+preview_prefix := "cvzengarden-pr-"
+
+# Create (or reuse) the preview database for PR <n> and write its secrets file (never committed)
+preview-db n:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    : "${TURSO_API_TOKEN:?TURSO_API_TOKEN is not set (Turso Platform API token for {{turso_org}})}"
+    name="{{preview_prefix}}{{n}}"
+    api="https://api.turso.tech/v1/organizations/{{turso_org}}"
+    auth="Authorization: Bearer $TURSO_API_TOKEN"
+    # Turso answers {"database": {...}} on success and {"error": "..."} otherwise; a 409 means it exists.
+    field() { python3 -c 'import json,sys; d=json.load(sys.stdin); v=d.get(sys.argv[1]); print(v if isinstance(v,str) else (v or {}).get(sys.argv[2],""))' "$@"; }
+    created=$(curl -sS -X POST -H "$auth" -H "Content-Type: application/json" "$api/databases" \
+      -d "{\"name\":\"$name\",\"group\":\"{{turso_group}}\"}")
+    host=$(printf '%s' "$created" | field database Hostname)
+    if [ -z "$host" ]; then
+      existing=$(curl -sS -H "$auth" "$api/databases/$name")
+      host=$(printf '%s' "$existing" | field database Hostname)
+    fi
+    if [ -z "$host" ]; then
+      echo "turso: could not create or find $name: $(printf '%s' "$created" | field error x)" >&2; exit 1
+    fi
+    token_json=$(curl -sS -X POST -H "$auth" "$api/databases/$name/auth/tokens?expiration=30d&authorization=full-access")
+    jwt=$(printf '%s' "$token_json" | field jwt x)
+    if [ -z "$jwt" ]; then echo "turso: no token for $name: $(printf '%s' "$token_json" | field error x)" >&2; exit 1; fi
+    admin=$(openssl rand -hex 24)
+    umask 077
+    printf '{"DATABASE_URL":"libsql://%s","DATABASE_AUTH_TOKEN":"%s","RZ_ADMIN_TOKEN":"%s"}\n' "$host" "$jwt" "$admin" > .preview-secrets.json
+    echo "preview database $name at $host; reviewer token: $admin"
+
+# Deploy PR <n> as its own Worker on workers.dev and attach the preview database secrets
+deploy-preview n: assets (preview-db n)
+    #!/usr/bin/env bash
+    set -euo pipefail
+    name="{{preview_prefix}}{{n}}"
+    bunx wrangler deploy --env preview --name "$name"
+    # --env="" targets the top level: with --env preview the secret command would suffix the name.
+    bunx wrangler secret bulk .preview-secrets.json --env="" --name "$name"
+    rm -f .preview-secrets.json
+    echo "preview: https://$name.resumezen.workers.dev"
+
+# Remove PR <n>'s Worker and database
+destroy-preview n:
+    #!/usr/bin/env bash
+    set -uo pipefail
+    name="{{preview_prefix}}{{n}}"
+    bunx wrangler delete --env="" --name "$name" --force || echo "no Worker $name"
+    curl -sS -o /dev/null -w "turso delete $name: %{http_code}\n" -X DELETE \
+      -H "Authorization: Bearer $TURSO_API_TOKEN" \
+      "https://api.turso.tech/v1/organizations/{{turso_org}}/databases/$name"
+
 # Run the API + chrome on $PORT (default 4310); DATABASE_URL defaults to file:data/cvzengarden.sqlite.
 # RZ_ADMIN_TOKEN unlocks the review queue at /admin; unset leaves moderation off.
 serve: build

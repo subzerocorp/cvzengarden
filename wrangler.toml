@@ -32,3 +32,18 @@ RZ_SEED_DEMO = "0"
 
 [observability]
 enabled = true
+
+# Branch previews: one Worker per pull request (`cvzengarden-pr-N`, see `just deploy-preview`),
+# on workers.dev only (routes are not inherited, so the custom domains stay on production),
+# against its own Turso database, with the demo submissions seeded.
+[env.preview]
+workers_dev = true
+preview_urls = false
+# Never inherit the custom domains: deploying a preview must not move production.
+routes = []
+
+[env.preview.vars]
+RZ_SEED_DEMO = "1"
+
+[env.preview.observability]
+enabled = true
