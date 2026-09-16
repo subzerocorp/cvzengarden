@@ -5,6 +5,15 @@ name = "cvzengarden"
 main = "_build/default/backend/output/backend/worker.mjs"
 compatibility_date = "2026-09-01"
 
+# Custom domains: both apex hosts and their www serve the same app (decision 2026-09-16, NAT-351).
+# The zones live on Cloudflare; `wrangler deploy` creates the DNS records and certificates.
+routes = [
+  { pattern = "cvzengarden.com", custom_domain = true },
+  { pattern = "www.cvzengarden.com", custom_domain = true },
+  { pattern = "resumezengarden.com", custom_domain = true },
+  { pattern = "www.resumezengarden.com", custom_domain = true },
+]
+
 # The workers.dev URL stays on as the fallback address alongside the custom domains.
 workers_dev = true
 preview_urls = true
