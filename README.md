@@ -93,6 +93,8 @@ just deploy                                  # wrangler deploy
 
 **CI** (`.github/workflows/ci.yml`): every push and pull request runs `just verify` and uploads the Worker bundle; a push to `main` (or a manual run with *deploy* ticked) then runs `wrangler deploy`. Deploy needs two repository secrets, `CLOUDFLARE_API_TOKEN` (Workers Scripts: Edit) and `CLOUDFLARE_ACCOUNT_ID`; the Worker's own secrets are set once with `wrangler secret put`.
 
+**Branch previews**: every pull request is deployed as its own Worker, `cvzengarden-pr-<n>` at `https://cvzengarden-pr-<n>.resumezen.workers.dev`, against its own Turso database `cvzengarden-pr-<n>` (empty, then migrated and seeded with the demo submissions on first request). The URL and a note about the reviewer token are posted as a PR comment; both Worker and database are removed when the PR closes. The `preview` wrangler environment has `routes = []`, so a preview can never take the custom domains. This needs a third repository secret, `TURSO_API_TOKEN` (Turso Platform API). Locally: `just deploy-preview 123`, `just destroy-preview 123`.
+
 ---
 
 ## Routes and API

@@ -5,12 +5,15 @@
 #   CLOUDFLARE_ACCOUNT_ID  — the account the Worker belongs to
 # Runtime secrets (DATABASE_URL, DATABASE_AUTH_TOKEN, RZ_ADMIN_TOKEN) are set once with
 # `wrangler secret put`; they live on the Worker, not in this repository.
+# Branch previews additionally need TURSO_API_TOKEN (Turso Platform API, organization scull7):
+# every pull request gets its own Worker and database, removed when the PR closes.
 name: ci
 
 on:
   push:
     branches: [main]
   pull_request:
+    types: [opened, synchronize, reopened, closed]
   workflow_dispatch:
     inputs:
       deploy:
@@ -24,6 +27,7 @@ concurrency:
 
 jobs:
   verify:
+    if: github.event.action != 'closed'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -101,3 +105,80 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
+
+  preview:
+    needs: verify
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    concurrency:
+      group: preview-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      TURSO_API_TOKEN: ${{ secrets.TURSO_API_TOKEN }}
+      WRANGLER_SEND_METRICS: "false"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: 5.3.0
+          dune-cache: true
+
+      - run: opam install --yes dune melange ocamlformat
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: extractions/setup-just@v2
+
+      - run: bun install --frozen-lockfile
+
+      - name: Deploy the preview Worker and database
+        id: preview
+        run: |
+          opam exec -- just deploy-preview ${{ github.event.pull_request.number }} | tee preview.log
+          echo "url=https://cvzengarden-pr-${{ github.event.pull_request.number }}.resumezen.workers.dev" >> "$GITHUB_OUTPUT"
+
+      - name: Post the preview URL on the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          body="**Preview** for ${{ github.event.pull_request.head.sha }}: ${{ steps.preview.outputs.url }}
+          Own Turso database \`cvzengarden-pr-${{ github.event.pull_request.number }}\` (demo submissions seeded); reviewer token in the workflow log. Removed when this PR closes."
+          existing=$(gh api "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" \
+            --jq '[.[] | select(.user.type == "Bot" and (.body | startswith("**Preview** for")))][0].id')
+          if [ -n "$existing" ] && [ "$existing" != "null" ]; then
+            gh api --method PATCH "repos/${{ github.repository }}/issues/comments/$existing" -f body="$body" >/dev/null
+          else
+            gh pr comment ${{ github.event.pull_request.number }} --body "$body"
+          fi
+
+  preview-cleanup:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      TURSO_API_TOKEN: ${{ secrets.TURSO_API_TOKEN }}
+      WRANGLER_SEND_METRICS: "false"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: extractions/setup-just@v2
+
+      - run: bun install --frozen-lockfile
+
+      - name: Remove the preview Worker and database
+        run: just destroy-preview ${{ github.event.pull_request.number }}
