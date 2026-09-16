@@ -1,4 +1,4 @@
-val ( let* ) : ('a, 'b) result -> ('a -> ('c, 'b) result) -> ('c, 'b) result
+(** A JSON Resume document. *)
 
 module Location : sig
   type t = {
@@ -8,14 +8,12 @@ module Location : sig
     country_code : string option;
     region : string option;
   }
-
-  val decode : t Decode.t
+  (** [t] is [basics.location]. *)
 end
 
 module Profile : sig
   type t = { network : string option; username : string option; url : string option }
-
-  val decode : t Decode.t
+  (** [t] is one [basics.profiles] entry. *)
 end
 
 module Basics : sig
@@ -30,8 +28,7 @@ module Basics : sig
     location : Location.t option;
     profiles : Profile.t list;
   }
-
-  val decode : t Decode.t
+  (** [t] is [basics]. *)
 end
 
 module Work : sig
@@ -46,8 +43,7 @@ module Work : sig
     summary : string option;
     highlights : string list;
   }
-
-  val decode : t Decode.t
+  (** [t] is one [work] entry. *)
 end
 
 module Volunteer : sig
@@ -60,8 +56,7 @@ module Volunteer : sig
     summary : string option;
     highlights : string list;
   }
-
-  val decode : t Decode.t
+  (** [t] is one [volunteer] entry. *)
 end
 
 module Education : sig
@@ -75,8 +70,7 @@ module Education : sig
     score : string option;
     courses : string list;
   }
-
-  val decode : t Decode.t
+  (** [t] is one [education] entry. *)
 end
 
 module Award : sig
@@ -86,8 +80,7 @@ module Award : sig
     awarder : string option;
     summary : string option;
   }
-
-  val decode : t Decode.t
+  (** [t] is one [awards] entry. *)
 end
 
 module Certificate : sig
@@ -97,8 +90,7 @@ module Certificate : sig
     url : string option;
     issuer : string option;
   }
-
-  val decode : t Decode.t
+  (** [t] is one [certificates] entry. *)
 end
 
 module Publication : sig
@@ -109,32 +101,27 @@ module Publication : sig
     url : string option;
     summary : string option;
   }
-
-  val decode : t Decode.t
+  (** [t] is one [publications] entry. *)
 end
 
 module Skill : sig
   type t = { name : string option; level : string option; keywords : string list }
-
-  val decode : t Decode.t
+  (** [t] is one [skills] entry. *)
 end
 
 module Language : sig
   type t = { language : string option; fluency : string option }
-
-  val decode : t Decode.t
+  (** [t] is one [languages] entry. *)
 end
 
 module Interest : sig
   type t = { name : string option; keywords : string list }
-
-  val decode : t Decode.t
+  (** [t] is one [interests] entry. *)
 end
 
 module Reference : sig
   type t = { name : string option; reference : string option }
-
-  val decode : t Decode.t
+  (** [t] is one [references] entry. *)
 end
 
 module Project : sig
@@ -150,8 +137,7 @@ module Project : sig
     entity : string option;
     type_ : string option;
   }
-
-  val decode : t Decode.t
+  (** [t] is one [projects] entry. *)
 end
 
 type t = {
@@ -168,8 +154,16 @@ type t = {
   references : Reference.t list;
   projects : Project.t list;
 }
+(** [t] is a JSON Resume document. *)
 
 val decode : t Decode.t
+(** [decode] reads a Resume object. *)
+
 val of_json : Js.Json.t -> (t, Decode.error) result
+(** [of_json json] is a Resume, or a path-tagged error. *)
+
 val of_string : string -> (t, Decode.error) result
+(** [of_string text] parses JSON and decodes a Resume. *)
+
 val section_counts : t -> (string * int) list
+(** [section_counts r] is the non-empty section names with their entry counts. *)

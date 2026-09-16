@@ -71,4 +71,10 @@ let run () =
        (Result.get_ok (Resume.of_string {|{"basics":{"name":"Sam","label":"Dev"}}|})));
   Check.is_true "inline style is emitted in head"
     (has "<style>\n.rz-name{color:red}\n    </style>"
-       (Skeleton.render ~style:".rz-name{color:red}" (Result.get_ok (Resume.of_string "{}"))))
+       (Skeleton.render ~style:".rz-name{color:red}" (Result.get_ok (Resume.of_string "{}"))));
+  Check.string "tel strips punctuation" "tel:+15035550142" (Skeleton.tel_href "+1 503 555 0142");
+  Check.string "tel parens" "tel:5035550142" (Skeleton.tel_href "(503) 555-0142");
+  Check.string "gpa numeric" "GPA 3.8" (Skeleton.format_score "3.8");
+  Check.string "gpa text" "First Class" (Skeleton.format_score "First Class");
+  Check.string "profile github" "github" (Skeleton.profile_type "GitHub");
+  Check.string "profile unknown" "other" (Skeleton.profile_type "UnknownNet")

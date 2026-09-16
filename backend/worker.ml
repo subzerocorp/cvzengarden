@@ -45,7 +45,7 @@ let build env origin =
   match (optional env._DATABASE_URL, optional env._DATABASE_AUTH_TOKEN) with
   | None, _ | _, None -> return (Error "DATABASE_URL and DATABASE_AUTH_TOKEN secrets are required")
   | Some url, Some auth_token ->
-      let db = Libsql_web.connect ~url ~auth_token in
+      let db = Db.of_client (Libsql_web.connect ~url ~auth_token) in
       let> () = Db.migrate db in
       let> () = Seed.run ~demo:(optional env._RZ_SEED_DEMO = Some "1") db in
       let fetch_asset path = assets_fetch env._ASSETS (request_of_url (origin ^ path)) in

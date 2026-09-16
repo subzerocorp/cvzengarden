@@ -50,7 +50,6 @@ let request_with_headers headers path app : Bun.response Js.Promise.t =
 external json : ctx -> Js.Json.t -> int -> Bun.response = "json" [@@mel.send]
 external html : ctx -> string -> Bun.response = "html" [@@mel.send]
 external body : ctx -> string -> int -> string Js.Dict.t -> Bun.response = "body" [@@mel.send]
-external redirect : ctx -> string -> Bun.response = "redirect" [@@mel.send]
 external param : ctx -> string -> string = "param" [@@mel.send] [@@mel.scope "req"]
 external query : ctx -> string -> string Js.nullable = "query" [@@mel.send] [@@mel.scope "req"]
 external path : ctx -> string = "path" [@@mel.get] [@@mel.scope "req"]

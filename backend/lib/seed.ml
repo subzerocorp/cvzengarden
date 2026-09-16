@@ -75,7 +75,9 @@ let seed_officials db =
   Promise.sequence
     (List.map
        (fun (t : Theme_meta.t) () ->
-         Promise.map ignore (Db.insert ~or_ignore:true db t ~css:None ~checks_json:None))
+         Promise.map
+           (fun (_ : int) -> ())
+           (Db.insert ~conflict:Ignore db t ~css:None ~checks_json:None))
        Theme_meta.officials)
 
 let seed_demo db =
@@ -87,8 +89,9 @@ let seed_demo db =
       (List.map
          (fun ((t : Theme_meta.t), css) () ->
            let checks = Theme_lint.run css |> Theme_lint.list_to_json |> Js.Json.stringify in
-           Promise.map ignore
-             (Db.insert ~or_ignore:true db t ~css:(Some css) ~checks_json:(Some checks)))
+           Promise.map
+             (fun (_ : int) -> ())
+             (Db.insert ~conflict:Ignore db t ~css:(Some css) ~checks_json:(Some checks)))
          community)
 
 let run ~demo db =

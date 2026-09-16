@@ -19,7 +19,7 @@ let max_css_bytes = 512 * 1024
 let field_error path message = Error { Decode.path; message }
 
 let trimmed_string name ~min ~max ~path o =
-  let* v = Theme_meta.required name Decode.string ~path o in
+  let* v = Decode.required name Decode.string ~path o in
   let v = Js.String.trim v in
   let n = String.length v in
   if n < min then
@@ -34,9 +34,9 @@ let decode : t Decode.t =
       let* author = trimmed_string "author" ~min:1 ~max:80 ~path o in
       let* author_url = Decode.field "authorUrl" Decode.string ~path o in
       let author_url = Option.bind author_url Safe_url.safe_href in
-      let* target = Theme_meta.keyed "target" Theme_meta.target_of_key ~path o in
-      let* fonts = Theme_meta.keyed "fonts" Theme_meta.fonts_of_key ~path o in
-      let* css = Theme_meta.required "css" Decode.string ~path o in
+      let* target = Decode.keyed "target" Theme_meta.target_of_key ~path o in
+      let* fonts = Decode.keyed "fonts" Theme_meta.fonts_of_key ~path o in
+      let* css = Decode.required "css" Decode.string ~path o in
       let* css =
         if Js.String.trim css = "" then field_error "css" "is empty"
         else if String.length css > max_css_bytes then field_error "css" "is larger than 512 KiB"

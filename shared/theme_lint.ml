@@ -389,9 +389,9 @@ let ( let* ) = Result.bind
 
 let decode : check Decode.t =
   Decode.obj (fun ~path o ->
-      let get name = Theme_meta.required name Decode.string ~path o in
+      let get name = Decode.required name Decode.string ~path o in
       let* id = get "id" in
       let* title = get "title" in
       let* note = get "note" in
-      let* status = Theme_meta.keyed "status" status_of_key ~path o in
+      let* status = Decode.keyed "status" status_of_key ~path o in
       Ok { id; title; note; status })

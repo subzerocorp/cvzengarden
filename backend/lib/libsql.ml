@@ -26,7 +26,6 @@ let run client sql args = Promise.map rows_affected (execute client { sql; args 
 (* ── Row readers ─────────────────────────────────────────────────────── *)
 
 let text row key = Option.bind (Js.Dict.get row key) Js.Json.decodeString
-let text_or row key default = Option.value (text row key) ~default
 
 let int row key =
   Option.bind (Js.Dict.get row key) (fun v ->
@@ -39,4 +38,3 @@ let int row key =
 
 let s = Js.Json.string
 let opt = function Some v -> Js.Json.string v | None -> Js.Json.null
-let i n = Js.Json.number (float_of_int n)

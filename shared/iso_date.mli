@@ -1,14 +1,13 @@
-type t = { year : int; month : int option; day : int option }
+(** JSON Resume ISO-8601 dates: [YYYY], [YYYY-MM], [YYYY-MM-DD]. *)
 
-val month_names : string array
-val month_name : int -> string option
+type t = { year : int; month : int option; day : int option }
+(** [t] is a calendar date with optional month and day. *)
+
 val datetime : t -> string
+(** [datetime d] is the machine [datetime] value ([YYYY], [YYYY-MM], or [YYYY-MM-DD]). *)
+
 val visible : t -> string
-val is_leap_year : int -> bool
-val days_in_month : int -> int -> int
-val is_calendar_valid : t -> bool
-val digits : int -> string -> int option
-val time_tail : Js.Re.t
-val date_part : Js.String.t -> Js.String.t
-val ( let** ) : 'a option -> ('a -> 'b option) -> 'b option
+(** [visible d] is the human date ([2020], [March 2020], or [January 15, 2022]). *)
+
 val parse : Js.String.t -> t option
+(** [parse raw] is the date when [raw] is a valid ISO-8601 resume date. *)

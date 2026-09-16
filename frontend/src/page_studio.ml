@@ -12,7 +12,7 @@ let read_file (file : Js.File.t) =
   (let> text = Js.File.text file in
    Store.set_resume_text text;
    Js.Promise.resolve ())
-  |> ignore
+  |> fun p -> ignore (p : unit Js.Promise.t)
 
 let import_url () =
   match
@@ -23,7 +23,7 @@ let import_url () =
       (let> body = Web.get_text url in
        Option.iter Store.set_resume_text body;
        Js.Promise.resolve ())
-      |> ignore
+      |> fun p -> ignore (p : unit Js.Promise.t)
 
 (* ── Views ───────────────────────────────────────────────────────────── *)
 

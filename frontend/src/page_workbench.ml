@@ -58,7 +58,7 @@ let read_file draft (file : Js.File.t) =
    adopt_css draft text;
    if fst draft.name () = "" then snd draft.name (strip_css_suffix (Js.File.name file));
    Js.Promise.resolve ())
-  |> ignore
+  |> fun p -> ignore (p : unit Js.Promise.t)
 
 let submission_body draft ~css ~pages =
   Js.Json.stringify
@@ -116,9 +116,11 @@ let submit draft checks () =
       (let> response = Web.post_json "/api/submissions" (submission_body draft ~css ~pages) in
        let outcome = outcome_of_response response in
        snd draft.outcome outcome;
-       (match outcome with Accepted _ -> Store.load_themes () |> ignore | _ -> ());
+       (match outcome with
+       | Accepted _ -> ignore (Store.load_themes () : unit Js.Promise.t)
+       | _ -> ());
        Js.Promise.resolve ())
-      |> ignore
+      |> fun p -> ignore (p : unit Js.Promise.t)
   | None, _, _ -> ()
 
 (* ── Views ───────────────────────────────────────────────────────────── *)

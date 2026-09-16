@@ -240,6 +240,21 @@ Nine review threads, all addressed on the branch:
 - Catch-alls are gone: storage accessors and the probe `mkdir` match `Js.Exn.Error _` only. `Store.themes_of_body` decodes in one place and a bad payload is logged, never replaced by the first-party set; the last good article is a signal fed by an effect, not a `ref` inside a memo.
 - `page_workbench`, `page_admin` and the drawer are split into helpers under the 30-line cap (draft/view records of signals passed explicitly).
 
+## 2026-09-15 — PR #31 review: OCaml RULES leftovers
+
+- Every compilation unit has a documented `.mli` (shared trimmed; backend, frontend, probes, tests added). Nested Resume decoders and unused FFI stay out of the public surface.
+- `just test` is `dune build @check @fmt @runtest`; a root `dune` alias runs the Melange tests via Bun. Calculation tests split per module (`test_iso_date`, `test_slug`, `test_safe_url`, `test_decode`).
+- Typed `ignore`; `Db.insert ~conflict`; `RZ_ADMIN_TOKEN` defaults empty (no `garden-dev` in the justfile). Nested `match` flattened in `authorized`, `route_lint`/`css_of_body`, and sheet `srcdoc`.
+- `dune build @check @fmt @runtest`: 217 passed, 0 failed.
+
+## 2026-09-12 — CrossR catalog skills installed
+
+Vendored nine skills from [sycamore-hq/crossr-skills](https://github.com/sycamore-hq/crossr-skills) into `.agents/skills/` via `npx skills add --copy`: `code-writer`, `github-pr-fix`, `github-pr-review`, `code-review`, `ocaml`, `show-me`, `testing`, `unslop`, `voice-dna`. `code-writer` / `unslop` / `voice-dna` were already identical to upstream. Pin: `skills-lock.json`. No product code change.
+
+## 2026-09-12 — PR #32 review fixes
+
+`gan-verdict` vendored (`SKILL.md` + `references/batch-verdict.md` + `references/handoff-packet.md`) so `code-review` and `testing` can load the verdict/envelope protocol they cite; `skills-lock.json` pinned, catalog bullet updated. `AGENTS.md` Skills heading now names `.agents/skills/` instead of a laptop path; every skill under it resolves on the branch. Personas line left as-is (agents not vendored).
+
 ## 2026-09-16 — Cloudflare Workers deploy; Linear is the tracker (NAT-346, NAT-356)
 
 - `backend/worker.ml` is a Worker module (`export default { fetch }`) running the same Hono app: Turso over HTTP (`Libsql_web`, `@libsql/client/web`), static files through the `ASSETS` binding, app built on the first request. `Api.config.files` is the port: `Disk` on Bun, `Assets` on Workers (unmatched routes fall through to the binding; `/skeleton/preview.css` still 404s first).

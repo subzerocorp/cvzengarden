@@ -134,40 +134,28 @@ let to_json t =
 
 let ( let* ) = Result.bind
 
-let required name (dec : 'a Decode.t) ~path o =
-  let* v = Decode.field name dec ~path o in
-  match v with
-  | Some v -> Ok v
-  | None -> Error { Decode.path = Decode.join_field path name; message = "is required" }
-
-let keyed name of_key ~path o =
-  let* raw = required name Decode.string ~path o in
-  match of_key raw with
-  | Some v -> Ok v
-  | None -> Error { Decode.path = Decode.join_field path name; message = "unknown value " ^ raw }
-
 let decode : t Decode.t =
   Decode.obj (fun ~path o ->
-      let* id = required "id" Decode.string ~path o in
-      let* name = required "name" Decode.string ~path o in
-      let* author = required "author" Decode.string ~path o in
+      let* id = Decode.required "id" Decode.string ~path o in
+      let* name = Decode.required "name" Decode.string ~path o in
+      let* author = Decode.required "author" Decode.string ~path o in
       let* author_url = Decode.field "authorUrl" Decode.string ~path o in
-      let* target = keyed "target" target_of_key ~path o in
-      let* fonts = keyed "fonts" fonts_of_key ~path o in
-      let* swatches = Decode.field_list "swatches" Decode.string ~path o in
+      let* target = Decode.keyed "target" target_of_key ~path o in
+      let* fonts = Decode.keyed "fonts" fonts_of_key ~path o in
+      let* colours = Decode.field_list "swatches" Decode.string ~path o in
       let* swatches =
-        match swatches with
+        match colours with
         | [ g; i; a ] -> Ok (g, i, a)
         | _ ->
             Error
               {
-                Decode.path = Decode.join_field path "swatches";
+                Decode.path = (if path = "" then "swatches" else path ^ ".swatches");
                 message = "expected exactly three colours";
               }
       in
-      let* badge = required "badge" Decode.string ~path o in
-      let* bg = required "bg" Decode.string ~path o in
-      let* status = keyed "status" status_of_key ~path o in
+      let* badge = Decode.required "badge" Decode.string ~path o in
+      let* bg = Decode.required "bg" Decode.string ~path o in
+      let* status = Decode.keyed "status" status_of_key ~path o in
       Ok { id; name; author; author_url; target; fonts; swatches; badge; bg; status })
 
 let list_of_json json = Decode.list decode ~path:"themes" json

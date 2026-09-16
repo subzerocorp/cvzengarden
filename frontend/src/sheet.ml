@@ -67,14 +67,12 @@ let first_document p () =
 
 (** The [srcdoc] attribute: empty until the first document, then fixed. *)
 let srcdoc p frame () =
-  match fst frame.latched () with
-  | Some doc -> doc
-  | None -> (
-      match first_document p () with
-      | Some doc ->
-          snd frame.latched (Some doc);
-          doc
-      | None -> "")
+  match (fst frame.latched (), first_document p ()) with
+  | Some doc, _ -> doc
+  | None, Some doc ->
+      snd frame.latched (Some doc);
+      doc
+  | None, None -> ""
 
 let page_px p () =
   Option.fold

@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "skills": {
+    "code-review": {
+      "source": "sycamore-hq/crossr-skills",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/code-review/SKILL.md",
+      "computedHash": "0478d9bc58784c84551f5dc97249f093e59bfc24f82405c76b5ff419d3ab146c"
+    },
+    "code-writer": {
+      "source": "sycamore-hq/crossr-skills",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/code-writer/SKILL.md",
+      "computedHash": "1c9fbe57d92af26b98652c48735f324538527b12b0166532a1c0938d4e89e65d"
+    },
+    "gan-verdict": {
+      "source": "sycamore-hq/crossr-skills",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/gan-verdict/SKILL.md",
+      "computedHash": "e5ff16330bd64426a799cada558c8071066c1bb1e6b9d94f097538577924e56c"
+    },
+    "github-pr-fix": {
+      "source": "sycamore-hq/crossr-skills",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/github-pr-fix/SKILL.md",
+      "computedHash": "349d463f32a46c90fc105f40d12b3929dbffd96097d8262a47486d52ecc07f69"
+    },
+    "github-pr-review": {
+      "source": "sycamore-hq/crossr-skills",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/github-pr-review/SKILL.md",
+      "computedHash": "3702531eb04994ec27d77ef54296ffa249eddb90f08d37a6ad3bf278bef75652"
+    },
+    "ocaml": {
+      "source": "sycamore-hq/crossr-skills",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/ocaml/SKILL.md",
+      "computedHash": "f2e0c133133e89eaeb872d5aa56993fbed2e050a6859f5c2492a7ab633bcb5c3"
+    },
+    "show-me": {
+      "source": "sycamore-hq/crossr-skills",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/show-me/SKILL.md",
+      "computedHash": "ca181ad256d6acc3d44e03524705f8086a3ab702485e6e3ebeeb005e02ba59f0"
+    },
+    "testing": {
+      "source": "sycamore-hq/crossr-skills",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/testing/SKILL.md",
+      "computedHash": "ae90a64530620453e544ee79f29c7326ee2f4aa121f04471999a46f10585d5bd"
+    },
+    "unslop": {
+      "source": "sycamore-hq/crossr-skills",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/unslop/SKILL.md",
+      "computedHash": "a6d354c6085b9a0aba7b6e32d9a488100e367872e137b6af61a23488e42a7f93"
+    },
+    "voice-dna": {
+      "source": "sycamore-hq/crossr-skills",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/voice-dna/SKILL.md",
+      "computedHash": "cf3ea173cdecff647298ad0c5cddd1062564bc53d671dd59837397770a8ac5c3"
+    }
+  }
+}

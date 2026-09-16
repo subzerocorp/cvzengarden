@@ -1,8 +1,7 @@
-val strip_http_scheme : Js.String.t -> Js.String.t option
-val host_end : Js.Re.t
+(** Safe hrefs: http(s), mailto, tel; everything else is dropped. *)
+
 val hostname : Js.String.t -> Js.String.t
-val has_host : Js.String.t -> bool
-val has_body : Js.String.t -> Js.String.t -> bool
-val scheme_shaped : Js.Re.t
-val has_scheme : string -> bool
+(** [hostname href] is the host of [href], or [""] when none is present. *)
+
 val safe_href : Js.String.t -> Js.String.t option
+(** [safe_href raw] is a usable href, or [None] for javascript/data/empty/unknown schemes. *)

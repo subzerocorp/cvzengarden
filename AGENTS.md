@@ -8,6 +8,14 @@ ResumeZen (`cvzengarden.com` / `resumezengarden.com`) is a CSS Zen Garden for r�
 - Break work into small, independently reviewable chunks.
 - End each plan with a bulleted list of unresolved questions.
 
+## Skills (crossr-skills, vendored in `.agents/skills/`)
+
+- `code-writer` — always on.
+- `ocaml` — RULES for Melange/OCaml (`shared/`, `backend/`, `frontend/`, `probes/`, `test/`).
+- Catalog (vendored from [sycamore-hq/crossr-skills](https://github.com/sycamore-hq/crossr-skills) into `.agents/skills/`): `code-review`, `gan-verdict`, `github-pr-fix`, `github-pr-review`, `ocaml`, `show-me`, `testing`, `unslop`, `voice-dna`.
+
+Personas: `/Users/nathansculli/src/crossr-skills/.agents/agents/`.
+
 ## Stack (locked by [`docs/decisions/2026-09-12-stack-unlock.md`](docs/decisions/2026-09-12-stack-unlock.md) — see README "Stack")
 
 | Layer | Choice |
@@ -39,7 +47,7 @@ No Tailwind, no CSS-in-JS, no JS in themes, no second Skeleton, no new npm depen
 ```bash
 just fmt-check   # ocamlformat (dune fmt)
 just lint        # warnings-as-errors compile + zero-JavaScript check
-just test        # Melange test suite under Bun (renderer parity, calculations, linter, HTTP API)
+just test        # dune build @check @fmt @runtest
 just build       # dune build + bun build → frontend/dist
 just probe       # Playwright probes (OCaml bindings in probes/) against a server the runner starts
 just verify      # all of the above

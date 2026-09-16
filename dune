@@ -1,0 +1,20 @@
+(alias
+ (name check)
+ (deps
+  (alias_rec backend)
+  (alias_rec frontend)
+  (alias_rec test)
+  (alias_rec probes)))
+
+(rule
+ (alias runtest)
+ (deps
+  test/output/test/main.mjs
+  (glob_files_rec test/output/**)
+  (source_tree skeleton)
+  (source_tree themes)
+  package.json
+  bun.lock
+  (source_tree node_modules))
+ (action
+  (run bun test/output/test/main.mjs)))

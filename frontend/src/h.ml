@@ -20,12 +20,7 @@ external handler : ('e -> unit) -> prop = "%identity"
 external dyn : (unit -> 'a) -> prop = "%identity"
 (** A reactive attribute: Solid re-runs the getter when its signals change. *)
 
-external classes : bool Js.Dict.t -> prop = "%identity"
-external undefined : prop = "#undefined"
-
 let props pairs : prop Js.Dict.t = Js.Dict.fromList pairs
-let no_props : prop Js.Dict.t = Js.Dict.empty ()
-let class_list (pairs : (string * bool) list) : bool Js.Dict.t = Js.Dict.fromList pairs
 
 (* ── Children ─────────────────────────────────────────────────────────── *)
 
@@ -37,7 +32,6 @@ external show : (unit -> node) -> node = "%identity"
 external show_text : (unit -> string) -> node = "%identity"
 external many : node array -> node = "%identity"
 external of_nullable : node Js.nullable -> node = "%identity"
-external of_element : 'element -> node = "%identity"
 
 let nothing : node = of_nullable Js.Nullable.null
 let list nodes = many (Array.of_list nodes)

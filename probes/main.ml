@@ -186,7 +186,8 @@ let workbench page base =
 
 let admin page base =
   Report.suite "review queue";
-  on_dialog page (fun d -> ignore (dialog_accept d "Contrast on tags is under 3:1"));
+  on_dialog page (fun d ->
+      ignore (dialog_accept d "Contrast on tags is under 3:1" : unit Js.Promise.t));
   let> () = visit page (base ^ "/admin") in
   let> locked = text (locator page ".queue-empty") in
   Report.contains "locked until a token is entered" "reviewer token" locked;
@@ -241,7 +242,7 @@ let run () =
   watch page;
   let> () =
     route page (Js.Re.fromString "fonts\\.googleapis\\.com|fonts\\.gstatic\\.com") (fun r ->
-        ignore (abort r))
+        ignore (abort r : unit Js.Promise.t))
   in
   let> () = garden page base in
   let> () = gallery page base in
@@ -268,4 +269,4 @@ let () =
       Report.fail "probe run raised" (Option.value (Js.Json.stringifyAny err) ~default:"unknown");
       Report.finish ();
       return ())
-  |> ignore
+  |> fun p -> ignore (p : unit Js.Promise.t)
