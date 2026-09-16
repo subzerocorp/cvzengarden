@@ -58,17 +58,25 @@ preview_prefix := "cvzengarden-pr-"
 preview-db n:
     #!/usr/bin/env bash
     set -euo pipefail
+    : "${TURSO_API_TOKEN:?TURSO_API_TOKEN is not set (Turso Platform API token for {{turso_org}})}"
     name="{{preview_prefix}}{{n}}"
     api="https://api.turso.tech/v1/organizations/{{turso_org}}"
     auth="Authorization: Bearer $TURSO_API_TOKEN"
+    # Turso answers {"database": {...}} on success and {"error": "..."} otherwise; a 409 means it exists.
+    field() { python3 -c 'import json,sys; d=json.load(sys.stdin); v=d.get(sys.argv[1]); print(v if isinstance(v,str) else (v or {}).get(sys.argv[2],""))' "$@"; }
     created=$(curl -sS -X POST -H "$auth" -H "Content-Type: application/json" "$api/databases" \
       -d "{\"name\":\"$name\",\"group\":\"{{turso_group}}\"}")
-    host=$(printf '%s' "$created" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("database",{}).get("Hostname",""))')
+    host=$(printf '%s' "$created" | field database Hostname)
     if [ -z "$host" ]; then
-      host=$(curl -sS -H "$auth" "$api/databases/$name" | python3 -c 'import json,sys; print(json.load(sys.stdin)["database"]["Hostname"])')
+      existing=$(curl -sS -H "$auth" "$api/databases/$name")
+      host=$(printf '%s' "$existing" | field database Hostname)
     fi
-    jwt=$(curl -sS -X POST -H "$auth" "$api/databases/$name/auth/tokens?expiration=30d&authorization=full-access" \
-      | python3 -c 'import json,sys; print(json.load(sys.stdin)["jwt"])')
+    if [ -z "$host" ]; then
+      echo "turso: could not create or find $name: $(printf '%s' "$created" | field error x)" >&2; exit 1
+    fi
+    token_json=$(curl -sS -X POST -H "$auth" "$api/databases/$name/auth/tokens?expiration=30d&authorization=full-access")
+    jwt=$(printf '%s' "$token_json" | field jwt x)
+    if [ -z "$jwt" ]; then echo "turso: no token for $name: $(printf '%s' "$token_json" | field error x)" >&2; exit 1; fi
     admin=$(openssl rand -hex 24)
     umask 077
     printf '{"DATABASE_URL":"libsql://%s","DATABASE_AUTH_TOKEN":"%s","RZ_ADMIN_TOKEN":"%s"}\n' "$host" "$jwt" "$admin" > .preview-secrets.json

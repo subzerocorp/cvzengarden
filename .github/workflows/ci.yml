@@ -143,6 +143,7 @@ jobs:
       - name: Deploy the preview Worker and database
         id: preview
         run: |
+          set -o pipefail
           opam exec -- just deploy-preview ${{ github.event.pull_request.number }} | tee preview.log
           echo "url=https://cvzengarden-pr-${{ github.event.pull_request.number }}.resumezen.workers.dev" >> "$GITHUB_OUTPUT"
 
